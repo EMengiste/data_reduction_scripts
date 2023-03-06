@@ -224,8 +224,9 @@ class fepx_sim:
             if ids =="all":
                 ids= [i for i in range(len(values))]
             for id in ids:
-                print(values[id])
-                value[str(id)]= values[0].split()
+                value[str(id)]= [float(i) for i in values[id].split()]
+
+            #pprint(value,max=1000)
         #pprint(dict)
         #print(value)
         if len(ids)==1:
@@ -364,20 +365,102 @@ import json
 import os
 from ezmethods import *
 import matplotlib.pyplot as plt
-#plt.rcParams.update({'font.size': 30})
-#plt.rcParams['text.usetex'] = True
-#plt.rcParams['font.family'] = 'DejaVu Serif'
-#plt.rcParams["mathtext.fontset"] = "cm"
+plt.rcParams.update({'font.size': 30})
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'DejaVu Serif'
+plt.rcParams["mathtext.fontset"] = "cm"
+plt.rcParams['figure.figsize'] = 12,12
 import numpy as np
 import shutil
-#
-home="/Users/ezramengiste/Documents/neper_fepx_gui/the_sims/"
-sim= fepx_sim("name",path=home+"1_uniaxial")
-out = sim.get_output("stress",step="1",res="elts",ids="all")
-results = sim.get_results()
-pprint(out)
-pprint(results)
 
+def avg(arr):
+    return sum(arr)/len(arr)
+#
+home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+#sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+sim_iso= fepx_sim("name",path=home+"isotropic/Cube")
+#sim2.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+
+sample_num = 20
+start = 0
+ids = np.arange(start,start+sample_num,1)
+slip_iso =  [normailze(sim_iso.get_output("slip",step="28",res="elsets",ids=ids)[str(i)],absolute=True) for i in ids]
+slips_iso = {}
+slips = {}
+
+for i in range(12):
+    slips_iso[str(i)] = []
+    slips[i] =[]
+     
+
+
+fig= plt.figure()
+
+color="k"
+for m in ids:
+    for j in range(12):
+        ax= fig.add_subplot(2,6,j+1)
+        slips_iso[str(i)] .append(slip_iso[m][j])    
+        ax.hist(slips_iso[str(j)], bins=20 ,color="blue" ,edgecolor=color, alpha=0.1)
+
+        
+baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
+
+sims = ["070","071","074", "075"]
+slips_list = {}
+for sim in sims:
+    slips_list[sim] = slips
+
+elt_num = len(ids)
+
+fig= plt.figure()
+
+del sim_iso
+
+for simulation in sims:
+    slips = slips_list[simulation]
+
+    sim= fepx_sim("name",path=home+simulation+"/Cube")
+    #sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+    slip =  [normailze(sim.get_output("slip",step="28",res="elsets",ids=ids)[str(i)],absolute=True) for i in ids]
+
+    strength = [ float(i.split("d")[0]) for i in sim.material_parameters["g_0"]]
+    altered  =  [index for index,val in enumerate(strength) if val>baseline]
+    for j,val in enumerate(slip):
+        ax= fig.add_subplot(2,6,j+1)
+        slips[str(j)]=val 
+        color="k"
+        if j in altered:
+            color="red"
+        ax= fig.add_subplot(2,6,j+1)
+        ax.hist(slips[str(j)], bins=20 ,color=color,edgecolor=color, alpha=0.5)       
+
+        ax.set_ylim([0,1500])
+    del sim
+            
+#stress = sim.get_output("stress",step="28",res="elsets",ids=ids)
+#crss = sim.get_output("crss",step="28",res="elsets",ids=ids)
+
+#pprint(slip,max=100)
+
+
+#print(len(array_of_ids))
+plt.tight_layout()
+plt.subplots_adjust(left=0.13, right=0.995,top=0.99, bottom=0.1, wspace=0.035)
+plt.show()
+#plt.savefig("figure")
 exit(0)
+array_of_ids = []
+y = np.arange(6)
+y2 = np.arange(12)
+for index,i in enumerate(ids):
+    if slips[index]> right and slips[index]<=left:
+        #print(i,stress[str(i)])
+        axs[1].bar(y, stress[str(i)],color="k",edgecolor="k",alpha=0.003)
+        axs[2].bar(y2, slip[str(i)],color="k",edgecolor="k",alpha=0.003)
+        axs[3].hist(crss[str(i)],color="k",edgecolor="k",alpha=0.003)
+        array_of_ids.append(i)
+
+
 stress = results["stress"]
 strain = results["strain"]

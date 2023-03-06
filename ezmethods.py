@@ -1,14 +1,14 @@
-def pprint(arr, preamble="\n-+++"):
+def pprint(arr, preamble="\n-+++",max=50):
     space= "                                                   "
     for i in arr:
         i=str(i)
         if isinstance(arr,dict):
             val = preamble+i+": "+str(arr[i])+space
             #                 :boundary_conditions: uniaxial_grip                 '
-            print(val[:50]+"|||||------|")
+            print(val[:max]+"|||||------|")
         else:
             val = i+ space
-            print(preamble+val[:50]+"|||||------|")
+            print(preamble+val[:max]+"|||||------|")
         preamble="    "
 
 def list_sims(list,func="",option=[""]):
