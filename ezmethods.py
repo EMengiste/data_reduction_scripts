@@ -80,7 +80,7 @@ def plotting_space(x,y=[],layers=3,axis="",resolution=0,ylabel="",debug=False):
             axis.set_ylabel(ylabel)
             #print("-------|---------|---------|---------|---------|---------|---------|---------|")
 
-def normailze(array,scale=1,maximum=1,absolute=False,debug=False):
+def normalize(array,scale=1,maximum=1,absolute=False,debug=False):
     if debug:
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
         print("-------|---------|---------|---------|---------|---------|---------|---------|")

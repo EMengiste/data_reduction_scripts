@@ -222,21 +222,18 @@ class fepx_sim:
 
         with open(step_file) as file:
             values=file.readlines()
-            num_components= len(values[0].split(" "))
-            component_vals = {}
-            for component in range(num_components):
-                component_vals[str(component)] = []
             if ids =="all":
                 ids= [i for i in range(len(values))]
             for id in ids:
                 value[str(id)]= [float(i) for i in values[id].split()]
-                for component in range(num_components):
-                    component_vals[str(component)].append(value[str(id)][component])
+
             #pprint(value,max=1000)
+        #pprint(dict)
+        #print(value)
         if len(ids)==1:
             return value[str(ids[0])]
         else:
-            return [value,component_vals]
+            return value
         #
        #
       #
@@ -362,22 +359,6 @@ values = { "1=crss": [],
            "21=work_pl": [],
            "22=workrate": [],
            "23=workrate_pl": []}
-
-slip_systems = ["$(01-1)[111]$",                
-                "$(10-1)[111]$",
-                "$(1-10)[111]$",
-
-                "$(011)[11-1]$",
-                "$(101)[11-1]$",
-                "$(1-10)[11-1]$",
-
-                "$(011)[1-11]$",
-                "$(10-1)[1-11]$",
-                "$(110)[1-11]$",
-
-                "$(01-1)[1-1-1]$",
-                "$(101)[1-1-1]$",
-                "$(110)[1-1-1]$"]
 ########
 ########
 ########
@@ -389,14 +370,7 @@ plt.rcParams.update({'font.size': 10})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["figure.subplot.left"] = 0.13
-plt.rcParams["figure.subplot.right"] = 0.995
-plt.rcParams["figure.subplot.top"] = 0.99
-plt.rcParams["figure.subplot.bottom"] = 0.1
-plt.rcParams["figure.subplot.wspace"] = 0.035
-plt.rcParams["figure.subplot.hspace"] = 0.0062
-
-plt.rcParams['figure.figsize'] = 60,20
+plt.rcParams['figure.figsize'] = 12,12
 import numpy as np
 import shutil
 import time
@@ -413,8 +387,23 @@ home="/Users/ezramengiste/Documents/neper_fepx_gui/the_sims"
 #sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
 sim_iso= fepx_sim("name",path=home+"/1_uniaxial")
 #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+
+slip_systems = ["$(01-1)[111]$",                
+                "$(10-1)[111]$",
+                "$(1-10)[111]$",
+
+                "$(011)[11-1]$",
+                "$(101)[11-1]$",
+                "$(1-10)[11-1]$",
+
+                "$(011)[1-11]$",
+                "$(10-1)[1-11]$",
+                "$(110)[1-11]$",
+
+                "$(01-1)[1-1-1]$",
+                "$(101)[1-1-1]$",
+                "$(110)[1-1-1]$"]
 sim_iso.post_process()
-baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
 val =sim_iso.sim["**general"].split()
 sample_num = int(int(val[2])/10)
 start = 0
@@ -422,42 +411,16 @@ bin_size = 10
 ids = np.arange(start,start+sample_num,1)
 step = "1"
 res ="elts"
-slip_iso =  sim_iso.get_output("slip",step=step,res=res,ids=ids)[1]
-stress_iso =  sim_iso.get_output("stress",step=step,res=res,ids=ids)[1]
-#stress_iso = [normailze(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
+slip_iso =  [normailze(sim_iso.get_output("slip",step=step,res=res,ids=ids)[str(i)],absolute=True) for i in ids]
+stress_iso = [normailze(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
+slips_iso = {}
+
+baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
 del sim_iso
 comps=np.arange(6)
-
-
 fig = plt.figure(figsize=[60,20])
-wid=3
-hig = 6
-
-for i in range(6):
-    ax_stress = fig.add_subplot(wid,hig,18-i)
-    ax_stress.hist(stress_iso["0"],edgecolor="k")
-
+ax_stress = fig.add_subplot(2,7,13)
 axies = []
-
-for index,item in enumerate(slip_systems):
-    ax= fig.add_subplot(wid,hig,index+1)
-    axies.append(ax)
-    ax.hist(normalize(slip_iso[str(index)],absolute=True))
-    ax.set_xlabel("slip")
-    ax.set_ylabel("number")
-    ax.set_title(item)
-
-for value in [slip_iso,slip_iso]:
-    for index,item in enumerate(slip_systems):
-        ax= axies[index]
-        ax.hist(value[str(index)],alpha=0.1)
-        ax.set_xlabel("slip")
-        ax.set_ylabel("number")
-        ax.set_title(item)
-
-
-plt.show()
-exit(0)
 for i in range(len(slip_iso[0])):
     slips =[]
     ax= fig.add_subplot(2,7,i+1)
