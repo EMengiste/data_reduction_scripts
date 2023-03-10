@@ -444,25 +444,26 @@ stress_axies = []
 #avg_slip_iso = []
 
 
-fig = plt.figure(figsize=[20,20])
+fig = plt.figure(figsize=[40,20])
 wid=6
 hig =3
-for sim_start in range(0,75,5):
+for sim_start in range(0,11,5):
     fig.clear()
     axies = []
     mean_iso = {}
-    ax2= fig.add_subplot(111)
+    ax1= fig.add_subplot(hig,wid,18)
+    ax2= fig.add_subplot(hig,wid,17)
     for index,item in enumerate(slip_systems):        
-        #ax= fig.add_subplot(hig,wid,index+1)   
+        ax= fig.add_subplot(hig,wid,index+1)   
         slip_iso[str(index)]=normalize(slip_iso[str(index)],absolute=True)
         print(np.mean(slip_iso[str(index)]))
         mean_iso[str(index)]= np.mean(slip_iso[str(index)])
         #ax.hist(slip_iso[str(index)],bins=bins
         #        ,edgecolor="k",alpha= 0.5,color="k")
-        #ax.plot(1,mean,"*k",ms=20)
-        #axies.append(ax)
-        #ax.set_xlabel("ratio")
-        #ax.set_ylabel("slip")
+        ax.plot(1,mean_iso[str(index)],"*k",ms=20)
+        axies.append(ax)
+        ax.set_xlabel("ratio")
+        ax.set_ylabel("slip")
         #ax.set_title(item)
 
         #avg_slip_iso.append(np.average(slip_iso[str(index)])*10000000)
@@ -503,16 +504,14 @@ for sim_start in range(0,75,5):
                 mean_altered_iso +=mean_iso[str(index)]
             else:
                 mean_unaltered+=mean
-                mean_altered_iso +=mean_iso[str(index)]
-            #ax= axies[index]
+                mean_unaltered_iso +=mean_iso[str(index)]
+            ax= axies[index]
             print(mean)
             #ax.hist(normalize(slip[str(index)],absolute=True),bins=bins
             #        ,edgecolor="k",alpha= 0.2,color=color)
-            #ax.plot(ratio,mean,"o",ms=20,color=color)
-            #ax.set_ylim([0,sample_num])
-        ax2.plot(ratio,mean_altered_iso, "*r",ms=30)
-        ax2.plot(ratio,mean_unaltered_iso,"*g",ms=30)
-        ax2.plot(ratio,mean_altered, "*b",ms=30)
+            ax.plot(ratio,mean,"o",ms=20,color=color)
+            
+        ax1.plot(ratio,mean_altered, "*b",ms=30)
         ax2.plot(ratio,mean_unaltered,"*k",ms=30)
 
         #for i in range(6):
@@ -521,11 +520,13 @@ for sim_start in range(0,75,5):
         #    ax_stress.set_title("Stress "+str(i))
 
 
+    ax1.plot(1,mean_altered_iso,"o",ms=30)
+    ax2.plot(1,mean_unaltered_iso,"o",ms=30)
     #comps = np.arange(12)
     #analysis_axes[-1].bar(comps,avg_slip_iso)
     #analysis_axes[-2].bar(comps,avg_slip_iso)
     plt.tight_layout()
-    plt.savefig("/home/etmengiste/jobs/aps/images/val"+str(sim_start))
+    plt.savefig("/home/etmengiste/jobs/aps/images/Largeval"+str(sim_start))
 exit(0)
 
 

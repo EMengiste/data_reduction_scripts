@@ -394,7 +394,7 @@ ax.plot(my_code_strain33,my_code_stress33)
 
 sim_start=20
 #slips_avg = []
-for sim in simulations[20:22]:
+for sim in simulations[74:75]:
     sim= fepx_sim(sim,path=home+sim+"/Cube")
     num_steps = sim.get_num_steps()
     my_code_strain33= [sim.get_output("strain",step=step,res="mesh")[2] for step in range(num_steps)]
