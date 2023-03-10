@@ -370,7 +370,7 @@ plt.rcParams.update({'font.size': 10})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams['figure.figsize'] = 12,12
+plt.rcParams['figure.figsize'] = 20,20
 import numpy as np
 import shutil
 import time
@@ -379,69 +379,32 @@ start= time.time()
 def avg(arr):
     return sum(arr)/len(arr)
 #
-home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
-home="/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
-home="/Users/ezramengiste/Documents/neper_fepx_gui/the_sims"
+home="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/home/etmengiste/jobs/slip_study_rerun/"
+ist= "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic"
+simulations = os.listdir(home)
+simulations.sort()
+fig = plt.figure()
+sim_iso = fepx_sim("iso",path=ist+"/Cube")
+num_steps = sim_iso.get_num_steps()
+my_code_strain33= [sim_iso.get_output("strain",step=step,res="mesh")[2] for step in range(num_steps)]
+my_code_stress33=[sim_iso.get_output("stress",step=step,res="mesh")[2] for step in range(num_steps)]
 
+ax= fig.add_subplot(111)
+ax.plot(my_code_strain33,my_code_stress33)
 
-#sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
-sim_iso= fepx_sim("name",path=home+"/1_uniaxial")
-#sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
-
-slip_systems = ["$(01-1)[111]$",                
-                "$(10-1)[111]$",
-                "$(1-10)[111]$",
-
-                "$(011)[11-1]$",
-                "$(101)[11-1]$",
-                "$(1-10)[11-1]$",
-
-                "$(011)[1-11]$",
-                "$(10-1)[1-11]$",
-                "$(110)[1-11]$",
-
-                "$(01-1)[1-1-1]$",
-                "$(101)[1-1-1]$",
-                "$(110)[1-1-1]$"]
-sim_iso.post_process()
-val =sim_iso.sim["**general"].split()
-sample_num = int(int(val[2])/10)
-start = 0
-bin_size = 10
-ids = np.arange(start,start+sample_num,1)
-step = "1"
-res ="elts"
-slip_iso =  [normailze(sim_iso.get_output("slip",step=step,res=res,ids=ids)[str(i)],absolute=True) for i in ids]
-stress_iso = [normailze(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
-slips_iso = {}
-
-baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
-del sim_iso
-comps=np.arange(6)
-fig = plt.figure(figsize=[60,20])
-ax_stress = fig.add_subplot(2,7,13)
-axies = []
-for i in range(len(slip_iso[0])):
-    slips =[]
-    ax= fig.add_subplot(2,7,i+1)
-    for id in ids:
-        slips.append(slip_iso[id][i])
-        if i == 0:
-            stress_fake_1 =  [ 0.3*float(i) for i in stress_iso[id]] 
-            plotting_space([stress_fake_1,stress_iso[id]],axis=ax_stress)
-    slips_iso[str(i)] = slips
-    #print(slips)
-    slip_fake_1 = [  abs(float(i-0.002)) for i in slips] 
-    ax.hist(slip_fake_1,bins=bin_size,color="red",edgecolor="k",alpha=0.2)
-    ax.hist(slips,bins=bin_size,color="blue",edgecolor="k",alpha=0.2)
-    ax.set_title(slip_systems[i])
-    ax.set_ylim([0,int(sample_num)])
-    axies.append(ax)
-
+sim_start=20
+#slips_avg = []
+for sim in simulations[20:22]:
+    sim= fepx_sim(sim,path=home+sim+"/Cube")
+    num_steps = sim.get_num_steps()
+    my_code_strain33= [sim.get_output("strain",step=step,res="mesh")[2] for step in range(num_steps)]
+    my_code_stress33=[sim.get_output("stress",step=step,res="mesh")[2] for step in range(num_steps)]
+    
+    ax.plot(my_code_strain33,my_code_stress33)
 
 plt.tight_layout()
-plt.subplots_adjust(left=0.062, bottom=0.08, right=0.9,top=0.948, wspace=0.162,hspace=.126)
 plt.show()
+
 exit(0)
 for sim in ["046","050","075"]:
     sim= fepx_sim("name",path=home+sim+"/Cube")

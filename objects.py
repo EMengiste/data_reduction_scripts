@@ -385,16 +385,16 @@ import json
 import os
 from ezmethods import *
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 10})
+plt.rcParams.update({'font.size': 20})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["figure.subplot.left"] = 0.13
+plt.rcParams["figure.subplot.left"] = 0.045
+plt.rcParams["figure.subplot.bottom"] = 0.042
 plt.rcParams["figure.subplot.right"] = 0.995
-plt.rcParams["figure.subplot.top"] = 0.99
-plt.rcParams["figure.subplot.bottom"] = 0.1
-plt.rcParams["figure.subplot.wspace"] = 0.035
-plt.rcParams["figure.subplot.hspace"] = 0.0062
+plt.rcParams["figure.subplot.top"] = 0.891
+plt.rcParams["figure.subplot.wspace"] = 0.17
+plt.rcParams["figure.subplot.hspace"] = 0.44
 
 plt.rcParams['figure.figsize'] = 60,20
 import numpy as np
@@ -405,59 +405,247 @@ start= time.time()
 def avg(arr):
     return sum(arr)/len(arr)
 #
-home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+#home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
 home="/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
-home="/Users/ezramengiste/Documents/neper_fepx_gui/the_sims"
-
+#home="/Users/ezramengiste/Documents/neper_fepx_gui/the_sims"
+home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
 
 #sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
-sim_iso= fepx_sim("name",path=home+"/1_uniaxial")
+#sim_iso= fepx_sim("name",path=home+"/1_uniaxial")
+sim_iso= fepx_sim("name",path=home+"isotropic/Cube")
 #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
 sim_iso.post_process()
 baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
 val =sim_iso.sim["**general"].split()
 sample_num = int(int(val[2])/10)
+sample_num= 2000
 start = 0
 bin_size = 10
+max = 0.00004
+bins=np.arange(0,max,max/bin_size)
 ids = np.arange(start,start+sample_num,1)
-step = "1"
-res ="elts"
+step = "28"
+res ="elsets"
 slip_iso =  sim_iso.get_output("slip",step=step,res=res,ids=ids)[1]
 stress_iso =  sim_iso.get_output("stress",step=step,res=res,ids=ids)[1]
+baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
 #stress_iso = [normailze(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
 del sim_iso
 comps=np.arange(6)
 
 
-fig = plt.figure(figsize=[60,20])
-wid=3
-hig = 6
+stress_axies = []
 
-for i in range(6):
-    ax_stress = fig.add_subplot(wid,hig,18-i)
-    ax_stress.hist(stress_iso["0"],edgecolor="k")
-
-axies = []
-
-for index,item in enumerate(slip_systems):
-    ax= fig.add_subplot(wid,hig,index+1)
-    axies.append(ax)
-    ax.hist(normalize(slip_iso[str(index)],absolute=True))
-    ax.set_xlabel("slip")
-    ax.set_ylabel("number")
-    ax.set_title(item)
-
-for value in [slip_iso,slip_iso]:
-    for index,item in enumerate(slip_systems):
-        ax= axies[index]
-        ax.hist(value[str(index)],alpha=0.1)
-        ax.set_xlabel("slip")
-        ax.set_ylabel("number")
-        ax.set_title(item)
+#for i in range(6):
+    #ax_stress = fig.add_subplot(hig,wid,12+i)
+    #ax_stress.hist(stress_iso[str(i)],bins=bin_size,edgecolor="k")
+    #ax_stress.set_title("Stress "+str(i))
+    #stress_axies.append(ax_stress)
+#avg_slip_iso = []
 
 
-plt.show()
+fig = plt.figure(figsize=[20,20])
+wid=6
+hig =3
+for sim_start in range(0,75,5):
+    fig.clear()
+    axies = []
+    mean_iso = {}
+    ax2= fig.add_subplot(111)
+    for index,item in enumerate(slip_systems):        
+        #ax= fig.add_subplot(hig,wid,index+1)   
+        slip_iso[str(index)]=normalize(slip_iso[str(index)],absolute=True)
+        print(np.mean(slip_iso[str(index)]))
+        mean_iso[str(index)]= np.mean(slip_iso[str(index)])
+        #ax.hist(slip_iso[str(index)],bins=bins
+        #        ,edgecolor="k",alpha= 0.5,color="k")
+        #ax.plot(1,mean,"*k",ms=20)
+        #axies.append(ax)
+        #ax.set_xlabel("ratio")
+        #ax.set_ylabel("slip")
+        #ax.set_title(item)
+
+        #avg_slip_iso.append(np.average(slip_iso[str(index)])*10000000)
+        #if index<6:
+        #    ax2 = fig.add_subplot(hig,wid,18-index)
+        #    ax2.plot(1,1)
+        #    analysis_axes.append(ax2)
+            #ax2.set_ylim[]
+
+    simulations = os.listdir(home)
+    simulations.sort()
+    pprint(slip_iso)
+    #slips_avg = []
+    for sim in simulations[sim_start:sim_start+5]:
+        sim= fepx_sim(sim,path=home+sim+"/Cube")
+
+        slip = sim.get_output("slip",step=step,res=res,ids=ids)[1]
+        #stress =  sim.get_output("stress",step=step,res=res,ids=ids)[1]
+        strength = [ float(i.split("d")[0]) for i in sim.material_parameters["g_0"]]
+        altered  =  []
+        ratio=1
+        for index,val in enumerate(strength):
+            if val>baseline:
+                altered.append(index)
+                ratio = val/baseline
+        del sim
+        mean_altered=0
+        mean_unaltered=0
+        mean_altered_iso=0
+        mean_unaltered_iso=0
+        for index,item in enumerate(slip_systems):
+            color = "blue"
+            slip1 = normalize(slip[str(index)],absolute=True)
+            mean= np.mean(slip1)
+            if index in altered:
+                color="red"
+                mean_altered +=mean
+                mean_altered_iso +=mean_iso[str(index)]
+            else:
+                mean_unaltered+=mean
+                mean_altered_iso +=mean_iso[str(index)]
+            #ax= axies[index]
+            print(mean)
+            #ax.hist(normalize(slip[str(index)],absolute=True),bins=bins
+            #        ,edgecolor="k",alpha= 0.2,color=color)
+            #ax.plot(ratio,mean,"o",ms=20,color=color)
+            #ax.set_ylim([0,sample_num])
+        ax2.plot(ratio,mean_altered_iso, "*r",ms=30)
+        ax2.plot(ratio,mean_unaltered_iso,"*g",ms=30)
+        ax2.plot(ratio,mean_altered, "*b",ms=30)
+        ax2.plot(ratio,mean_unaltered,"*k",ms=30)
+
+        #for i in range(6):
+        #    ax_stress = stress_axies[i]
+        #    ax_stress.hist(stress[str(i)],bins=bin_size,alpha=0.3,edgecolor="k",)
+        #    ax_stress.set_title("Stress "+str(i))
+
+
+    #comps = np.arange(12)
+    #analysis_axes[-1].bar(comps,avg_slip_iso)
+    #analysis_axes[-2].bar(comps,avg_slip_iso)
+    plt.tight_layout()
+    plt.savefig("/home/etmengiste/jobs/aps/images/val"+str(sim_start))
 exit(0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+home="/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
+
+simulations = os.listdir(home)
+simulations.sort()
+#sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+sim_iso= fepx_sim("name",path=home+"isotropic/Cube")
+#sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+
+
+sample_num = 2000
+start = 0
+ids = np.arange(start,start+sample_num,1)
+
+slip_iso =  [normailze(sim_iso.get_output("slip",step="28",res="elsets",ids=ids)[str(i)],absolute=True) for i in ids]
+slips_iso = {}
+
+baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
+
+del sim_iso
+
+fig = plt.figure()
+axies = []
+for i in range(len(slip_iso[0])):
+    slips =[]
+    ax= fig.add_subplot(2,6,i+1)
+    for id in ids:
+        slips.append(slip_iso[id][i])
+    slips_iso[str(i)] = slips
+    ax.hist(slips,bins=10,color="blue",edgecolor="red",alpha=0.2)
+    axies.append(ax)
+
+for sim in ["071", "072", "073", "074","075"]:
+    sim= fepx_sim(sim,path=home+sim+"/Cube")
+    
+    #sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+    slip =  [normailze(sim.get_output("slip",step="28",res="elsets",ids=ids)[str(i)],absolute=True) for i in ids]
+
+    strength = [ float(i.split("d")[0]) for i in sim.material_parameters["g_0"]]
+    altered  =  [index for index,val in enumerate(strength) if val>baseline]
+    for i in range(len(slip_iso[0])):
+        color = "k"
+        if i in altered:
+            color="red"
+        slips =[]
+        ax= axies[i]
+        ax.clear()
+        for id in ids:
+            slips.append(slip_iso[id][i])
+        slips_iso[str(i)] = slips
+        ax.hist(slips,bins=20,color=color ,edgecolor="k", alpha= 0.2)
+        ax.set_ylim([0,sample_num*.8])
+        ax.set_xlim([0,0.15])
+
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.13, right=0.995,top=0.99, bottom=0.1, wspace=0.035)
+    plt.savefig("figure"+sim.name)
+    del sim
+
+exit(0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 for i in range(len(slip_iso[0])):
     slips =[]
     ax= fig.add_subplot(2,7,i+1)
