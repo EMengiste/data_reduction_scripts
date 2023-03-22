@@ -1,0 +1,24 @@
+Included in each csv the orientations of each grain for all steps of the given
+simulation. The file name for the cubic domain follows the format:
+
+DOM_CUB_NSLIP_[a]_SET_[b]_ANISO_[c]
+
+Where,
+a is the number of slip systems altered
+b is the random set of slip systems
+c is the percentage of the base strength the altered slip systems have
+
+For the elongated domain this becomes DOM_ELONG_NSLIP_[a]_SET_[b]_ANISO_[c].
+
+The first column of each file is the grain ID with every three columns after
+following the format
+
+STEP_[n]_ROD_1, STEP_[n]_ROD_2, STEP_[n]_ROD_3
+
+where n is the step at which the orientations are recorded (0-26) and
+ROD_1, ROD_2, and ROD_3 are the components of the Rodrigues vector at that step.
+
+These files were generated using the pandas library and as such can be easily
+traversed using the pd.read_csv("[file_name].csv") function.
+e.g. Data["STEP_n_ROD_2][19] will give the nth step second component of the
+Rodrigues vector for grain 20

@@ -1,0 +1,8 @@
+In this directory will be 75 directories with two simulations each the corresponding job
+numbers will be all even or all odd for the domain type and in the batch run script.
+
+job numbers 2032-2181
+2032 cube and all even up to 2180
+2033 elongated and all od up to 2181
+sim 001 contains jobs 2032 and 2033
+etc

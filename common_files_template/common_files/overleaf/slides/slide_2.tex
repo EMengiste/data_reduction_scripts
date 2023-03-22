@@ -1,0 +1,47 @@
+\newcommand{\makeFrame}[4]{
+\begin{frame}{Cubic domain after  $4.5\%$ strain: #1}
+    \newcommand{\ipfOne}{figures/#2.png}
+    \newcommand{\ipfTwo}{figures/#3.png}
+    \newcommand{\poly}{figures/cubic_domain.png}
+    \newcommand{\one}{#4}
+    \newcommand{\two}{fepx version 1.3.1-18}
+    \begin{columns}
+        %
+        \begin{column}{\polySize \textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{\poly}
+            \end{figure}
+        \end{column}
+        \begin{column}{\figSize \textwidth}
+            \begin{tikzpicture}
+                \begin{scope}
+                    \node[anchor= west,fill=white] {\includegraphics[width=\textwidth]{\ipfOne}};
+                \end{scope}
+                %   
+            \end{tikzpicture}
+            \vspace{1cm}
+            \centering
+            {\large \one}
+        \end{column}        
+        %
+        \begin{column}{\figSize \textwidth}
+            \begin{tikzpicture}
+                \begin{scope}
+                    \node[anchor= west,fill=white]
+                    {\includegraphics[width=\textwidth]{\ipfTwo}};
+                \end{scope}
+                %
+            \end{tikzpicture}
+            \vspace{1cm}
+        \centering
+        {\large \two}
+        \end{column}
+    \end{columns}
+\end{frame}}
+
+\makeFrame{First set}{Cube_first_set_6ss}{Cube_first_set}{Manual 6 slip systems down}
+\makeFrame{Second set}{Cube_second_set_6ss}{Cube_second_set}{Manual 6 slip systems down}
+\makeFrame{Third set(new 2)}{Cube_fourth_set_6ss}{Cube_fourth_set}{Manual 6 slip systems down}
+
+

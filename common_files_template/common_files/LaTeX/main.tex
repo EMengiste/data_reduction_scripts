@@ -1,0 +1,71 @@
+%\documentclass[13pt,aspectratio=169]{beamer}% Used to establish the beamer environment
+%
+\documentclass[20pt]{beamer} % scale up the font largest available is 20
+\geometry{papersize={16in,9in}} % make much larger. needs testing
+%
+%
+\usepackage{tikz} % Used for vectorized drawings
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{math}
+%
+\usepackage{amsmath} % Math typesetting package
+\usepackage{amssymb} % Math symbols
+\usepackage{float}  % Defines floating objects (Tables, Figures, etc...)
+%\usepackage{pgfplots} % Package for plotting
+
+
+\usepackage{color,soul} % 
+\usepackage{mathtools}
+\usepackage{appendix}
+\usepackage{siunitx}
+\usepackage[normalem]{ulem}
+\usepackage{upgreek}
+\usepackage[numbers]{natbib}
+\usepackage{subfigure}
+\usepackage{miller}
+% Theme choice (black and white, essentially)
+\usecolortheme{dove}
+
+% Frame titles
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+% Block title settings
+\setbeamerfont{block title}{size=\large,series=\bfseries}
+
+% Footer with acme lab, logo and frame number 
+\addtobeamertemplate{footline}{%
+  \begin{tikzpicture}
+    % Crimson PMS 201
+    \definecolor{mycolor}{RGB}{158,27,50}
+    %
+    \filldraw[color=mycolor, fill=mycolor, very thick] (-2,-1) rectangle (\textwidth,.27);
+    
+    \node[right, anchor= south west, text =white] (logo) at  (-2,-1) {\includegraphics[width= 1cm]{figures/A-Square-Logo-4c_Official.jpg}};
+    
+    \node[right, anchor=west, text =white] at (logo.east) {\normalsize ACME Lab};
+    
+   \node [left,anchor=south east, text =white] at (.93\textwidth,-.67) {\normalsize \insertframenumber{}};
+\end{tikzpicture}}
+
+% Removes navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+% Title and author
+\title{Slip system anisotropy study}
+\author{Ezra Mengiste, Matthew Kasemer}
+\setbeamerfont{title}{size=\Huge}
+
+%%%%% Begin document
+\begin{document}
+
+% Make title page
+\maketitle
+% Include body slides here
+%\input{slides/slide_1.tex}
+%\include{slides/slide_2.tex}
+\input{slides/name.tex}
+%\include{slides/formatting.tex}
+% Include reference slide here
+\include{slides/references.tex}
+
+%%%%% End document
+\end{document}

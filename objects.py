@@ -385,7 +385,7 @@ import json
 import os
 from ezmethods import *
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 20})
+plt.rcParams.update({'font.size': 15})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
@@ -447,14 +447,25 @@ stress_axies = []
 fig = plt.figure(figsize=[40,20])
 wid=6
 hig =3
-for sim_start in range(0,11,5):
+for sim_start in range(0,75,5):
     fig.clear()
     axies = []
     mean_iso = {}
-    ax1= fig.add_subplot(hig,wid,18)
-    ax2= fig.add_subplot(hig,wid,17)
+    ax1= fig.add_subplot(hig,wid,15)
+    ax2= fig.add_subplot(hig,wid,16)
+    ax1.set_ylim(0,0.05)
+    ax1.set_xlim(0.9,4.1)
+    ax2.set_ylim(0,0.3)
+    ax2.set_xlim(0.9,4.1)
+
+    ax1.set_xlabel("ratio")
+    ax2.set_xlabel("ratio")
+    ax1.set_ylabel("avg $\gamma$ ")
+    ax2.set_ylabel("avg $\gamma$")
     for index,item in enumerate(slip_systems):        
-        ax= fig.add_subplot(hig,wid,index+1)   
+        ax= fig.add_subplot(hig,wid,index+1)
+        ax.set_ylim(0,0.02)   
+        ax.set_xlim(0.9,4.1)   
         slip_iso[str(index)]=normalize(slip_iso[str(index)],absolute=True)
         print(np.mean(slip_iso[str(index)]))
         mean_iso[str(index)]= np.mean(slip_iso[str(index)])
@@ -463,8 +474,8 @@ for sim_start in range(0,11,5):
         ax.plot(1,mean_iso[str(index)],"*k",ms=20)
         axies.append(ax)
         ax.set_xlabel("ratio")
-        ax.set_ylabel("slip")
-        #ax.set_title(item)
+        ax.set_ylabel("avg $\gamma$")
+        ax.set_title(item)
 
         #avg_slip_iso.append(np.average(slip_iso[str(index)])*10000000)
         #if index<6:

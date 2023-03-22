@@ -1,0 +1,27 @@
+\begin{frame}
+    %
+    \frametitle{Example Figure}
+    %
+    Here is an example of a figure, which you can reference as Figure~\ref{fig:label}:
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5in]{figures/miller_indices.png}
+        \caption{This is a caption for the figure}
+        \label{fig:my_label}
+    \end{figure}
+    %
+    You can also have sub-figures, which can make having multiple plots on a slide easy:
+    \begin{figure}
+        \centering
+        \subfigure[]{
+            \includegraphics[width=0.5in]{figures/miller_indices.png}
+        }
+        \quad
+        \subfigure[]{
+            \includegraphics[width=0.5in]{figures/miller_indices.png}
+        }
+        \caption{This is an example subfigure.}
+        \label{fig:my_label2}
+    \end{figure}
+    %
+\end{frame}
