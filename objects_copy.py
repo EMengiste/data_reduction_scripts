@@ -366,7 +366,7 @@ import json
 import os
 from ezmethods import *
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 10})
+plt.rcParams.update({'font.size': 20})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
@@ -379,31 +379,38 @@ start= time.time()
 def avg(arr):
     return sum(arr)/len(arr)
 #
-home="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/home/etmengiste/jobs/slip_study_rerun/"
+home="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/nonfirst_g_0/slip_study_rerun/"
 ist= "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic"
 simulations = os.listdir(home)
 simulations.sort()
 fig = plt.figure()
 sim_iso = fepx_sim("iso",path=ist+"/Cube")
 num_steps = sim_iso.get_num_steps()
-my_code_strain33= [sim_iso.get_output("strain",step=step,res="mesh")[2] for step in range(num_steps)]
-my_code_stress33=[sim_iso.get_output("stress",step=step,res="mesh")[2] for step in range(num_steps)]
+iso_strain= [sim_iso.get_output("strain",step=step,res="mesh")[2] for step in range(num_steps)]
+iso_stress=[sim_iso.get_output("stress",step=step,res="mesh")[2] for step in range(num_steps)]
 
+vals = find_yield(iso_stress,iso_strain)
 ax= fig.add_subplot(111)
-ax.plot(my_code_strain33,my_code_stress33)
+ax.plot(iso_strain,iso_stress)
+ax.plot(vals["y_strain"], vals["y_stress"], "o",label=vals["y_stress"])
 
 sim_start=20
 #slips_avg = []
-for sim in simulations[74:75]:
-    sim= fepx_sim(sim,path=home+sim+"/Cube")
+for sim_name in simulations[25:30]:
+    sim= fepx_sim(sim_name,path=home+sim_name+"/Cube")
     num_steps = sim.get_num_steps()
-    my_code_strain33= [sim.get_output("strain",step=step,res="mesh")[2] for step in range(num_steps)]
-    my_code_stress33=[sim.get_output("stress",step=step,res="mesh")[2] for step in range(num_steps)]
+    strain= [sim.get_output("strain",step=step,res="mesh")[2] for step in range(num_steps)]
+    stress=[sim.get_output("stress",step=step,res="mesh")[2] for step in range(num_steps)]
     
-    ax.plot(my_code_strain33,my_code_stress33)
-
-plt.tight_layout()
-plt.show()
+    ax.plot(strain,stress)
+    vals = find_yield(stress,strain)
+    ax.plot(vals["y_strain"], vals["y_stress"], "o",label=vals["y_stress"])
+    ax.legend(loc="best")
+    plt.tight_layout()
+    if (simulations.index(sim_name)+1)%5 ==0:
+        #plt.show()
+        plt.savefig("/home/etmengiste/jobs/aps/images/figure_"+sim_name)
+        plt.clf()
 
 exit(0)
 for sim in ["046","050","075"]:
