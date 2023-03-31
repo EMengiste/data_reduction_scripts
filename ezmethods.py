@@ -378,20 +378,6 @@ class fepx_sim:
   #
  #
 #
-
-def vectorize(v):
-    value= []
-    for i in v:
-        for j in i:
-            value.append(j)
-    return value
-##
-def calculate_inner(a,b):
-    value = 0
-    for index in range(8):
-        value+=a[index]*b[index]
-    return value
-
 def diad(a,b):
     mat = []
     for i in range(3):
@@ -427,7 +413,8 @@ def calculate_schmid(a,b):
     #vect = vectorize(matrix)
     return P
     #print(calculate_inner(vect,vect))
-P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
+
+
 def pprint(arr, preamble="\n-+++",max=50):
     space= "                                                   "
     for i in arr:
@@ -585,6 +572,15 @@ def find_yield(stress, strain, offset="",number=""):
   #
  #
 #
+# Plot effective plastic strain
+def plot_eff_strain(j,ax,domain,ani,dataframe):
+    for i in range(0+25*j,24+25*j,5):
+        mk="*"
+        ax.plot(ani,dataframe[str(i)+domain+"_unaltered"],"b-"+mk,ms=15)
+        ax.plot(ani,dataframe[str(i)+domain+"_altered"],"r-"+mk,ms=15)
+        ax.set_xlabel("ratio")
+        ax.set_ylabel("$\\bar\\varepsilon^{p}$")
+        ax.set_title(domain)
 ##
 def avg(arr):
     return sum(arr)/len(arr)
@@ -593,6 +589,8 @@ def avg(arr):
 #
 ##
 def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
+    
+    P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
     sim_iso= fepx_sim("name",path=home+"isotropic/"+domain)
     #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
     sim_iso.post_process()
@@ -790,6 +788,7 @@ def get_bulk_output(simulation_plotted,domain):
     #shutil.copyfile(dot_sim+"/"+domain+".png",simset_dir+"/common_files/figures/")
     #shutil.copyfile(dot_sim+"/"+domain+"_density.png",simset_dir+"/common_files/figures/")
     sim_results = sim.get_results()
+    g_0= normalize(sim.material_parameters["g_0"],maximum=1)
     del sim
     #pprint(sim_results, preamble="#\n--------\n#")
 
@@ -822,7 +821,6 @@ def get_bulk_output(simulation_plotted,domain):
     #  Initial Slip strengths
     #
     ax = fig.add_subplot(width,length,plotted)
-    g_0= normalize(sim.material_parameters["g_0"],maximum=1)
     plotting_space([g_0],axis=ax,ylabel="initial slip_strength",layers=2)
     plotted+= 1
     #
@@ -865,7 +863,6 @@ def get_bulk_output(simulation_plotted,domain):
         print("===+",plotted,"\n")
         #print("===+",plotted,"\n")
         #print("\n\n\n++++++",value,"\n",steps_val)
-    del sim
     #pprint(sim_results)
     #
 

@@ -88,7 +88,7 @@ home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmeng
 simulations = os.listdir(home)
 simulations.sort()
 bulk=False
-#bulk=True
+bulk=True
 
 slips = ["2","4","6"]
 aniso = ["125","150","175","200","400"]     
@@ -99,8 +99,11 @@ aniso = ["125","150","175","200","400"]
 #name = "DOM_"+domains[1][1]+"_ISO"   
 #package_oris(home+"isotropic/"+domains[1][0]+".sim/", name=name)
 
+
+
 aniso = {"Aniso":["100"]+aniso}
 dataframe = pd.DataFrame(aniso)
+data = pd.DataFrame(aniso)
 
 
 for i in range(0,75,5):
@@ -112,21 +115,30 @@ for i in range(0,75,5):
             set_num    = str(int((current%25)/5)+1)
             for domain in domains:
                 # DOM_CUB_NSLIP_2_SET_1_ANISO_125
-                name = "DOM_"+domain[1]+"_NSLIP_"+num_slips+"_SET_"+set_num+"_ANISO_"+aniso[aniso_index]
-                print(name)
-                #get_bulk_output(simulation,domain[0])
-                package_oris(home+simulation+"/"+domain[0]+".sim/", name=name)
+                #name = "DOM_"+domain[1]+"_NSLIP_"+num_slips+"_SET_"+set_num+"_ANISO_"+aniso[aniso_index]
+                #print(name)
+                get_bulk_output(simulation,domain[0])
+                #package_oris(home+simulation+"/"+domain[0]+".sim/", name=name)
 
     print(i,"====\n\n\n")
     #get_yield_v_aniso_ratio(i,"Cube")
     #get_yield_v_aniso_ratio(i,"Elongated")
-    slip_vs_aniso(i,"Cube", slip_systems,debug=True, save_plot=False,df=dataframe)
-    slip_vs_aniso(i,"Elongated", slip_systems,debug=True, save_plot=False, df=dataframe)
+    #slip_vs_aniso(i,"Cube", slip_systems,debug=True, save_plot=False,df=dataframe)
+    #slip_vs_aniso(i,"Elongated", slip_systems,debug=True, save_plot=False, df=dataframe)
 #plt.savefig("/home/etmengiste/jobs/aps/images/Combined_plot"+simulations[i]+"_")
 dataframe.to_csv("/home/etmengiste/jobs/aps/images/eff_pl_strain_values.csv")
+#dataframe= pd.read_csv("/home/etmengiste/jobs/aps/images/eff_pl_strain_values.csv")
+ani = [float(i)/100 for i in dataframe["Aniso"]]
+for j in range(3):
+    fig= plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+    print(0+25*j,24+25*j)
+    plot_eff_strain(j,ax1,"Cube",ani,dataframe)
+    plot_eff_strain(j,ax2,"Elongated",ani,dataframe)
+    plt.savefig("/home/etmengiste/jobs/aps/images/eff_pl_strain"+slips[j]+"_"+str(i))
 
 exit(0)
-
 #home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
 #home="/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
 #home="/Users/ezramengiste/Documents/neper_fepx_gui/the_sims"
