@@ -88,7 +88,132 @@ home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmeng
 simulations = os.listdir(home)
 simulations.sort()
 bulk=False
-bulk=True
+debug = False
+
+P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
+#pprint(P)
+
+altered = [0, 1, 2, 3]
+unaltered = [4, 5, 6, 7, 8, 9, 10, 11]
+def calc_eff_pl_str(sim,domain,under=""):
+    file = open(home+sim+"/"+domain+"_eff_pl_str.csv","w")
+    sim= fepx_sim(sim,path=home+sim+"/"+domain)
+    sim.post_process()
+    num_elts = int(sim.sim['**general'].split()[2])
+    step = sim.sim['**step']
+    slip = sim.get_output("slip",step="28",res="elts",ids="all")
+    elt_vol = sim.get_output("elt"+under+"vol",step="0",res="elts",ids="all")
+    v_tot = sum(elt_vol[1]["0"])
+    del elt_vol
+    elt_vol_final = sim.get_output("elt"+under+"vol",step=step,res="elts",ids="all")
+    mat_par = sim.material_parameters["g_0"]
+    del sim
+
+    sim_iso= fepx_sim("name",path=home+"isotropic/"+domain)
+    #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+    sim_iso.post_process()
+    baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
+    val =sim_iso.sim["**general"].split()
+    baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
+    #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
+    del sim_iso
+
+    strength = [ float(i.split("d")[0]) for i in mat_par]
+    #exit(0)
+    altered  =  []
+    ratio=1
+    for index,val in enumerate(strength):
+        if val>baseline:
+            altered.append(index)
+            ratio = val/baseline
+    avg_eff_pl_str_alt = []
+    avg_eff_pl_str_unalt = []
+    print("***---***")
+    print(altered)
+    print(baseline)
+    print("***---***")
+    values = "elt_vol, tot_vol, vol_frac, eff_pl_alt, eff_pl_unalt, vol_eff_pl_alt, vol_eff_pl_unalt"
+    file.write(values+"\n")
+    for el in range(num_elts):
+        
+        total_altered = 0
+        total_unaltered = 0
+
+        for i in range(12):
+            if i in altered:
+                schmid_val = P[i]
+                shear_val = slip[0][str(el)][i]
+                total_altered+= schmid_val*shear_val
+                if debug:
+                    print("\n+++Schmid val")
+                    pprint(schmid_val, preamble="+++")
+                    print("\n\n+++===slip system shear\n===---", shear_val)
+                    print("\n+++===Total resolved shear strain")
+                    pprint(total_altered, preamble="+++===---")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##\n\n")
+            #print("-----------------------------------##-------##-------##")
+            #
+            else:
+                schmid_val = P[i]
+                shear_val = slip[0][str(el)][i]
+                total_unaltered+= schmid_val*shear_val
+                if debug:
+                    print("\n+++Schmid val")
+                    pprint(schmid_val, preamble="+++")
+                    print("\n\n+++===slip system shear\n===---", shear_val)
+                    print("\n+++===Total resolved shear strain")
+                    pprint(total_unaltered, preamble="+++===---")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##\n\n\n")
+
+        eff_pl_str_alt = math.sqrt((2/3)*inner_prod(total_altered,total_altered))
+        eff_pl_str_unalt = math.sqrt((2/3)*inner_prod(total_unaltered,total_unaltered))
+
+        v_el = elt_vol_final[0][str(el)][0]
+        v_frac = v_el/v_tot
+
+        avg_eff_pl_str_alt.append(eff_pl_str_alt*v_frac)
+        avg_eff_pl_str_unalt.append(eff_pl_str_unalt*v_frac)
+
+        if debug:
+            print("el vol", v_el)
+            print("tot vol", v_tot)
+            print("vol_frac", v_frac)
+            print("-----------------------------------##-------##\n")
+            print("\n Effective plastic altered :",eff_pl_str_alt)
+            print("\n Effective plastic altered :",eff_pl_str_unalt)
+            print("-----------------------------------##-------##\n\n")
+            print("-----------------------------------##-------##\n")
+            print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_alt[el])
+            print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_unalt[el])
+            print("-----------------------------------##-------##\n\n")
+
+        values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])    
+        file.write(values+"\n")
+    print("\n__")
+    print(sum(avg_eff_pl_str_alt))
+    print(sum(avg_eff_pl_str_unalt))
+
+
+sim="isotropic"
+domain="Cube"
+#calc_eff_pl_str(sim,domain,under="_")
+domain="Elongated"
+#calc_eff_pl_str(sim,domain,under="_")
+
+for i in simulations:
+    if i=="common_files":
+        print("common_files")
+        break
+    for dom in domains:
+        calc_eff_pl_str(i,dom[0])
+#pprint(elt_vol[1]["0"],max=100)
+
+
+exit(0)
 
 slips = ["2","4","6"]
 aniso = ["125","150","175","200","400"]     
