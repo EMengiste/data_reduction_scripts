@@ -54,23 +54,140 @@ from ezmethods import *
 import matplotlib.pyplot as plt
 
 import math
-plt.rcParams.update({'font.size': 25})
+plt.rcParams.update({'font.size': 45})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
-plt.rcParams["figure.subplot.left"] = 0.045
+plt.rcParams["figure.subplot.left"] = 0.05
 plt.rcParams["figure.subplot.bottom"] = 0.08
-plt.rcParams["figure.subplot.right"] = 0.995
-plt.rcParams["figure.subplot.top"] = 0.891
+plt.rcParams["figure.subplot.right"] = 0.99
+plt.rcParams["figure.subplot.top"] = 0.95
 plt.rcParams["figure.subplot.wspace"] = 0.21
 plt.rcParams["figure.subplot.hspace"] = 0.44
-plt.rcParams['figure.figsize'] = 60,20
+plt.rcParams['figure.figsize'] = 30,20
 import numpy as np
 import shutil
 import time
 import pandas as pd
 import time
 start = time.perf_counter()
+
+#sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
+#sim_iso= fepx_sim("name",path=home+"/1_uniaxial")
+#sample_num = int(int(val[2])/10)
+sample_num= 2000
+start = 0
+bin_size = 10
+max = 0.00004
+bins=np.arange(0,max,max/bin_size)
+domains = [["Cube","CUB"], ["Elongated","ELONG"]]
+#ids = np.arange(start,start+sample_num,1)
+home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
+aps_home ="/home/etmengiste/jobs/aps/"
+home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+simulations = os.listdir(home)
+simulations.sort()
+bulk=False
+
+slips = ["2","4","6"]
+aniso = ["125","150","175","200","400"]     
+sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+
+an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "4.00"]
+#name = "DOM_"+domains[0][1]+"_ISO"           
+#package_oris(home+"isotropic/"+domains[0][0]+".sim/", name=name)
+
+file = open(home+"common_files/Cube.stelt").readlines()
+grain_id = 300
+file_grain_ids = open(home+"common_files/Cube_grain_elts")
+
+elts = file_grain_ids.readlines()[grain_id].split(", ")
+elts = [int(i) for i in elts]
+file_grain_ids.close()
+print(elts[0:5])
+exit(0)
+#name = "DOM_"+domains[1][1]+"_ISO"   
+#package_oris(home+"isotropic/"+domains[1][0]+".sim/", name=name)
+for sim_name in simulations[0:5]:
+    if sim_name=="common_files":
+        print("common_files")
+        break
+    for dom in domains:
+        path = sim_name+"/"+dom[0]
+        sim= fepx_sim("sim",path=home+path)
+        sim.post_process()
+        num_elts = int(sim.sim['**general'].split()[2])
+        step = sim.sim['**step']
+        #nums= np.arange(1457,1473,1) 373
+        #nums= np.arange(261,414,1) 
+
+        nums= elts
+        #pprint(elts)
+        ori = sim.get_output("ori",step="0",res="elts",ids=nums)
+        ori10 = sim.get_output("ori",step="10",res="elts",ids=nums)
+        ori20 = sim.get_output("ori",step="20",res="elts",ids=nums)
+        ori28 = sim.get_output("ori",step="28",res="elts",ids=nums)
+        file= open(home+path+"oris0.txt","w")
+        file10= open(home+path+"oris10.txt","w")
+        file20= open(home+path+"oris20.txt","w")
+        file28= open(home+path+"oris28.txt","w")
+        for i in ori[0]:
+            var=""
+            var10=""
+            var20=""
+            var28=""
+            for j in range(3):
+                var+= str(ori[0][i][j])+" "
+                var10+= str(ori10[0][i][j])+" "
+                var20+= str(ori20[0][i][j])+" "
+                var28+= str(ori28[0][i][j])+" "
+            #print(var)
+            file.write(var+"\n")
+            file10.write(var10+"\n")
+            file20.write(var20+"\n")
+            file28.write(var28+"\n")
+        file.close()
+        file10.close()
+        file20.close()
+        file28.close()
+os.system("pwd") 
+os.chdir(home)       
+os.system("./common_files/elt_spred.sh")
+exit(0)
+def post_process():
+    aniso = {"Aniso":["100"]+aniso}
+    dataframe = pd.DataFrame(aniso)
+    data = pd.DataFrame(aniso)
+
+
+    for i in range(0,75,5):
+        if bulk:    
+            for aniso_index in range(5):
+                current= i+aniso_index            
+                simulation = simulations[current]
+                num_slips  = slips[int(current/25)]
+                set_num    = str(int((current%25)/5)+1)
+                for domain in domains:
+                    # DOM_CUB_NSLIP_2_SET_1_ANISO_125
+                    #name = "DOM_"+domain[1]+"_NSLIP_"+num_slips+"_SET_"+set_num+"_ANISO_"+aniso[aniso_index]
+                    #print(name)
+                    get_bulk_output(simulation,domain[0])
+                    #package_oris(home+simulation+"/"+domain[0]+".sim/", name=name)
+
+        print(i,"====\n\n\n")
+        get_yield_v_aniso_ratio(i,"Cube")
+        get_yield_v_aniso_ratio(i,"Elongated")
+
+        #calc_eff_pl_str(simulations[i],"Cube")
+        #calc_eff_pl_str(simulations[i], "Elongated")
+
+        #slip_vs_aniso(i,"Cube", slip_systems,debug="comparision", save_plot=True,df=dataframe)
+        #slip_vs_aniso(i,"Elongated", slip_systems,debug="comparision", save_plot=True, df=dataframe)
+    #plt.savefig("/home/etmengiste/jobs/aps/images/Combined_plot"+simulations[i]+"_")
+
+for i in [0,25,50]:
+    plot_yield_stress(i)
+    plot_eff_strain(i)
 
 #
 #sim.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
@@ -140,8 +257,8 @@ def calc_eff_pl_str(sim,domain,under=""):
         total_unaltered = 0
 
         for i in range(12):
+            schmid_val = P[i]
             if i in altered:
-                schmid_val = P[i]
                 shear_val = slip[0][str(el)][i]
                 total_altered+= schmid_val*shear_val
                 if debug:
@@ -156,7 +273,6 @@ def calc_eff_pl_str(sim,domain,under=""):
             #print("-----------------------------------##-------##-------##")
             #
             else:
-                schmid_val = P[i]
                 shear_val = slip[0][str(el)][i]
                 total_unaltered+= schmid_val*shear_val
                 if debug:
@@ -213,44 +329,29 @@ for i in simulations:
 #pprint(elt_vol[1]["0"],max=100)
 
 
+#slip_vs_aniso(i,"Cube", slip_systems,debug=True, save_plot=False,df=dataframe)
 exit(0)
 
-slips = ["2","4","6"]
-aniso = ["125","150","175","200","400"]     
+file_grain_ids = open(home+"common_files/Cube_grain_elts","w")
+elts = []
+grain_elts=[]
+values = np.arange(0,2000,1) 
+for val in values:
+    for i in file:
+        vals= i.split()
+        if vals[1] == str(val):
+            #print(vals[0])
+            elts.append(int(vals[0])-1)
+    #print(elts)
+    print(val,"----")
+    grain_elts.append(elts)
+    file_grain_ids.write(str(elts)[1:-1]+"\n")
+#print(len(elts))
+#print(grain_elts)
 
-#name = "DOM_"+domains[0][1]+"_ISO"           
-#package_oris(home+"isotropic/"+domains[0][0]+".sim/", name=name)
-
-#name = "DOM_"+domains[1][1]+"_ISO"   
-#package_oris(home+"isotropic/"+domains[1][0]+".sim/", name=name)
 
 
 
-aniso = {"Aniso":["100"]+aniso}
-dataframe = pd.DataFrame(aniso)
-data = pd.DataFrame(aniso)
-
-
-for i in range(0,75,5):
-    if bulk:    
-        for aniso_index in range(5):
-            current= i+aniso_index
-            simulation = simulations[current]
-            num_slips  = slips[int(current/25)]
-            set_num    = str(int((current%25)/5)+1)
-            for domain in domains:
-                # DOM_CUB_NSLIP_2_SET_1_ANISO_125
-                #name = "DOM_"+domain[1]+"_NSLIP_"+num_slips+"_SET_"+set_num+"_ANISO_"+aniso[aniso_index]
-                #print(name)
-                get_bulk_output(simulation,domain[0])
-                #package_oris(home+simulation+"/"+domain[0]+".sim/", name=name)
-
-    print(i,"====\n\n\n")
-    #get_yield_v_aniso_ratio(i,"Cube")
-    #get_yield_v_aniso_ratio(i,"Elongated")
-    #slip_vs_aniso(i,"Cube", slip_systems,debug=True, save_plot=False,df=dataframe)
-    #slip_vs_aniso(i,"Elongated", slip_systems,debug=True, save_plot=False, df=dataframe)
-#plt.savefig("/home/etmengiste/jobs/aps/images/Combined_plot"+simulations[i]+"_")
 dataframe.to_csv("/home/etmengiste/jobs/aps/images/eff_pl_strain_values.csv")
 #dataframe= pd.read_csv("/home/etmengiste/jobs/aps/images/eff_pl_strain_values.csv")
 ani = [float(i)/100 for i in dataframe["Aniso"]]
@@ -262,6 +363,7 @@ for j in range(3):
     plot_eff_strain(j,ax1,"Cube",ani,dataframe)
     plot_eff_strain(j,ax2,"Elongated",ani,dataframe)
     plt.savefig("/home/etmengiste/jobs/aps/images/eff_pl_strain"+slips[j]+"_"+str(i))
+
 
 exit(0)
 #home="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"

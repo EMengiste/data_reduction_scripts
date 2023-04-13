@@ -2,6 +2,7 @@ import os
 import numpy as np
 import json
 import matplotlib.pyplot as plt
+import matplotlib.transforms as mtransforms
 import math
 import pandas as pd
 plt.rcParams.update({'font.size': 25})
@@ -299,6 +300,7 @@ class fepx_sim:
             if ids =="all":
                 ids= [i for i in range(len(values))]
             for id in ids:
+                #print(id,"--------")
                 value[str(id)]= [float(i) for i in values[id].split()]
                 for component in range(num_components):
                     component_vals[str(component)].append(value[str(id)][component])
@@ -608,7 +610,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     #avg_slip_iso = []
     fig = plt.figure(1,figsize=[70,35])
     wid=6
-    hig =3
+    hig =4
     fig.clear()
     axies = []
     mean_iso = {}
@@ -618,6 +620,9 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     ax22= fig.add_subplot(hig,wid,16)
     ax3= fig.add_subplot(hig,wid,17)
     ax4= fig.add_subplot(hig,wid,18)
+    # vol avg
+    ax5= fig.add_subplot(hig,wid,23)
+
     ax1.set_ylim(0,0.05)
     ax1.set_xlim(0.9,4.1)
     ax2.set_ylim(0,0.3)
@@ -625,11 +630,14 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
 
     ax1.set_xlabel("ratio")
     ax2.set_xlabel("ratio")
+    ax3.set_xlabel("ratio")
+    ax5.set_xlabel("ratio")
     ax1.set_ylabel("$\\bar\\varepsilon^{p,a}$ ")
     ax11.set_ylabel("$\\bar\\varepsilon^{p,a}$ ")
     ax2.set_ylabel("$\\bar\\varepsilon^{p,u}$")
     ax22.set_ylabel("$\\bar\\varepsilon^{p,u}$")
     ax3.set_ylabel("normalized $\\bar\\varepsilon^{p}$")
+    ax5.set_ylabel("normalized $\\bar\\varepsilon^{p}$")
     for index,item in enumerate(slip_systems):
         ax= fig.add_subplot(hig,wid,index+1)
         #
@@ -655,7 +663,24 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     simulations.sort()
     effective_pl_strain_unalt = []
     effective_pl_strain_alt = []
-    for sim in simulations[sim_start:sim_start+5]:
+
+    vol_eff_pl_strain_unalt = []
+    vol_eff_pl_strain_alt = []
+    for index,sim in enumerate(simulations[sim_start:sim_start+5]):
+        
+        file=home+sim+"/"+domain+"_eff_pl_str.csv"
+        if index <1:            
+            file_iso=home+sim+"/"+domain+"iso_eff_pl_str.csv"
+            # Eff plast strain
+            print("opening file ",file_iso)
+            data = pd.read_csv(file_iso)
+            tot_alt_iso = sum(data[" vol_eff_pl_alt"])
+            tot_unalt_iso = sum(data[" vol_eff_pl_unalt"])
+            print("--[+ total altered = ",tot_alt_iso)
+            print("--[+ total unaltered = ",tot_unalt_iso)
+            
+            vol_eff_pl_strain_alt.append(tot_alt_iso/tot_alt_iso)
+            vol_eff_pl_strain_unalt.append(tot_unalt_iso/tot_unalt_iso)
         sim= fepx_sim(sim,path=home+sim+"/"+domain)
         slip = normalize(sim.get_output("slip",step=step,res=res,ids=ids),absolute=True)
         #stress =  sim.get_output("stress",step=step,res=res,ids=ids)[1]
@@ -701,7 +726,6 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
             ax.plot(ratio,slip_val,"o",ms=20,color=color)
         ax4.plot(ratio,sum(slip), "*k",ms=15)
 
-
         if debug: # not going to print what you want check again
             print("\n\n\nsum of slip=",sum(slip))
             print("altered")
@@ -726,6 +750,28 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
 
         effective_pl_strain_alt.append(total_altered/total_altered_iso)
         effective_pl_strain_unalt.append(total_unaltered/total_unaltered_iso)
+        
+        # Eff plast strain
+        print("opening file ",file)
+        data = pd.read_csv(file)
+        tot_alt = sum(data[" vol_eff_pl_alt"])
+        tot_unalt = sum(data[" vol_eff_pl_unalt"])
+        normalized_tot_alt =tot_alt/tot_alt_iso
+        normalized_tot_unalt =tot_unalt/tot_unalt_iso
+        print("--[+ total altered = ",normalized_tot_alt)
+        print("--[+ total unaltered = ",normalized_tot_unalt)
+        normalized_tot_alt =tot_alt/tot_alt_iso
+        normalized_tot_unalt =tot_unalt/tot_unalt_iso
+        vol_eff_pl_strain_alt.append(normalized_tot_alt)
+        vol_eff_pl_strain_unalt.append(normalized_tot_unalt)
+
+
+        headers = [["tot_alt_msh","tot_unalt_msh","tot_alt_vol","tot_unalt_vol"],[total_altered,total_unaltered,tot_alt, tot_unalt]]
+        values = pd.DataFrame(headers)
+        print("---------------------+++++-------")
+        print(values)
+        print("---------------------+++++-------")
+        values.to_csv(file[:-4]+"calculation.csv")
         #
        #
      #
@@ -734,11 +780,27 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     ax2.plot(ratios,effective_pl_strain_unalt,"ob",ms=25)
     ax11.plot(ratios,effective_pl_strain_alt, "or",ms=25)
     ax22.plot(ratios,effective_pl_strain_unalt,"ob",ms=25)
+
     ax3.plot(ratios,effective_pl_strain_unalt,"db",ms=15)
     ax3.plot(ratios,effective_pl_strain_alt, "*r",ms=30)
+
+
+    ax5.plot([1]+ratios,vol_eff_pl_strain_unalt,"db",ms=15)
+    ax5.plot([1]+ratios,vol_eff_pl_strain_alt, "*r",ms=30)
+    
+    #
+    # Save values 
+
+
+    eff_str_vs_ratio = pd.DataFrame([[1]+ratios,vol_eff_pl_strain_alt,vol_eff_pl_strain_unalt])
+
+    eff_str_vs_ratio.to_csv("/home/etmengiste/jobs/aps/sim_"+domain+"_"+str(sim_start))
+     
+
     ax1.set_ylim([0,6])
     ax2.set_ylim([0,6])
     ax3.set_ylim([0,6])
+    ax5.set_ylim([0,6])
     lineS="dotted"
     col="k"
     ax1.hlines(total_altered_iso/total_altered_iso,linestyle=lineS,color=col,xmin=1,xmax=4)
@@ -751,11 +813,14 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     ax22.plot(1,total_unaltered_iso/total_unaltered_iso,"k*",ms=25)
     ax3.plot(1,total_altered_iso/total_altered_iso,"k*",ms=25)
 
+    ax3.plot(1,1,"k*",ms=25)
+
     #ax1.set_title("$\sum \gamma^{\\alpha_{altered}}$")
     #ax2.set_title("$\sum \gamma^{\\alpha_{unaltered}}$")
     #ax11.set_title("$\sum \gamma^{\\alpha_{altered}}$")
     #ax22.set_title("$\sum \gamma^{\\alpha_{altered}}$")
-    ax3.set_title("$\\bar\\varepsilon^{p}$")
+    ax3.set_title("$\\bar\\varepsilon^{p}$ mesh calculation")
+    ax5.set_title("$\\bar\\varepsilon^{p}$ Volume average")
     ax4.set_title("$\\bar\\varepsilon^{p}$")
     #comps = np.arange(12)
     #analysis_axes[-1].bar(comps,avg_slip_iso)
@@ -764,10 +829,77 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     df[str(sim_start)+domain+"_unaltered"]= [1]+effective_pl_strain_unalt
     df[str(sim_start)+domain+"_altered"]= [1]+effective_pl_strain_alt
     if save_plot:
-        plt.savefig("/home/etmengiste/jobs/aps/images/Largeval_e"+simulations[sim_start]+"_"+domain)
+        plt.savefig("/home/etmengiste/jobs/aps/images/Largeval_e"+simulations[sim_start]+"_"+domain,bbox_inches=mtransforms.Bbox([[.68, 0], [.85, 0.5]]).transformed(fig.transFigure - fig.dpi_scale_trans))
         print("###--##==+++plotted to file: Largeval_e"+simulations[sim_start]+"_"+domain)
+    else:
+        plt.tight_layout()
+        plt.show()
     #
   #
+#
+#
+def plot_eff_strain(start):
+    fig= plt.figure()
+    ax = fig.add_subplot(111)
+    for domain in ["Cube", "Elongated"]:
+        ax.cla()
+        ax.set_ylim([0,2.1])
+        ax.set_xlim([0.9,4.1])
+        for i in range(start,start+25,5):
+            dat = pd.read_csv(aps_home+"sim_"+domain+"_"+str(i)+"_eff_pl_str",index_col=0)
+            #print(dat)
+            print("--")
+            ratios= dat.iloc[0]
+            altered= dat.iloc[1]
+            unaltered= dat.iloc[2]
+            print(altered)
+            print(unaltered)
+            set =int((i-start)/5)
+            ax.plot(ratios,unaltered,"k-*",ls=sets[set],ms=25,lw=4,label="SET "+str(set+1))
+            ax.plot(ratios,altered,"r-D",ls=sets[set],ms=25,lw=4)
+            ax.set_xlabel("ratio")
+            ax.set_ylabel("$\\bar\\varepsilon^{p}$ (-)")
+            ax.set_title(domain)
+            ax.set_xticks(ratios)
+            ax.set_xticklabels(an)
+        sli = slips[int(start/25)]
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig("/home/etmengiste/jobs/aps/images/eff_pl_strain_"+sli+"ss"+domain)
+    #plt.show()
+#
+#
+#
+#
+def plot_yield_stress(start):
+    fig= plt.figure()
+    ax = fig.add_subplot(111)
+    for domain in ["Cube", "Elongated"]:
+        ax.cla()
+        ax.set_ylim([127,175])
+        for i in range(start,start+25,5):
+            dat = pd.read_csv(aps_home+"sim_"+domain+"_"+str(i)+"_yields",index_col=0)
+            #print(dat)
+            print("--")
+            ratios= dat.iloc[0]
+            yields = dat.iloc[1]
+            print(ratios)
+            print(yields)
+            set =int((i-start)/5)
+            ax.plot(ratios,yields,"ko",ls=sets[set],ms=15,label="SET "+str(set+1))
+            ax.set_xlabel("ratio")
+            ax.set_ylabel("$\sigma_y$ (MPa)")
+            ax.set_title(domain)
+        sli = slips[int(start/25)]
+        ax.set_xticks(ratios)
+        ax.set_xticklabels(an)
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig("/home/etmengiste/jobs/aps/images/yield_stress"+sli+"ss"+domain)
+    #plt.show()
+
+    print("------------------------------")
+    #exit(0)
 #
 #
 #
@@ -881,7 +1013,7 @@ def get_bulk_output(simulation_plotted,domain):
 #
 #
 ##
-def get_yield_v_aniso_ratio(sim_start,domain,ratios=[ 1.25, 1.5, 1.75, 2.0, 4],ids=[0],step = "28",res ="mesh"):
+def get_yield_v_aniso_ratio(sim_start,domain,plot=False,ratios=[ 1.25, 1.5, 1.75, 2.0, 4],ids=[0],step = "28",res ="mesh"):
     simulations = os.listdir(home)
     simulations.sort()
     fig = plt.figure(figsize=[60,20])
@@ -912,6 +1044,7 @@ def get_yield_v_aniso_ratio(sim_start,domain,ratios=[ 1.25, 1.5, 1.75, 2.0, 4],i
     ax2.plot(1,vals_iso["y_stress"], "*k",ms=20)
     ax3.plot(1,vals_iso["y_stress"]/vals_iso["y_stress"], "*k",ms=20)
     mrkr = ["ks","ko","kd","k^","kv"]
+    yields = []
     #
     for index,sim_name in enumerate(simulations[sim_start:sim_start+5]):
         sim= fepx_sim(sim_name,path=home+sim_name+"/"+domain)
@@ -924,12 +1057,16 @@ def get_yield_v_aniso_ratio(sim_start,domain,ratios=[ 1.25, 1.5, 1.75, 2.0, 4],i
         ax.plot(vals["y_strain"], vals["y_stress"], mrkr[index],ms=20,label=sim_name+": "+str(vals["y_stress"]))
         ax2.plot(ratios[index],vals["y_stress"], mrkr[index],ms=27)
         ax3.plot(ratios[index],vals["y_stress"]/vals_iso["y_stress"], mrkr[index],ms=27)
+        yields.append(vals["y_stress"])
         ax.legend(loc=7)
         #plt.tight_layout()
     #
-    plt.savefig("/home/etmengiste/jobs/aps/images/figure_"+simulations[sim_start]+"_"+domain)
-    print("\n+++--\n+++--\n+++-- wrote file "+simulations[sim_start]+"_"+domain)
-    plt.clf()
+    yields = pd.DataFrame([[1]+ratios,[vals_iso["y_stress"]]+yields])
+    yields.to_csv("/home/etmengiste/jobs/aps/sim_"+domain+"_"+str(sim_start)+"_yields")
+    if plot:
+        plt.savefig("/home/etmengiste/jobs/aps/images/figure_"+simulations[sim_start]+"_"+domain)
+        print("\n+++--\n+++--\n+++-- wrote file "+simulations[sim_start]+"_"+domain)
+        plt.clf()
     #
   #
 #
@@ -971,3 +1108,145 @@ def package_oris(path,name="elset_ori.csv"):
   #
 #
 #
+
+P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
+def calc_eff_pl_str(sim,domain,under="", debug=False):
+    file = open(home+sim+"/"+domain+"_eff_pl_str.csv","w")
+    file_iso = open(home+sim+"/"+domain+"iso_eff_pl_str.csv","w")
+
+    sim= fepx_sim(sim,path=home+sim+"/"+domain)
+    sim.post_process()
+    num_elts = int(sim.sim['**general'].split()[2])
+    step = sim.sim['**step']
+    slip = sim.get_output("slip",step="28",res="elts",ids="all")
+    elt_vol = sim.get_output("elt"+under+"vol",step="0",res="elts",ids="all")
+    v_tot = sum(elt_vol[1]["0"])
+    elt_vol_final = sim.get_output("elt"+under+"vol",step=step,res="elts",ids="all")
+    mat_par = sim.material_parameters["g_0"]
+    del sim
+
+    #   ISO
+    sim_iso= fepx_sim("name",path=home+"isotropic/"+domain)
+    sim_iso.post_process()
+    step_iso = sim_iso.sim['**step']
+    slip_iso = sim_iso.get_output("slip",step="28",res="elts",ids="all")
+    elt_vol_iso = sim_iso.get_output("elt_vol",step="0",res="elts",ids="all")
+    v_tot_iso = sum(elt_vol_iso[1]["0"])
+    elt_vol_final_iso = sim_iso.get_output("elt_vol",step=step_iso,res="elts",ids="all")
+    baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
+    #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
+    del sim_iso
+
+    strength = [ float(i.split("d")[0]) for i in mat_par]
+    #exit(0)
+    altered  =  []
+    ratio=1
+    for index,val in enumerate(strength):
+        if val>baseline:
+            altered.append(index)
+            ratio = val/baseline
+
+    # 
+    avg_eff_pl_str_alt = []
+    avg_eff_pl_str_unalt = []
+
+
+    avg_eff_pl_str_alt_iso = []
+    avg_eff_pl_str_unalt_iso = []
+
+    print("***---***")
+    print(altered)
+    print(baseline)
+    print("***---***")
+    values = "elt_vol, tot_vol, vol_frac, eff_pl_alt, eff_pl_unalt, vol_eff_pl_alt, vol_eff_pl_unalt"
+    file.write(values+"\n")    
+    file_iso.write(values+"\n")
+ 
+    for el in range(num_elts):
+        
+        total_altered = 0
+        total_unaltered = 0
+
+        total_altered_iso = 0
+        total_unaltered_iso = 0
+
+        for i in range(12):
+            schmid_val = P[i]
+            shear_val = slip[0][str(el)][i]
+            shear_val_iso = slip_iso[0][str(el)][i]
+            if i in altered:
+                total_altered+= schmid_val*shear_val
+                total_altered_iso+= schmid_val*shear_val_iso
+                if debug:
+                    print("\n+++Schmid val")
+                    pprint(schmid_val, preamble="+++")
+                    print("\n\n+++===slip system shear\n===---", shear_val)
+                    print("\n+++===Total resolved shear strain")
+                    pprint(total_altered, preamble="+++===---")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##\n\n")
+            #print("-----------------------------------##-------##-------##")
+            #
+            else:
+                total_unaltered+= schmid_val*shear_val
+                total_unaltered_iso+= schmid_val*shear_val_iso
+                if debug:
+                    print("\n+++Schmid val")
+                    pprint(schmid_val, preamble="+++")
+                    print("\n\n+++===slip system shear\n===---", shear_val)
+                    print("\n+++===Total resolved shear strain")
+                    pprint(total_unaltered, preamble="+++===---")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##-------##")
+                    print("-----------------------------------##-------##\n\n\n")
+
+        eff_pl_str_alt = math.sqrt((2/3)*inner_prod(total_altered,total_altered))
+        eff_pl_str_unalt = math.sqrt((2/3)*inner_prod(total_unaltered,total_unaltered))
+
+
+
+        eff_pl_str_alt_iso = math.sqrt((2/3)*inner_prod(total_altered_iso,total_altered_iso))
+        eff_pl_str_unalt_iso = math.sqrt((2/3)*inner_prod(total_unaltered_iso,total_unaltered_iso))
+
+        v_el = elt_vol_final[0][str(el)][0]
+        v_frac = v_el/v_tot
+
+        #iso
+        v_el_iso = elt_vol_final_iso[0][str(el)][0]
+        v_frac_iso = v_el_iso/v_tot_iso
+
+        # altered
+
+        avg_eff_pl_str_alt.append(eff_pl_str_alt*v_frac)
+        avg_eff_pl_str_unalt.append(eff_pl_str_unalt*v_frac)
+
+        #iso
+
+        avg_eff_pl_str_alt_iso.append(eff_pl_str_alt_iso*v_frac_iso)
+        avg_eff_pl_str_unalt_iso.append(eff_pl_str_unalt_iso*v_frac_iso)
+
+
+        if debug:
+            print("el vol", v_el)
+            print("tot vol", v_tot)
+            print("vol_frac", v_frac)
+            print("-----------------------------------##-------##\n")
+            print("\n Effective plastic altered :",eff_pl_str_alt)
+            print("\n Effective plastic altered :",eff_pl_str_unalt)
+            print("-----------------------------------##-------##\n\n")
+            print("-----------------------------------##-------##\n")
+            print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_alt[el])
+            print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_unalt[el])
+            print("-----------------------------------##-------##\n\n")
+
+        values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])    
+        file.write(values+"\n")
+
+        values = str(v_el_iso)+"," + str(v_tot_iso)+","+ str(v_frac_iso)+","+ str(eff_pl_str_alt_iso)+ ","+ str(eff_pl_str_unalt_iso)+ ","+ str(avg_eff_pl_str_alt_iso[el])+ ","+ str(avg_eff_pl_str_unalt_iso[el])    
+        file_iso.write(values+"\n")
+    print("\n__")
+    print(sum(avg_eff_pl_str_alt))
+    print(sum(avg_eff_pl_str_unalt))
+
+
