@@ -52,7 +52,7 @@ completion_file.write("   Domain:	Cubic,    Elongated")
 number = 0
 for i in list_of_sims:
     # if the folder is not common_files
-    if i!= "common_files":
+    if i!= "common_files" and i!= "runtime.png":
         print(i)
         completion_file.write("\n Sim_folder "+i+": ")
         print("Files in "+i,os.listdir(sim_suite_dir+"/"+i))
@@ -88,6 +88,7 @@ for i in list_of_sims:
                     #print(out)
                     output_lines= open(domain+"/"+out[0],"r").readlines()
                     #
+                    step="0"
                     # Find out current step
                     for out in output_lines:
                         if out.startswith("Info   : Running step"):
