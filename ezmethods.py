@@ -18,6 +18,8 @@ plt.rcParams["figure.subplot.hspace"] = 0.44
 plt.rcParams['figure.figsize'] = 60,20
 import numpy as np
 home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
+home ="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+
 ist= "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic"
 
 
@@ -44,6 +46,10 @@ values = { "1=crss": [],
            "21=work_pl": [],
            "22=workrate": [],
            "23=workrate_pl": []}
+  #
+ #
+#
+##
 CUB_110 = [[0, 1,-1], 
            [1, 0 ,-1],
            [1,-1,0], 
@@ -56,7 +62,10 @@ CUB_110 = [[0, 1,-1],
            [0, 1 ,-1],
            [1, 0, 1], 
            [1, 1 ,0]]
-
+  #
+ #
+#
+##
 CUB_111 = [[1, 1, 1], 
            [1, 1, 1],
            [1, 1, 1], 
@@ -69,8 +78,10 @@ CUB_111 = [[1, 1, 1],
            [1,-1,-1],
            [1,-1,-1], 
            [1,-1,-1]]
-
+  #
+ #
 #
+##
 class fepx_sim:
     #
     #
@@ -388,14 +399,22 @@ def diad(a,b):
             row.append(a[i]*b[j])
         mat.append(row)
     return(mat)
-
+    #
+   #
+  #
+ #
+#
+##
 def inner_prod(a,b):
     tot = 0
     for i in range(3):
         for j in range(3):
             tot+= a[i][j]*b[i][j]            
     return tot
-
+  #
+ #
+#
+##
 def nomalize_vector(vect):
     value= 0
     final = vect
@@ -405,7 +424,10 @@ def nomalize_vector(vect):
     for i in range(len(vect)):
         final[i] = final[i]/mag
     return final
-
+  #
+ #
+#
+##
 def calculate_schmid(a,b):
     a= nomalize_vector(a)
     b= nomalize_vector(b)
@@ -415,8 +437,10 @@ def calculate_schmid(a,b):
     #vect = vectorize(matrix)
     return P
     #print(calculate_inner(vect,vect))
-
-
+  #
+ #
+#
+##
 def pprint(arr, preamble="\n-+++",max=50):
     space= "                                                   "
     for i in arr:
@@ -429,9 +453,12 @@ def pprint(arr, preamble="\n-+++",max=50):
             val = i+ space
             print(preamble+val[:max]+"|||||------|")
         preamble="    "
+    #
+   #
   #
  #
 #
+##
 def list_sims(list,func="",option=[""]):
     array=[]
     for i in list:
@@ -482,7 +509,6 @@ def plotting_space(x,y=[],layers=3,axis="",resolution=0,ylabel="",debug=False):
             if axis!="":
                 axis.bar(y+spacing,i,width=wide,edgecolor="k")
             if debug:
-
                 print("======\n\n")
                 print(m)
                 print(y+spacing)
@@ -490,7 +516,6 @@ def plotting_space(x,y=[],layers=3,axis="",resolution=0,ylabel="",debug=False):
                 print("======\n\n")
                 for j in range(len(x[0])):
                     print(str(j)+"  -------|---------|---------|---------|---------|---------|---------|---------|")
-
                     for i in range(len(x)):
                         ret= str(i)+" |"
                         print(ret)
@@ -519,7 +544,6 @@ def normalize(array,scale=1,maximum=1,absolute=False,debug=False):
         print("maximum val "+str(maximum)+"------")
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
-
     # [f(x) if condition else g(x) for x in sequence]
     if isinstance(array[0],str):
         array=[float(i)
@@ -532,13 +556,11 @@ def normalize(array,scale=1,maximum=1,absolute=False,debug=False):
         array= [abs(i) for i in array]
     if maximum=="":
         maximum = max(array)
-
     return [scale*i/maximum for i in array]
   #
  #
 #
-##
-# yield calculation for simulation data
+## yield calculation for simulation data
 def find_yield(stress, strain, offset="",number=""):
     load_steps= len(strain)
     #
@@ -550,21 +572,19 @@ def find_yield(stress, strain, offset="",number=""):
         stress_off = [(E * i) - (E * offset) for i in strain]
         stress_o = [(E * i)+ strain[0] for i in strain]
         for i in range(load_steps):
-    	#
         	if  stress_off[i] > stress[i]:
         		x_n1 = i
         		x_n = x_n1 - 1
         		break
         # Use Cramer's rule to find where lines intersect (assume linear between
         #  simulation points)
-
         m1 = E
         a = - E *  offset
-
+        #
         m2 = (stress[x_n1] - stress[x_n]) / (strain[x_n1] - strain[x_n])
         b = stress[x_n] - (m2 * strain[x_n])
-
-
+        #
+        #
         Ystrain = (a - b) / (m2 - m1)
         Ystress = ((a * m2) - (b * m1)) / (m2 - m1)
     values ={"y_stress": Ystress,
@@ -574,7 +594,7 @@ def find_yield(stress, strain, offset="",number=""):
   #
  #
 #
-# Plot effective plastic strain
+## Plot effective plastic strain
 def plot_eff_strain(j,ax,domain,ani,dataframe):
     for i in range(0+25*j,24+25*j,5):
         mk="*"
@@ -583,6 +603,9 @@ def plot_eff_strain(j,ax,domain,ani,dataframe):
         ax.set_xlabel("ratio")
         ax.set_ylabel("$\\bar\\varepsilon^{p}$")
         ax.set_title(domain)
+  #
+ #
+#
 ##
 def avg(arr):
     return sum(arr)/len(arr)
@@ -591,7 +614,6 @@ def avg(arr):
 #
 ##
 def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
-    
     P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
     sim_iso= fepx_sim("name",path=home+"isotropic/"+domain)
     #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
@@ -667,7 +689,6 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     vol_eff_pl_strain_unalt = []
     vol_eff_pl_strain_alt = []
     for index,sim in enumerate(simulations[sim_start:sim_start+5]):
-        
         file=home+sim+"/"+domain+"_eff_pl_str.csv"
         if index <1:            
             file_iso=home+sim+"/"+domain+"iso_eff_pl_str.csv"
@@ -698,7 +719,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
         total_unaltered=0
         total_altered_iso=0
         total_unaltered_iso=0
-
+        #
         for index,item in enumerate(slip_systems):
             color = "blue"
             slip_val = slip[index]
@@ -725,7 +746,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
             #        ,edgecolor="k",alpha= 0.2,color=color)
             ax.plot(ratio,slip_val,"o",ms=20,color=color)
         ax4.plot(ratio,sum(slip), "*k",ms=15)
-
+        #
         if debug: # not going to print what you want check again
             print("\n\n\nsum of slip=",sum(slip))
             print("altered")
@@ -736,21 +757,21 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
             print(total_altered_iso)
             print("unaltered iso" )
             print(total_unaltered_iso)    
-
+        #
         total_altered=math.sqrt((2/3)*inner_prod(total_altered,total_altered))
         total_unaltered=math.sqrt((2/3)*inner_prod(total_unaltered,total_unaltered))
         total_altered_iso=math.sqrt((2/3)*inner_prod(total_altered_iso,total_altered_iso))
         total_unaltered_iso=math.sqrt((2/3)*inner_prod(total_unaltered_iso,total_unaltered_iso))
-
+        #
         if debug:
             print("\n\n\n\n++")
             print(total_unaltered)
             print(total_altered_iso)
             print(total_unaltered_iso)
-
+        #
         effective_pl_strain_alt.append(total_altered/total_altered_iso)
         effective_pl_strain_unalt.append(total_unaltered/total_unaltered_iso)
-        
+        #
         # Eff plast strain
         print("opening file ",file)
         data = pd.read_csv(file)
@@ -764,8 +785,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
         normalized_tot_unalt =tot_unalt/tot_unalt_iso
         vol_eff_pl_strain_alt.append(normalized_tot_alt)
         vol_eff_pl_strain_unalt.append(normalized_tot_unalt)
-
-
+        #
         headers = [["tot_alt_msh","tot_unalt_msh","tot_alt_vol","tot_unalt_vol"],[total_altered,total_unaltered,tot_alt, tot_unalt]]
         values = pd.DataFrame(headers)
         print("---------------------+++++-------")
@@ -780,23 +800,17 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     ax2.plot(ratios,effective_pl_strain_unalt,"ob",ms=25)
     ax11.plot(ratios,effective_pl_strain_alt, "or",ms=25)
     ax22.plot(ratios,effective_pl_strain_unalt,"ob",ms=25)
-
+    #
     ax3.plot(ratios,effective_pl_strain_unalt,"db",ms=15)
     ax3.plot(ratios,effective_pl_strain_alt, "*r",ms=30)
-
-
+    #
     ax5.plot([1]+ratios,vol_eff_pl_strain_unalt,"db",ms=15)
-    ax5.plot([1]+ratios,vol_eff_pl_strain_alt, "*r",ms=30)
-    
+    ax5.plot([1]+ratios,vol_eff_pl_strain_alt, "*r",ms=30)    
     #
     # Save values 
-
-
     eff_str_vs_ratio = pd.DataFrame([[1]+ratios,vol_eff_pl_strain_alt,vol_eff_pl_strain_unalt])
-
-    eff_str_vs_ratio.to_csv("/home/etmengiste/jobs/aps/sim_"+domain+"_"+str(sim_start))
-     
-
+    eff_str_vs_ratio.to_csv("/home/etmengiste/jobs/aps/sim_"+domain+"_"+str(sim_start))     
+    #
     ax1.set_ylim([0,6])
     ax2.set_ylim([0,6])
     ax3.set_ylim([0,6])
@@ -812,9 +826,9 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     ax11.plot(1,total_altered_iso/total_altered_iso,"k*",ms=25)
     ax22.plot(1,total_unaltered_iso/total_unaltered_iso,"k*",ms=25)
     ax3.plot(1,total_altered_iso/total_altered_iso,"k*",ms=25)
-
+    #
     ax3.plot(1,1,"k*",ms=25)
-
+    #
     #ax1.set_title("$\sum \gamma^{\\alpha_{altered}}$")
     #ax2.set_title("$\sum \gamma^{\\alpha_{unaltered}}$")
     #ax11.set_title("$\sum \gamma^{\\alpha_{altered}}$")
@@ -868,9 +882,7 @@ def plot_eff_strain(start):
         plt.savefig("/home/etmengiste/jobs/aps/images/eff_pl_strain_"+sli+"ss"+domain)
     #plt.show()
 #
-#
-#
-#
+##
 def plot_yield_stress(start):
     fig= plt.figure()
     ax = fig.add_subplot(111)
@@ -897,11 +909,9 @@ def plot_yield_stress(start):
         plt.tight_layout()
         plt.savefig("/home/etmengiste/jobs/aps/images/yield_stress"+sli+"ss"+domain)
     #plt.show()
-
+    #
     print("------------------------------")
     #exit(0)
-#
-#
 #
 ##
 def get_bulk_output(simulation_plotted,domain):
@@ -923,12 +933,12 @@ def get_bulk_output(simulation_plotted,domain):
     g_0= normalize(sim.material_parameters["g_0"],maximum=1)
     del sim
     #pprint(sim_results, preamble="#\n--------\n#")
-
+    #
     fig = plt.figure(figsize=[60,60])
-
+    #
     width = 5
     length = 2
-
+    #
     plotted= 1
     #
     #
@@ -972,18 +982,15 @@ def get_bulk_output(simulation_plotted,domain):
     ax.set_ylim([0,200])
     #
     #
-
-
     print("-------|---------|---------|---------|---------|---------|---------|---------|")
     print("-------|---------|---------|---------|---------|---------|---------|---------|")
-
+    #
     for value in values:
         val=value.split("=")[1]
         try:
             steps_val= sim_results[val]
             #print(step,steps_val)
             steps_val = normalize(steps_val,maximum=1)
-
             plotted+=1
             ax = fig.add_subplot(width,length,plotted)
             if isinstance(steps_val,float):
@@ -997,20 +1004,15 @@ def get_bulk_output(simulation_plotted,domain):
         #print("\n\n\n++++++",value,"\n",steps_val)
     #pprint(sim_results)
     #
-
-    #
     #os.chdir("../../")
     #
     fig.suptitle("simulations "+simulation_plotted)
     plt.tight_layout()
     #plt.show()
-
     plt.savefig("/home/etmengiste/jobs/aps/images/tex_output/"+domain+"_"+simulation_plotted)
     #
     #
   #
-#
-#
 #
 ##
 def get_yield_v_aniso_ratio(sim_start,domain,plot=False,ratios=[ 1.25, 1.5, 1.75, 2.0, 4],ids=[0],step = "28",res ="mesh"):
@@ -1070,8 +1072,6 @@ def get_yield_v_aniso_ratio(sim_start,domain,plot=False,ratios=[ 1.25, 1.5, 1.75
     #
   #
 #
-#
-#
 ##
 def package_oris(path,name="elset_ori.csv"):
     sim= fepx_sim("sim_name",path=path[:-5])
@@ -1100,20 +1100,21 @@ def package_oris(path,name="elset_ori.csv"):
             grain_data.append(steps["ori.step"+str(j)][i].split()[1])
             grain_data.append(steps["ori.step"+str(j)][i].split()[2])
         values.append(grain_data)
-
+    #
     arr= pd.DataFrame(values,columns=header)
     arr.to_csv("/home/etmengiste/jobs/aps/slip_system_anistropy_study/"+name+".csv")
     print(" Wrote file "+name+".csv")
     #
   #
 #
-#
-
+##
 P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
+#
+#
 def calc_eff_pl_str(sim,domain,under="", debug=False):
-    file = open(home+sim+"/"+domain+"_eff_pl_str.csv","w")
-    file_iso = open(home+sim+"/"+domain+"iso_eff_pl_str.csv","w")
-
+    file = open(home+sim+"/"+domain+"alt_eff_pl_str.csv","w")
+    file_iso = open(home+"isotropic"+"/"+domain+"_eff_pl_str.csv","w")
+    #
     sim= fepx_sim(sim,path=home+sim+"/"+domain)
     sim.post_process()
     num_elts = int(sim.sim['**general'].split()[2])
@@ -1124,19 +1125,18 @@ def calc_eff_pl_str(sim,domain,under="", debug=False):
     elt_vol_final = sim.get_output("elt"+under+"vol",step=step,res="elts",ids="all")
     mat_par = sim.material_parameters["g_0"]
     del sim
-
     #   ISO
     sim_iso= fepx_sim("name",path=home+"isotropic/"+domain)
     sim_iso.post_process()
     step_iso = sim_iso.sim['**step']
     slip_iso = sim_iso.get_output("slip",step="28",res="elts",ids="all")
-    elt_vol_iso = sim_iso.get_output("elt_vol",step="0",res="elts",ids="all")
+    elt_vol_iso = sim_iso.get_output("eltvol",step="0",res="elts",ids="all")
     v_tot_iso = sum(elt_vol_iso[1]["0"])
-    elt_vol_final_iso = sim_iso.get_output("elt_vol",step=step_iso,res="elts",ids="all")
+    elt_vol_final_iso = sim_iso.get_output("eltvol",step=step_iso,res="elts",ids="all")
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
     #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
     del sim_iso
-
+    #
     strength = [ float(i.split("d")[0]) for i in mat_par]
     #exit(0)
     altered  =  []
@@ -1145,15 +1145,14 @@ def calc_eff_pl_str(sim,domain,under="", debug=False):
         if val>baseline:
             altered.append(index)
             ratio = val/baseline
-
+    #
     # 
     avg_eff_pl_str_alt = []
     avg_eff_pl_str_unalt = []
-
-
+    #
     avg_eff_pl_str_alt_iso = []
     avg_eff_pl_str_unalt_iso = []
-
+    #
     print("***---***")
     print(altered)
     print(baseline)
@@ -1161,15 +1160,13 @@ def calc_eff_pl_str(sim,domain,under="", debug=False):
     values = "elt_vol, tot_vol, vol_frac, eff_pl_alt, eff_pl_unalt, vol_eff_pl_alt, vol_eff_pl_unalt"
     file.write(values+"\n")    
     file_iso.write(values+"\n")
- 
+    #
     for el in range(num_elts):
-        
         total_altered = 0
         total_unaltered = 0
-
         total_altered_iso = 0
         total_unaltered_iso = 0
-
+        #
         for i in range(12):
             schmid_val = P[i]
             shear_val = slip[0][str(el)][i]
@@ -1200,33 +1197,29 @@ def calc_eff_pl_str(sim,domain,under="", debug=False):
                     print("-----------------------------------##-------##-------##")
                     print("-----------------------------------##-------##-------##")
                     print("-----------------------------------##-------##\n\n\n")
-
+        #
         eff_pl_str_alt = math.sqrt((2/3)*inner_prod(total_altered,total_altered))
         eff_pl_str_unalt = math.sqrt((2/3)*inner_prod(total_unaltered,total_unaltered))
-
-
-
+        #
         eff_pl_str_alt_iso = math.sqrt((2/3)*inner_prod(total_altered_iso,total_altered_iso))
         eff_pl_str_unalt_iso = math.sqrt((2/3)*inner_prod(total_unaltered_iso,total_unaltered_iso))
-
+        #
+        #
         v_el = elt_vol_final[0][str(el)][0]
         v_frac = v_el/v_tot
-
+        #
         #iso
         v_el_iso = elt_vol_final_iso[0][str(el)][0]
         v_frac_iso = v_el_iso/v_tot_iso
-
+        #
         # altered
-
         avg_eff_pl_str_alt.append(eff_pl_str_alt*v_frac)
         avg_eff_pl_str_unalt.append(eff_pl_str_unalt*v_frac)
-
+        #
         #iso
-
         avg_eff_pl_str_alt_iso.append(eff_pl_str_alt_iso*v_frac_iso)
         avg_eff_pl_str_unalt_iso.append(eff_pl_str_unalt_iso*v_frac_iso)
-
-
+        #
         if debug:
             print("el vol", v_el)
             print("tot vol", v_tot)
@@ -1239,14 +1232,49 @@ def calc_eff_pl_str(sim,domain,under="", debug=False):
             print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_alt[el])
             print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_unalt[el])
             print("-----------------------------------##-------##\n\n")
-
+        #
         values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])    
         file.write(values+"\n")
-
+        #
         values = str(v_el_iso)+"," + str(v_tot_iso)+","+ str(v_frac_iso)+","+ str(eff_pl_str_alt_iso)+ ","+ str(eff_pl_str_unalt_iso)+ ","+ str(avg_eff_pl_str_alt_iso[el])+ ","+ str(avg_eff_pl_str_unalt_iso[el])    
+        print(values)
         file_iso.write(values+"\n")
     print("\n__")
     print(sum(avg_eff_pl_str_alt))
     print(sum(avg_eff_pl_str_unalt))
+    file.close()
+    file_iso.close()
+  #
+ #
+#
+##
+def plot_svs_from_csv(name):
+    import matplotlib.pyplot as plt
+    ax  = plt.subplot()
+    exx= pd.read_csv(name)
+    stress_exp = [float(i) for i in exx.iloc[:,2]]
+    strain_exp = [float(i) for i in exx.iloc[:,1]]
+    nam=name.replace("_",' ')
+    ax.plot(strain_exp, stress_exp,"k-",markersize=2, lw=0.5)
+    #ax.scatter(strain_exp[0:len(strain_exp):name[4]], stress_exp[0:len(stress_exp):name[4]]
+    #    , marker=yeild_markers[i],s=60,fc='w',color= 'k',zorder=i+3, label=nam[0:3])
+    stress = '$\sigma$'
+    strain='$\epsilon$'
+    x_label = f'{strain} (-)'
+    y_label = f'{stress} (MPa)'
 
+    # Compile labels for the graphs
+    #plt.ylim([0,limits[1]])
+    #plt.xlim([0.00001,limits[0]])
+    #lines_labels = [a.get_legend_handles_labels() for a in plt.axes]
+    #lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+    #plt.legend(lines, labels,loc="best", fontsize="small")
+    #plt.title(title,loc='center')
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+
+    plt.tight_layout()
+    file_name =name[:-4]
+    plt.savefig(file_name+"_stress_v_strain.png",dpi=400)
+    ax.cla()
 

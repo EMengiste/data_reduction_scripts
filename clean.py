@@ -4,7 +4,6 @@ from ezmethods import *
 
 common_files="/home/etmengiste/jobs/aps/aps_add_slip/common_files"
 
-
 os.chdir(common_files)
 
 print(os.listdir())
@@ -22,7 +21,7 @@ started_sims=[]
 
 print(main,common_files)
 sims=os.listdir()
-domains = ["Cube","Elongated"]
+domains = ["Cube"]
 def pprint(arr):
     for a in arr:
         print(a)
@@ -85,18 +84,18 @@ for i in list_of_sims:
                     #
                     out = [item for item in os.listdir(domain) if item.startswith("output.")]
                     #
-                    #print(out)
-                    output_lines= open(domain+"/"+out[0],"r").readlines()
+                    out.sort()
+                    #print(domain+"/"+out[1])
+                    output_file= open(domain+"/"+out[0],"r").readlines()
                     #
                     step="0"
                     # Find out current step
-                    for out in output_lines:
+                    for out in output_file:
                         if out.startswith("Info   : Running step"):
                             step = out[17:]
                     #
-                    output = output_lines[-2]
+                    output = output_file[-2]
                     print(output)
-
                     if output.startswith(completed):
                         print("Simulation completed----move")
                         # Show destination
@@ -108,22 +107,17 @@ for i in list_of_sims:
                             print(domain)
                             completed_sims.append(i+" "+j)
                         else:
-                            try:
-                                if j in os.listdir(destination+i+"/"+j):
-                                    print("alread here bud")
-                                else:
-                                    shutil.move(domain, destination+i+"/"+j)
-                                    print(destination+i+"/"+j)
-                                    exit(0)
-                                    sim= fepx_sim(sim,path=home+sim+"/"+domain)
-                                    sim.post_process()
-                                completed_sims.append(i+" "+j)
-                            except:
-                                print("not here")
+                            if j in os.listdir(destination+i+"/"+j):
+                                print("alread here bud")
+                            else:
+                                shutil.move(domain, destination+i+"/"+j)
+                                print( " Moved to "+destination+i+"/"+j)
+                            completed_sims.append(i+" "+j)
+                            print("Completed "+completed_sims[-1])
                         if output == "_EVPS: Iterat":
                             pass
                         else:
-                            array.append(float(output_lines[-3][23:-6])/3600)
+                            array.append(float(output_file[-3][23:-6])/3600)
                     else:
                         completion_file.write("++Simulation started but not yet done++ currently on "+ step)
                         #  if simulation is not completed return current step
