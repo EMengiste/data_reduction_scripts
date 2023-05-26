@@ -3,6 +3,8 @@ import shutil
 from ezmethods import *
 
 common_files="/home/etmengiste/jobs/aps/aps_add_slip/common_files"
+destination="/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files"
+common_files=destination
 
 os.chdir(common_files)
 
@@ -13,7 +15,6 @@ completion_file= open("completed.txt","w")
 os.chdir("..")
 main=os.getcwd()
 
-destination="/media/schmid_1tb_2/etmengiste/aps_add_slip/"
 completed_sims= []
 started_sims=[]
 
@@ -26,7 +27,7 @@ def pprint(arr):
     for a in arr:
         print(a)
 debug=False
-debug_move=False
+debug_move=True
 #
 completed="Info   : Final step terminated. Simulation completed successfully."
 #
@@ -90,8 +91,14 @@ for i in list_of_sims:
                 out = [item for item in os.listdir(domain) if item.startswith("output.")]
                 #
                 out.sort()
-                print(domain+"/"+out[1])
-                output_file= open(domain+"/"+out[0],"r").readlines()
+                print(out)
+                if len(out)<3:
+                    print(domain+"/"+out[0])
+                    output_file= open(domain+"/"+out[0],"r").readlines()
+                else:
+                    print(domain+"/"+out[1])
+                    output_file= open(domain+"/"+out[1],"r").readlines()
+
                 #
                 step="0"
                 # Find out current step
@@ -150,7 +157,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 num= [i for i in range(len(array))]
-plt.plot(num,array,"k*")
+plt.plot(num,array,"k*",ms=7)
 plt.axhline(np.mean(array),label="mean = "+str(round(np.mean(array),2))+" hrs")
 plt.ylabel("time (hr)")
 plt.xlabel("simulation number")

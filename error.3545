@@ -1,0 +1,65 @@
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 94946 Aborted                 (core dumped) neper -S $domain.sim -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95507 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95512 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95520 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95523 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95526 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95529 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95532 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95541 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95638 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95641 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95644 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95705 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95708 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 14: 95711 Aborted                 (core dumped) neper -S $domain.sim -reselt "eltvol:vol" -reselset ori
+mkdir: cannot create directory ‘/media/schmid_2tb_1/etmengiste/files/aps_add_slip/097’: File exists
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+cp: cannot stat 'Cube/*.sh': No such file or directory
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 41: 96911 Aborted                 (core dumped) neper -S $domain -reselt "eltvol:vol" -reselset ori
+/media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/batch_process.sh: line 41: 96929 Aborted                 (core dumped) neper -S $domain -reselt "eltvol:vol" -reselset ori

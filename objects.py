@@ -29,8 +29,7 @@
 #   work_pl         = [1]
 #   workrate        = [1]
 #   workrate_pl     = [1]
-########
-
+#
 slip_systems = ["$(01-1)[111]$",
                 "$(10-1)[111]$",
                 "$(1-10)[111]$",
@@ -90,11 +89,11 @@ simulations.sort()
 bulk=False
 
 slips = ["2","4","6"]
-aniso = ["125","150","175","200","400"]     
+aniso = ["125","150","175","200","400"]
 sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
 
 an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "4.00"]
-#name = "DOM_"+domains[0][1]+"_ISO"           
+#name = "DOM_"+domains[0][1]+"_ISO"
 #package_oris(home+"isotropic/"+domains[0][0]+".sim/", name=name)
 
 file = open(home+"common_files/Cube.stelt").readlines()
@@ -106,7 +105,7 @@ elts = [int(i) for i in elts]
 file_grain_ids.close()
 print(elts[0:5])
 exit(0)
-#name = "DOM_"+domains[1][1]+"_ISO"   
+#name = "DOM_"+domains[1][1]+"_ISO"
 #package_oris(home+"isotropic/"+domains[1][0]+".sim/", name=name)
 for sim_name in simulations[0:5]:
     if sim_name=="common_files":
@@ -119,7 +118,7 @@ for sim_name in simulations[0:5]:
         num_elts = int(sim.sim['**general'].split()[2])
         step = sim.sim['**step']
         #nums= np.arange(1457,1473,1) 373
-        #nums= np.arange(261,414,1) 
+        #nums= np.arange(261,414,1)
 
         nums= elts
         #pprint(elts)
@@ -150,41 +149,10 @@ for sim_name in simulations[0:5]:
         file10.close()
         file20.close()
         file28.close()
-os.system("pwd") 
-os.chdir(home)       
+os.system("pwd")
+os.chdir(home)
 os.system("./common_files/elt_spred.sh")
 exit(0)
-def post_process():
-    aniso = {"Aniso":["100"]+aniso}
-    dataframe = pd.DataFrame(aniso)
-    data = pd.DataFrame(aniso)
-
-
-    for i in range(0,75,5):
-        if bulk:    
-            for aniso_index in range(5):
-                current= i+aniso_index            
-                simulation = simulations[current]
-                num_slips  = slips[int(current/25)]
-                set_num    = str(int((current%25)/5)+1)
-                for domain in domains:
-                    # DOM_CUB_NSLIP_2_SET_1_ANISO_125
-                    #name = "DOM_"+domain[1]+"_NSLIP_"+num_slips+"_SET_"+set_num+"_ANISO_"+aniso[aniso_index]
-                    #print(name)
-                    get_bulk_output(simulation,domain[0])
-                    #package_oris(home+simulation+"/"+domain[0]+".sim/", name=name)
-
-        print(i,"====\n\n\n")
-        get_yield_v_aniso_ratio(i,"Cube")
-        get_yield_v_aniso_ratio(i,"Elongated")
-
-        #calc_eff_pl_str(simulations[i],"Cube")
-        #calc_eff_pl_str(simulations[i], "Elongated")
-
-        #slip_vs_aniso(i,"Cube", slip_systems,debug="comparision", save_plot=True,df=dataframe)
-        #slip_vs_aniso(i,"Elongated", slip_systems,debug="comparision", save_plot=True, df=dataframe)
-    #plt.savefig("/home/etmengiste/jobs/aps/images/Combined_plot"+simulations[i]+"_")
-
 for i in [0,25,50]:
     plot_yield_stress(i)
     plot_eff_strain(i)
@@ -252,7 +220,7 @@ def calc_eff_pl_str(sim,domain,under=""):
     values = "elt_vol, tot_vol, vol_frac, eff_pl_alt, eff_pl_unalt, vol_eff_pl_alt, vol_eff_pl_unalt"
     file.write(values+"\n")
     for el in range(num_elts):
-        
+
         total_altered = 0
         total_unaltered = 0
 
@@ -307,7 +275,7 @@ def calc_eff_pl_str(sim,domain,under=""):
             print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_unalt[el])
             print("-----------------------------------##-------##\n\n")
 
-        values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])    
+        values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])
         file.write(values+"\n")
     print("\n__")
     print(sum(avg_eff_pl_str_alt))
@@ -335,7 +303,7 @@ exit(0)
 file_grain_ids = open(home+"common_files/Cube_grain_elts","w")
 elts = []
 grain_elts=[]
-values = np.arange(0,2000,1) 
+values = np.arange(0,2000,1)
 for val in values:
     for i in file:
         vals= i.split()

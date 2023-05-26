@@ -10,8 +10,8 @@
 # - Executes FEPX with OpenMPI's `mpirun' on 4 processors by default.
 
 # Run pyhton cleaning script
-python3 /home/etmengiste/code/data_reduction_scripts/clean.py
+python3 /home/etmengiste/code/data_reduction_scripts/post_process.py
 
-sbatch --job-name=clnupisl1 --hint=nomultithread /media/schmid_1tb_2/etmengiste/aps_add_slip/common_files/post-process.sh
+scontrol release {3531..3540}
 #scontrol release {START..END}
 exit 0

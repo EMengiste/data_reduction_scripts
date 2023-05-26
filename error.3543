@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/home/etmengiste/code/data_reduction_scripts/post_process.py", line 140, in <module>
+    post_process(domains,length)
+  File "/home/etmengiste/code/data_reduction_scripts/post_process.py", line 76, in post_process
+    package_oris(home+simulation+"/"+domain[0]+".sim/", name=name)
+  File "/home/etmengiste/code/data_reduction_scripts/ezmethods.py", line 1083, in package_oris
+    sim= fepx_sim("sim_name",path=path)
+  File "/home/etmengiste/code/data_reduction_scripts/ezmethods.py", line 131, in __init__
+    config = open(path+"/inputs/simulation.config").readlines()
+FileNotFoundError: [Errno 2] No such file or directory: '/media/schmid_1tb_2/etmengiste/aps_add_slip/007/Cube.sim//inputs/simulation.config'
+Invalid job id specified for job 3531
+slurm_suspend error: Invalid job id specified
+Invalid job id specified for job 3533
+slurm_suspend error: Invalid job id specified
+Invalid job id specified for job 3534
+slurm_suspend error: Invalid job id specified
