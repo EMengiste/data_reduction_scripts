@@ -7,11 +7,21 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 import pandas as pd
-plt.rcParams.update({'font.size': 60})
+
+SIZE=65
+
+plt.rcParams.update({'font.size': SIZE})
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['figure.figsize'] = 20,15
-
+#
+plt.rc('font', size=SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SIZE)    # legend fontsize
+plt.rc('figure', titlesize=SIZE)  #
 denoised= 0
 iso_home= "/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic/Cube"
 #iso_home= "/media/schmid_2tb_1/etmengiste/files/update_03_29_2022/current_param"

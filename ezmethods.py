@@ -16,7 +16,7 @@ plt.rcParams["figure.subplot.right"] = 0.995
 plt.rcParams["figure.subplot.top"] = 0.891
 plt.rcParams["figure.subplot.wspace"] = 0.21
 plt.rcParams["figure.subplot.hspace"] = 0.44
-plt.rcParams['figure.figsize'] = 60,20
+plt.rcParams['figure.figsize'] = 23,8
 import numpy as np
 home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
 home ="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
@@ -137,7 +137,8 @@ class fepx_sim:
         self.completed = "post.report" in self.results_dir
         self.has_config = "simulation.config" in self.results_dir
         if path[-4:] == ".sim":
-            self.sim=True
+            self.is_sim=True
+            self.post_processed=True
             pass
         else:
             self.post_processed=os.path.isdir(path+".sim")
@@ -147,10 +148,11 @@ class fepx_sim:
         #
         # If the config file exists poulate the attributes
         #
-        if self.sim:
+        if self.is_sim:
             print("########---- opening "+path+"/simulation.config")
             config = open(path+"/inputs/simulation.config").readlines()
-        elif self.has_config:
+
+        elif self.has_config and not self.is_sim:
             #print(self.name,"has config")
             print("########---- opening "+path+"/simulation.config")
             config = open(path+"/simulation.config").readlines()
@@ -324,7 +326,7 @@ class fepx_sim:
             for id in ids:
                 #print(id,"--------")
                 value[str(id)] = [float(i) for i in values[id].split()]
-                print(component_vals)
+                #print(component_vals)
                 for component in range(num_components):
                     component_vals[str(component)].append(value[str(id)][component])
             #pprint(value,max=1000)
@@ -340,8 +342,23 @@ class fepx_sim:
     #
     def post_process(self,options=""):
         #
-        if not self.completed:
-            print("simulation not done come back after it is")
+        if self.post_processed:
+            print("Already post processed")
+            end=".sim/.sim"
+            if self.is_sim:
+                end= "/.sim"
+            if self.sim == "":
+                values = {}
+                with open(self.path+end) as file:
+                    sim_file = [i.strip() for  i in file.readlines()]
+                    for line in sim_file:
+                        if line.startswith("***"):
+                            print(line,"\n")
+                        elif line.startswith("**"):
+                            values[line]= sim_file[sim_file.index(line)+1].strip()
+                self.sim= values
+            pprint(values)
+            print(values["**general"][8])
             return
         #
         elif options!="":
@@ -357,20 +374,8 @@ class fepx_sim:
                 return
         #
         #
-        elif self.post_processed:
-            print("Already post processed")
-            if self.sim == "":
-                values = {}
-                with open(self.path+".sim/.sim") as file:
-                    sim_file = [i.strip() for  i in file.readlines()]
-                    for line in sim_file:
-                        if line.startswith("***"):
-                            print(line,"\n")
-                        elif line.startswith("**"):
-                            values[line]= sim_file[sim_file.index(line)+1].strip()
-                self.sim= values
-            pprint(values)
-            print(values["**general"][8])
+        elif not self.completed:
+            print("simulation not done come back after it is")
             return
         #
        #
@@ -433,7 +438,7 @@ def to_matrix(arr):
     matrix = [row1 ,row2, row3]
     return matrix
 ##
-def nomalize_vector(vect):
+def normalize_vector(vect,magnitude=False):
     value= 0
     final = vect
     for i in vect:
@@ -441,14 +446,17 @@ def nomalize_vector(vect):
     mag=math.sqrt(value)
     for i in range(len(vect)):
         final[i] = final[i]/mag
-    return final
+    if magnitude:
+        return [final,mag]
+    else:
+        return final
   #
  #
 #
 ##
 def calculate_schmid(a,b):
-    a= nomalize_vector(a)
-    b= nomalize_vector(b)
+    a= normalize_vector(a)
+    b= normalize_vector(b)
     T = diad(a,b)
 
     P = 0.5*(T+np.transpose(T))
@@ -642,9 +650,9 @@ def avg(arr):
  #
 #
 ##
-def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
+def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etmengiste/jobs/aps/eff_pl_str/",base=5,iso_home=home,path=home,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
     P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
-    sim_iso= fepx_sim("name",path=home+"isotropic/"+domain)
+    sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
     #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
     sim_iso.post_process()
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
@@ -653,6 +661,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
     #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
     del sim_iso
+    print(path)
     #for i in range(6):
         #ax_stress = fig.add_subplot(hig,wid,12+i)
         #ax_stress.hist(stress_iso[str(i)],bins=bin_size,edgecolor="k")
@@ -709,18 +718,20 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
         #    ax2.plot(1,1)
         #    analysis_axes.append(ax2)
             #ax2.set_ylim[]
-
-    simulations = os.listdir(home)
+    print(path)
+    simulations = os.listdir(path)
     simulations.sort()
     effective_pl_strain_unalt = []
     effective_pl_strain_alt = []
 
     vol_eff_pl_strain_unalt = []
     vol_eff_pl_strain_alt = []
-    for index,sim in enumerate(simulations[sim_start:sim_start+5]):
-        file=home+sim+"/"+domain+"_eff_pl_str.csv"
+    for index,sim in enumerate(simulations[sim_start:sim_start+base]):
+        
+        file=path+sim+"/"+domain[0:-4]+"_eff_pl_str.csv"
         if index <1:
-            file_iso=home+sim+"/"+domain+"iso_eff_pl_str.csv"
+            file_iso=path+sim+"/"+domain[:-4]+"iso_eff_pl_str.csv"
+            print(file_iso)
             # Eff plast strain
             print("opening file ",file_iso)
             data = pd.read_csv(file_iso)
@@ -731,7 +742,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
 
             vol_eff_pl_strain_alt.append(tot_alt_iso/tot_alt_iso)
             vol_eff_pl_strain_unalt.append(tot_unalt_iso/tot_unalt_iso)
-        sim= fepx_sim(sim,path=home+sim+"/"+domain)
+        sim= fepx_sim(sim,path=path+sim+"/"+domain)
         slip = normalize(sim.get_output("slip",step=step,res=res,ids=ids),absolute=True)
         #stress =  sim.get_output("stress",step=step,res=res,ids=ids)[1]
         mat_par = sim.material_parameters["g_0"]
@@ -838,8 +849,9 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     #
     # Save values
     eff_str_vs_ratio = pd.DataFrame([[1]+ratios,vol_eff_pl_strain_alt,vol_eff_pl_strain_unalt])
-    eff_str_vs_ratio.to_csv("/home/etmengiste/jobs/aps/sim_"+domain+"_"+str(sim_start))
+    eff_str_vs_ratio.to_csv(target_dir+"sim_"+domain+"_"+str(sim_start))
     #
+    print("target_dir,",target_dir)
     ax1.set_ylim([0,6])
     ax2.set_ylim([0,6])
     ax3.set_ylim([0,6])
@@ -869,39 +881,47 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     #analysis_axes[-1].bar(comps,avg_slip_iso)
     #analysis_axes[-2].bar(comps,avg_slip_iso)
     #plt.tight_layout()
-    df[str(sim_start)+domain+"_unaltered"]= [1]+effective_pl_strain_unalt
-    df[str(sim_start)+domain+"_altered"]= [1]+effective_pl_strain_alt
     if save_plot:
+
+        df[str(sim_start)+domain+"_unaltered"]= [1]+effective_pl_strain_unalt
+        df[str(sim_start)+domain+"_altered"]= [1]+effective_pl_strain_alt
         plt.savefig("/home/etmengiste/jobs/aps/images/Largeval_e"+simulations[sim_start]+"_"+domain,bbox_inches=mtransforms.Bbox([[.68, 0], [.85, 0.5]]).transformed(fig.transFigure - fig.dpi_scale_trans))
         print("###--##==+++plotted to file: Largeval_e"+simulations[sim_start]+"_"+domain)
-    else:
+    elif show:
         plt.tight_layout()
         plt.show()
     #
   #
 #
 sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
-an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "4.00"]
+an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+ani_marker= ["k",
+             (10/255,10/255,10/255),
+             (70/255,70/255,70/255),
+             (150/255,150/255,150/255),
+             (200/255,200/255,200/255),
+             (215/255,215/255,215/255),
+             (255/255,255/255,255/255)]
 aps_home ="/home/etmengiste/jobs/aps/"
 slips=["2","4", "6"]
-x_label = f'Level of plastic anisotropy $\\rho$(:)'
+x_label = f'$p$ (-)'
 #
 #
 ## Plot effective plastic strain
-def plot_eff_strain(start,all=False,marker_size=40):
-    for domain in ["Cube", "Elongated"]:
+def plot_eff_strain(start,all=False,marker_size=40,aps_home="/home/etmengiste/jobs/aps/eff_pl_str/"):
+    for domain in ["Cube"]:
 
         if all:
             fig, axs = plt.subplots(1, 3,sharey="row")
             for j in range(3):
                 ax = axs[j]
                 ax.cla()
-                ax.set_ylim([0,2.1])
+                ax.set_ylim([-0.1,2.1])
                 ax.set_xlim([0.9,4.1])
                 slip = slips[j]
                 ax.set_title(slip+" slip systems strengthened")
                 print(j+1)       
-                for i in range(25*j,25*j+25,5):
+                for i in range(30*j,30*j+30,6):
                     print(i)
                     name=aps_home+"sim_"+domain+"_"+str(i)+"_eff_pl_str"
                     print(name)
@@ -913,9 +933,9 @@ def plot_eff_strain(start,all=False,marker_size=40):
                     unaltered= dat.iloc[2]
                     print("altered ",altered)
                     print("unaltered ",unaltered)
-                    set =int((i-25*j)/5)
+                    set =int((i-30*j)/6)
                     print(set)
-                    ax.plot(ratios,unaltered,"k-*",ls=sets[set],ms=marker_size,label="Set "+str(set+1))
+                    ax.plot(ratios,unaltered,"k-o",ls=sets[set],ms=marker_size,label="Set "+str(set+1))
                     ax.plot(ratios,altered,"kD",ls=sets[set],ms=marker_size)
                     ax.set_xticks(ratios)
                     ax.set_xticklabels(an,rotation=90)       
@@ -948,7 +968,7 @@ def plot_eff_strain(start,all=False,marker_size=40):
 
         fig.supxlabel(x_label)
         fig.supylabel(y_label)
-        fig.subplots_adjust(left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1)
+        fig.subplots_adjust(left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
     
         plt.savefig("eff_pl_strain_"+sli+"ss"+domain)
     #plt.show()
@@ -1214,9 +1234,11 @@ def package_oris(path,name="elset_ori.csv"):
 P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
 #
 #
-def calc_eff_pl_str(sim,domain,under="",home=home,iso_home=home, debug=False):
-    file = open(home+sim+"/"+domain+"alt_eff_pl_str.csv","w")
-    file_iso = open(iso_home+"isotropic"+"/"+domain+"_eff_pl_str.csv","w")
+def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=False):
+    if name=="":
+        name= domain
+    file = open(home+sim+"/"+name+"_alt_eff_pl_str.csv","w")
+    file_iso = open(iso_home+"isotropic"+"/"+name+"_eff_pl_str.csv","w")
     #
     sim= fepx_sim(sim,path=home+sim+"/"+domain)
     sim.post_process()
@@ -1229,7 +1251,7 @@ def calc_eff_pl_str(sim,domain,under="",home=home,iso_home=home, debug=False):
     mat_par = sim.material_parameters["g_0"]
     del sim
     #   ISO
-    sim_iso= fepx_sim("name",path=home+"isotropic/"+domain)
+    sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
     sim_iso.post_process()
     step_iso = sim_iso.sim['**step']
     slip_iso = sim_iso.get_output("slip",step="28",res="elts",ids="all")
@@ -1341,7 +1363,7 @@ def calc_eff_pl_str(sim,domain,under="",home=home,iso_home=home, debug=False):
         file.write(values+"\n")
         #
         values = str(v_el_iso)+"," + str(v_tot_iso)+","+ str(v_frac_iso)+","+ str(eff_pl_str_alt_iso)+ ","+ str(eff_pl_str_unalt_iso)+ ","+ str(avg_eff_pl_str_alt_iso[el])+ ","+ str(avg_eff_pl_str_unalt_iso[el])
-        print(values)
+        #print(values)
         file_iso.write(values+"\n")
     print("\n__")
     print(sum(avg_eff_pl_str_alt))
