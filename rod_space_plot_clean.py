@@ -16,6 +16,8 @@ plot_rod_outline(ax)
 remote= "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
 remote=""
 home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
+rem=""
+home=rem+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 
 simulations = os.listdir(home)
 simulations.sort()
@@ -63,7 +65,7 @@ for val,col in zip([0,60,51,52,53,54],colors):
               eig_vects.append(eig_val)
               #print(abs(max(eig_val)/min(eig_val)))
               print("eig_val",eig_val)
-              leng = 0.05
+              leng = 0.06
               eig_val = normalize_vector([abs(j) for j in eig_val])
               #print("eig_val",eig_val)
               #pprint(eig_vect)
@@ -83,6 +85,6 @@ for val,col in zip([0,60,51,52,53,54],colors):
        #exit(0)
 ax.axis("off")
 ax.view_init(elev=35., azim=45)
-plt.show()
+#plt.show()
 plt.savefig("funda_region")
 exit(0)

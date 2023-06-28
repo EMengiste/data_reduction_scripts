@@ -31,12 +31,7 @@ plt.rc('legend', fontsize=SIZE)    # legend fontsize
 plt.rc('figure', titlesize=SIZE)  #
 import numpy as np
 home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
-<<<<<<< HEAD
 home ="/media/schmid_1tb_2/etmengiste/aps_add_slip/"
-=======
-home ="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
-
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
 ist= "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic"
 isotropic_home ="/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic/"
 
@@ -63,13 +58,10 @@ values = { "1=crss": [],
            "21=work_pl": [],
            "22=workrate": [],
            "23=workrate_pl": []}
-<<<<<<< HEAD
-=======
   #
  #
 #
 ##
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
 CUB_110 = [[0, 1,-1],
            [1, 0 ,-1],
            [1,-1,0],
@@ -82,20 +74,6 @@ CUB_110 = [[0, 1,-1],
            [0, 1 ,-1],
            [1, 0, 1],
            [1, 1 ,0]]
-<<<<<<< HEAD
-
-CUB_111 = [[1, 1, 1],
-           [1, 1, 1],
-           [1, 1, 1],
-           [1, 1,-1],
-           [1, 1,-1],
-           [1, 1,-1],
-           [1,-1, 1],
-           [1,-1, 1],
-           [1,-1, 1],
-           [1,-1,-1],
-           [1,-1,-1],
-=======
   #
  #
 #
@@ -111,7 +89,6 @@ CUB_111 = [[1, 1, 1],
            [1,-1, 1],
            [1,-1,-1],
            [1,-1,-1],
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
            [1,-1,-1]]
   #
  #
@@ -148,6 +125,7 @@ class fepx_sim:
         print("---------------------------------##")
         if path =="":
             path = os.getcwd()
+        self.path = path
         #
         self.name=name
         #
@@ -174,22 +152,6 @@ class fepx_sim:
         self.print_results  = []
         #
         #
-<<<<<<< HEAD
-        self.path=path
-        #
-        # if path is the .sim folder
-        if ".sim" in self.path:
-            #
-            ##@ Status checks
-            self.sim=""
-            self.completed = True
-            self.has_config = True
-            self.post_processed= True
-            self.path = self.path[:-4]
-            #
-            config = open(path+"/inputs/simulation.config").readlines()
-            #
-=======
         ##@ Status checks
         self.sim=""
         self.results_dir=os.listdir(path)
@@ -215,7 +177,6 @@ class fepx_sim:
             #print(self.name,"has config")
             print("########---- opening "+path+"/simulation.config")
             config = open(path+"/simulation.config").readlines()
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         else:
             #
             ##@ Status checks
@@ -388,11 +349,6 @@ class fepx_sim:
         
         with open(step_file) as file:
             values=file.readlines()
-<<<<<<< HEAD
-            #print(step)
-            #print(values)
-=======
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
             num_components= len(values[0].split())
             component_vals = {}
             for component in range(num_components):
@@ -738,16 +694,9 @@ def avg(arr):
  #
 #
 ##
-<<<<<<< HEAD
-def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
-
-    P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
-    sim_iso= fepx_sim("name",path=isotropic_home+domain)
-=======
 def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etmengiste/jobs/aps/eff_pl_str/",base=5,iso_home=home,path=home,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
     P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
     sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
     sim_iso.post_process()
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
@@ -821,20 +770,12 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
 
     vol_eff_pl_strain_unalt = []
     vol_eff_pl_strain_alt = []
-<<<<<<< HEAD
-    for index,sim in enumerate(simulations[sim_start:sim_start+5]):
-
-        file=home+sim+"/"+domain+"_eff_pl_str.csv"
-        if index <1:
-            file_iso=home+sim+"/"+domain+"iso_eff_pl_str.csv"
-=======
     for index,sim in enumerate(simulations[sim_start:sim_start+base]):
         
         file=path+sim+"/"+domain[0:-4]+"_eff_pl_str.csv"
         if index <1:
             file_iso=path+sim+"/"+domain[:-4]+"iso_eff_pl_str.csv"
             print(file_iso)
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
             # Eff plast strain
             print("opening file ",file_iso)
             data = pd.read_csv(file_iso)
@@ -900,11 +841,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
             print(total_altered_iso)
             print("unaltered iso" )
             print(total_unaltered_iso)
-<<<<<<< HEAD
-
-=======
         #
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         total_altered=math.sqrt((2/3)*inner_prod(total_altered,total_altered))
         total_unaltered=math.sqrt((2/3)*inner_prod(total_unaltered,total_unaltered))
         total_altered_iso=math.sqrt((2/3)*inner_prod(total_altered_iso,total_altered_iso))
@@ -918,11 +855,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
         #
         effective_pl_strain_alt.append(total_altered/total_altered_iso)
         effective_pl_strain_unalt.append(total_unaltered/total_unaltered_iso)
-<<<<<<< HEAD
-
-=======
         #
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         # Eff plast strain
         print("opening file ",file)
         data = pd.read_csv(file)
@@ -957,25 +890,12 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
     #
     ax5.plot([1]+ratios,vol_eff_pl_strain_unalt,"db",ms=15)
     ax5.plot([1]+ratios,vol_eff_pl_strain_alt, "*r",ms=30)
-<<<<<<< HEAD
-
-    #
-    # Save values
-
-
-    eff_str_vs_ratio = pd.DataFrame([[1]+ratios,vol_eff_pl_strain_alt,vol_eff_pl_strain_unalt])
-
-    eff_str_vs_ratio.to_csv("/home/etmengiste/jobs/aps/sim_"+domain+"_"+str(sim_start))
-
-
-=======
     #
     # Save values
     eff_str_vs_ratio = pd.DataFrame([[1]+ratios,vol_eff_pl_strain_alt,vol_eff_pl_strain_unalt])
     eff_str_vs_ratio.to_csv(target_dir+"sim_"+domain+"_"+str(sim_start))
     #
     print("target_dir,",target_dir)
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     ax1.set_ylim([0,6])
     ax2.set_ylim([0,6])
     ax3.set_ylim([0,6])
@@ -1346,15 +1266,6 @@ def package_oris(path,name="elset_ori.csv"):
     #
   #
 #
-<<<<<<< HEAD
-#
-#
-P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
-def calc_eff_pl_str(sim,domain,home=home,under="", debug=False):
-    file = open(home+sim+"/"+domain+"_eff_pl_str.csv","w")
-    file_iso = open(home+sim+"/"+domain+"_iso_eff_pl_str.csv","w")
-
-=======
 ##
 P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
 #
@@ -1365,7 +1276,6 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
     file = open(home+sim+"/"+name+"_alt_eff_pl_str.csv","w")
     file_iso = open(iso_home+"isotropic"+"/"+name+"_eff_pl_str.csv","w")
     #
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     sim= fepx_sim(sim,path=home+sim+"/"+domain)
     sim.post_process()
     num_elts = int(sim.sim['**general'].split()[2])
@@ -1376,14 +1286,8 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
     elt_vol_final = sim.get_output("elt"+under+"vol",step=step,res="elts",ids="all")
     mat_par = sim.material_parameters["g_0"]
     del sim
-<<<<<<< HEAD
-    #
-    #   ISO
-    sim_iso= fepx_sim("name",path=isotropic_home+domain)
-=======
     #   ISO
     sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     sim_iso.post_process()
     step_iso = sim_iso.sim['**step']
     slip_iso = sim_iso.get_output("slip",step="28",res="elts",ids="all")
@@ -1393,10 +1297,7 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
     #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
     del sim_iso
-<<<<<<< HEAD
-=======
     #
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     strength = [ float(i.split("d")[0]) for i in mat_par]
     #exit(0)
     altered  =  []
@@ -1405,12 +1306,8 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
         if val>baseline:
             altered.append(index)
             ratio = val/baseline
-<<<<<<< HEAD
-
-=======
     print(ratio)
     #
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     #
     avg_eff_pl_str_alt = []
     avg_eff_pl_str_unalt = []
@@ -1425,14 +1322,8 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
     values = "elt_vol, tot_vol, vol_frac, eff_pl_alt, eff_pl_unalt, vol_eff_pl_alt, vol_eff_pl_unalt"
     file.write(values+"\n")
     file_iso.write(values+"\n")
-<<<<<<< HEAD
-
-    for el in range(num_elts):
-
-=======
     #
     for el in range(num_elts):
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         total_altered = 0
         total_unaltered = 0
         total_altered_iso = 0
@@ -1503,28 +1394,18 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
             print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_alt[el])
             print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_unalt[el])
             print("-----------------------------------##-------##\n\n")
-<<<<<<< HEAD
-
-        values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])
-        file.write(values+"\n")
-
-        values = str(v_el_iso)+"," + str(v_tot_iso)+","+ str(v_frac_iso)+","+ str(eff_pl_str_alt_iso)+ ","+ str(eff_pl_str_unalt_iso)+ ","+ str(avg_eff_pl_str_alt_iso[el])+ ","+ str(avg_eff_pl_str_unalt_iso[el])
-=======
         #
         values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])
         file.write(values+"\n")
         #
         values = str(v_el_iso)+"," + str(v_tot_iso)+","+ str(v_frac_iso)+","+ str(eff_pl_str_alt_iso)+ ","+ str(eff_pl_str_unalt_iso)+ ","+ str(avg_eff_pl_str_alt_iso[el])+ ","+ str(avg_eff_pl_str_unalt_iso[el])
         #print(values)
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         file_iso.write(values+"\n")
     file.close()
     file_iso.close()
     print("\n__")
     print(sum(avg_eff_pl_str_alt))
     print(sum(avg_eff_pl_str_unalt))
-<<<<<<< HEAD
-=======
     file.close()
     file_iso.close()
   #
@@ -2018,4 +1899,3 @@ def plot_std_mean_data(NAME,ylims="",debug=False):
         plt.subplots_adjust(left=0.09, right=0.98,top=0.95, bottom=0.124, wspace=0.07, hspace=0.1)
         fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean_std.png",dpi=400)
     
->>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
