@@ -5,7 +5,13 @@ import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 import math
 import pandas as pd
-plt.rcParams.update({'font.size': 25})
+from sklearn.linear_model import LinearRegression
+from mpl_toolkits.mplot3d import axes3d
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from scipy.spatial.transform import Rotation as R
+SIZE=35
+# Latex interpretation for plots
+plt.rcParams.update({'font.size': SIZE})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
@@ -15,10 +21,22 @@ plt.rcParams["figure.subplot.right"] = 0.995
 plt.rcParams["figure.subplot.top"] = 0.891
 plt.rcParams["figure.subplot.wspace"] = 0.21
 plt.rcParams["figure.subplot.hspace"] = 0.44
-plt.rcParams['figure.figsize'] = 60,20
+plt.rcParams['figure.figsize'] = 23,8#
+plt.rc('font', size=SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SIZE)    # legend fontsize
+plt.rc('figure', titlesize=SIZE)  #
 import numpy as np
 home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
+<<<<<<< HEAD
 home ="/media/schmid_1tb_2/etmengiste/aps_add_slip/"
+=======
+home ="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
 ist= "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic"
 isotropic_home ="/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic/"
 
@@ -45,6 +63,13 @@ values = { "1=crss": [],
            "21=work_pl": [],
            "22=workrate": [],
            "23=workrate_pl": []}
+<<<<<<< HEAD
+=======
+  #
+ #
+#
+##
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
 CUB_110 = [[0, 1,-1],
            [1, 0 ,-1],
            [1,-1,0],
@@ -57,6 +82,7 @@ CUB_110 = [[0, 1,-1],
            [0, 1 ,-1],
            [1, 0, 1],
            [1, 1 ,0]]
+<<<<<<< HEAD
 
 CUB_111 = [[1, 1, 1],
            [1, 1, 1],
@@ -69,9 +95,40 @@ CUB_111 = [[1, 1, 1],
            [1,-1, 1],
            [1,-1,-1],
            [1,-1,-1],
-           [1,-1,-1]]
-
+=======
+  #
+ #
 #
+##
+CUB_111 = [[1, 1, 1],
+           [1, 1, 1],
+           [1, 1, 1],
+           [1, 1,-1],
+           [1, 1,-1],
+           [1, 1,-1],
+           [1,-1, 1],
+           [1,-1, 1],
+           [1,-1, 1],
+           [1,-1,-1],
+           [1,-1,-1],
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
+           [1,-1,-1]]
+  #
+ #
+#
+sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+ani_marker= ["k",
+             (10/255,10/255,10/255),
+             (70/255,70/255,70/255),
+             (150/255,150/255,150/255),
+             (200/255,200/255,200/255),
+             (215/255,215/255,215/255),
+             (255/255,255/255,255/255)]
+aps_home ="/home/etmengiste/jobs/aps/"
+slips=["2","4", "6"]
+x_label = f'$p$ (-)'
+##
 class fepx_sim:
     #
     #
@@ -117,6 +174,7 @@ class fepx_sim:
         self.print_results  = []
         #
         #
+<<<<<<< HEAD
         self.path=path
         #
         # if path is the .sim folder
@@ -131,6 +189,33 @@ class fepx_sim:
             #
             config = open(path+"/inputs/simulation.config").readlines()
             #
+=======
+        ##@ Status checks
+        self.sim=""
+        self.results_dir=os.listdir(path)
+        self.completed = "post.report" in self.results_dir
+        self.has_config = "simulation.config" in self.results_dir
+        if path[-4:] == ".sim":
+            self.is_sim=True
+            self.post_processed=True
+            pass
+        else:
+            self.post_processed=os.path.isdir(path+".sim")
+        #
+        #
+        #
+        #
+        # If the config file exists poulate the attributes
+        #
+        if self.is_sim:
+            print("########---- opening "+path+"/simulation.config")
+            config = open(path+"/inputs/simulation.config").readlines()
+
+        elif self.has_config and not self.is_sim:
+            #print(self.name,"has config")
+            print("########---- opening "+path+"/simulation.config")
+            config = open(path+"/simulation.config").readlines()
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         else:
             #
             ##@ Status checks
@@ -295,13 +380,19 @@ class fepx_sim:
             res="mesh"
         if output in ["coo","disp","vel"] and res !="nodes":
             print("invalid output try again")
-            return
-        step_file = self.path+".sim/results/"+res+"/"+output+"/"+output+".step"+step
-
+            return        
+        if self.path[-4:] == ".sim":
+            step_file = self.path+"/results/"+res+"/"+output+"/"+output+".step"+step
+        else:
+            step_file = self.path+".sim/results/"+res+"/"+output+"/"+output+".step"+step
+        
         with open(step_file) as file:
             values=file.readlines()
+<<<<<<< HEAD
             #print(step)
             #print(values)
+=======
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
             num_components= len(values[0].split())
             component_vals = {}
             for component in range(num_components):
@@ -310,7 +401,8 @@ class fepx_sim:
                 ids= [i for i in range(len(values))]
             for id in ids:
                 #print(id,"--------")
-                value[str(id)]= [float(i) for i in values[id].split()]
+                value[str(id)] = [float(i) for i in values[id].split()]
+                #print(component_vals)
                 for component in range(num_components):
                     component_vals[str(component)].append(value[str(id)][component])
             #pprint(value,max=1000)
@@ -326,8 +418,23 @@ class fepx_sim:
     #
     def post_process(self,options=""):
         #
-        if not self.completed:
-            print("simulation not done come back after it is")
+        if self.post_processed:
+            print("Already post processed")
+            end=".sim/.sim"
+            if self.is_sim:
+                end= "/.sim"
+            if self.sim == "":
+                values = {}
+                with open(self.path+end) as file:
+                    sim_file = [i.strip() for  i in file.readlines()]
+                    for line in sim_file:
+                        if line.startswith("***"):
+                            print(line,"\n")
+                        elif line.startswith("**"):
+                            values[line]= sim_file[sim_file.index(line)+1].strip()
+                self.sim= values
+            pprint(values)
+            print(values["**general"][8])
             return
         #
         elif options!="":
@@ -343,20 +450,8 @@ class fepx_sim:
                 return
         #
         #
-        elif self.post_processed:
-            print("Already post processed")
-            if self.sim == "":
-                values = {}
-                with open(self.path+".sim/.sim") as file:
-                    sim_file = [i.strip() for  i in file.readlines()]
-                    for line in sim_file:
-                        if line.startswith("***"):
-                            print(line,"\n")
-                        elif line.startswith("**"):
-                            values[line]= sim_file[sim_file.index(line)+1].strip()
-                self.sim= values
-            pprint(values)
-            print(values["**general"][8])
+        elif not self.completed:
+            print("simulation not done come back after it is")
             return
         #
        #
@@ -397,15 +492,41 @@ def diad(a,b):
             row.append(a[i]*b[j])
         mat.append(row)
     return(mat)
-
+    #
+   #
+  #
+ #
+#
+def sort_by_vals(arr,mat):
+       arr = np.ndarray.tolist(arr)
+       mat = np.ndarray.tolist(mat)
+       arr_sorted = sorted(arr)
+       arr_sorted.sort()
+       mat_sorted = []
+       for i in range(len(arr)):
+              curr_ind =arr.index(arr_sorted[i])
+              #print(curr_ind)
+              mat_sorted.append(mat[curr_ind])
+       return [arr_sorted,mat_sorted]
+#
+##
 def inner_prod(a,b):
     tot = 0
     for i in range(3):
         for j in range(3):
             tot+= a[i][j]*b[i][j]
     return tot
-
-def nomalize_vector(vect):
+  #
+ #
+#
+def to_matrix(arr):
+    row1 = [arr[0],arr[-1],arr[-2]]
+    row2 = [arr[-1],arr[1],arr[-3]]
+    row3 = [arr[-2],arr[-3],arr[2]]
+    matrix = [row1 ,row2, row3]
+    return matrix
+##
+def normalize_vector(vect,magnitude=False):
     value= 0
     final = vect
     for i in vect:
@@ -413,19 +534,27 @@ def nomalize_vector(vect):
     mag=math.sqrt(value)
     for i in range(len(vect)):
         final[i] = final[i]/mag
-    return final
-
+    if magnitude:
+        return [final,mag]
+    else:
+        return final
+  #
+ #
+#
+##
 def calculate_schmid(a,b):
-    a= nomalize_vector(a)
-    b= nomalize_vector(b)
+    a= normalize_vector(a)
+    b= normalize_vector(b)
     T = diad(a,b)
 
     P = 0.5*(T+np.transpose(T))
     #vect = vectorize(matrix)
     return P
     #print(calculate_inner(vect,vect))
-
-
+  #
+ #
+#
+##
 def pprint(arr, preamble="\n-+++",max=50):
     space= "                                                   "
     for i in arr:
@@ -438,9 +567,12 @@ def pprint(arr, preamble="\n-+++",max=50):
             val = i+ space
             print(preamble+val[:max]+"|||||------|")
         preamble="    "
+    #
+   #
   #
  #
 #
+##
 def list_sims(list,func="",option=[""]):
     array=[]
     for i in list:
@@ -491,7 +623,6 @@ def plotting_space(x,y=[],layers=3,axis="",resolution=0,ylabel="",debug=False):
             if axis!="":
                 axis.bar(y+spacing,i,width=wide,edgecolor="k")
             if debug:
-
                 print("======\n\n")
                 print(m)
                 print(y+spacing)
@@ -499,7 +630,6 @@ def plotting_space(x,y=[],layers=3,axis="",resolution=0,ylabel="",debug=False):
                 print("======\n\n")
                 for j in range(len(x[0])):
                     print(str(j)+"  -------|---------|---------|---------|---------|---------|---------|---------|")
-
                     for i in range(len(x)):
                         ret= str(i)+" |"
                         print(ret)
@@ -528,7 +658,6 @@ def normalize(array,scale=1,maximum=1,absolute=False,debug=False):
         print("maximum val "+str(maximum)+"------")
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
-
     # [f(x) if condition else g(x) for x in sequence]
     if isinstance(array[0],str):
         array=[float(i)
@@ -541,13 +670,17 @@ def normalize(array,scale=1,maximum=1,absolute=False,debug=False):
         array= [abs(i) for i in array]
     if maximum=="":
         maximum = max(array)
-
     return [scale*i/maximum for i in array]
   #
  #
 #
-##
-# yield calculation for simulation data
+def find_nearest(a, a0):
+    "Element in nd array `a` closest to the scalar value `a0`"
+    a=np.array(a)
+    idx = np.abs(a - a0).argmin()
+    return idx
+#
+## yield calculation for simulation data
 def find_yield(stress, strain, offset="",number=""):
     load_steps= len(strain)
     #
@@ -559,23 +692,38 @@ def find_yield(stress, strain, offset="",number=""):
         stress_off = [(E * i) - (E * offset) for i in strain]
         stress_o = [(E * i)+ strain[0] for i in strain]
         for i in range(load_steps):
-    	#
         	if  stress_off[i] > stress[i]:
         		x_n1 = i
         		x_n = x_n1 - 1
         		break
         # Use Cramer's rule to find where lines intersect (assume linear between
         #  simulation points)
-
         m1 = E
         a = - E *  offset
-
+        #
         m2 = (stress[x_n1] - stress[x_n]) / (strain[x_n1] - strain[x_n])
         b = stress[x_n] - (m2 * strain[x_n])
-
-
+        #
+        #
         Ystrain = (a - b) / (m2 - m1)
         Ystress = ((a * m2) - (b * m1)) / (m2 - m1)
+    else:
+        index= find_nearest(stress,number)
+        x=np.array(strain[0:index]).reshape((-1, 1))
+        y=np.array(stress[0:index])
+        model= LinearRegression()
+        model.fit(x,y)
+        E = model.coef_[0]
+        stress_off = [(E * strain) - (E * offset) for strain in strain]
+        stress_o= [(E * strain) + model.intercept_ for strain in strain]
+        print('E=', model.coef_)
+        print("b=",model.intercept_)
+        print('index=',index)
+        print('near=',find_nearest(stress,number))
+        diff= np.array(stress)-np.array(stress_off)
+        ind= np.abs(diff).argmin()
+        Ystrain = float(strain[ind])
+        Ystress = float(stress[ind])
     values ={"y_stress": Ystress,
              "y_strain": Ystrain,
              "stress_offset": stress_off}
@@ -583,26 +731,23 @@ def find_yield(stress, strain, offset="",number=""):
   #
  #
 #
-# Plot effective plastic strain
-def plot_eff_strain(j,ax,domain,ani,dataframe):
-    for i in range(0+25*j,24+25*j,5):
-        mk="*"
-        ax.plot(ani,dataframe[str(i)+domain+"_unaltered"],"b-"+mk,ms=15)
-        ax.plot(ani,dataframe[str(i)+domain+"_altered"],"r-"+mk,ms=15)
-        ax.set_xlabel("ratio")
-        ax.set_ylabel("$\\bar\\varepsilon^{p}$")
-        ax.set_title(domain)
-##
+#
 def avg(arr):
     return sum(arr)/len(arr)
   #
  #
 #
 ##
+<<<<<<< HEAD
 def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
 
     P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
     sim_iso= fepx_sim("name",path=isotropic_home+domain)
+=======
+def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etmengiste/jobs/aps/eff_pl_str/",base=5,iso_home=home,path=home,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
+    P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
+    sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
     sim_iso.post_process()
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
@@ -611,6 +756,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
     #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
     del sim_iso
+    print(path)
     #for i in range(6):
         #ax_stress = fig.add_subplot(hig,wid,12+i)
         #ax_stress.hist(stress_iso[str(i)],bins=bin_size,edgecolor="k")
@@ -667,19 +813,28 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
         #    ax2.plot(1,1)
         #    analysis_axes.append(ax2)
             #ax2.set_ylim[]
-
-    simulations = os.listdir(home)
+    print(path)
+    simulations = os.listdir(path)
     simulations.sort()
     effective_pl_strain_unalt = []
     effective_pl_strain_alt = []
 
     vol_eff_pl_strain_unalt = []
     vol_eff_pl_strain_alt = []
+<<<<<<< HEAD
     for index,sim in enumerate(simulations[sim_start:sim_start+5]):
 
         file=home+sim+"/"+domain+"_eff_pl_str.csv"
         if index <1:
             file_iso=home+sim+"/"+domain+"iso_eff_pl_str.csv"
+=======
+    for index,sim in enumerate(simulations[sim_start:sim_start+base]):
+        
+        file=path+sim+"/"+domain[0:-4]+"_eff_pl_str.csv"
+        if index <1:
+            file_iso=path+sim+"/"+domain[:-4]+"iso_eff_pl_str.csv"
+            print(file_iso)
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
             # Eff plast strain
             print("opening file ",file_iso)
             data = pd.read_csv(file_iso)
@@ -690,7 +845,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
 
             vol_eff_pl_strain_alt.append(tot_alt_iso/tot_alt_iso)
             vol_eff_pl_strain_unalt.append(tot_unalt_iso/tot_unalt_iso)
-        sim= fepx_sim(sim,path=home+sim+"/"+domain)
+        sim= fepx_sim(sim,path=path+sim+"/"+domain)
         slip = normalize(sim.get_output("slip",step=step,res=res,ids=ids),absolute=True)
         #stress =  sim.get_output("stress",step=step,res=res,ids=ids)[1]
         mat_par = sim.material_parameters["g_0"]
@@ -707,7 +862,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
         total_unaltered=0
         total_altered_iso=0
         total_unaltered_iso=0
-
+        #
         for index,item in enumerate(slip_systems):
             color = "blue"
             slip_val = slip[index]
@@ -734,7 +889,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
             #        ,edgecolor="k",alpha= 0.2,color=color)
             ax.plot(ratio,slip_val,"o",ms=20,color=color)
         ax4.plot(ratio,sum(slip), "*k",ms=15)
-
+        #
         if debug: # not going to print what you want check again
             print("\n\n\nsum of slip=",sum(slip))
             print("altered")
@@ -745,21 +900,29 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
             print(total_altered_iso)
             print("unaltered iso" )
             print(total_unaltered_iso)
+<<<<<<< HEAD
 
+=======
+        #
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         total_altered=math.sqrt((2/3)*inner_prod(total_altered,total_altered))
         total_unaltered=math.sqrt((2/3)*inner_prod(total_unaltered,total_unaltered))
         total_altered_iso=math.sqrt((2/3)*inner_prod(total_altered_iso,total_altered_iso))
         total_unaltered_iso=math.sqrt((2/3)*inner_prod(total_unaltered_iso,total_unaltered_iso))
-
+        #
         if debug:
             print("\n\n\n\n++")
             print(total_unaltered)
             print(total_altered_iso)
             print(total_unaltered_iso)
-
+        #
         effective_pl_strain_alt.append(total_altered/total_altered_iso)
         effective_pl_strain_unalt.append(total_unaltered/total_unaltered_iso)
+<<<<<<< HEAD
 
+=======
+        #
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         # Eff plast strain
         print("opening file ",file)
         data = pd.read_csv(file)
@@ -773,8 +936,7 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
         normalized_tot_unalt =tot_unalt/tot_unalt_iso
         vol_eff_pl_strain_alt.append(normalized_tot_alt)
         vol_eff_pl_strain_unalt.append(normalized_tot_unalt)
-
-
+        #
         headers = [["tot_alt_msh","tot_unalt_msh","tot_alt_vol","tot_unalt_vol"],[total_altered,total_unaltered,tot_alt, tot_unalt]]
         values = pd.DataFrame(headers)
         print("---------------------+++++-------")
@@ -789,13 +951,13 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     ax2.plot(ratios,effective_pl_strain_unalt,"ob",ms=25)
     ax11.plot(ratios,effective_pl_strain_alt, "or",ms=25)
     ax22.plot(ratios,effective_pl_strain_unalt,"ob",ms=25)
-
+    #
     ax3.plot(ratios,effective_pl_strain_unalt,"db",ms=15)
     ax3.plot(ratios,effective_pl_strain_alt, "*r",ms=30)
-
-
+    #
     ax5.plot([1]+ratios,vol_eff_pl_strain_unalt,"db",ms=15)
     ax5.plot([1]+ratios,vol_eff_pl_strain_alt, "*r",ms=30)
+<<<<<<< HEAD
 
     #
     # Save values
@@ -806,6 +968,14 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     eff_str_vs_ratio.to_csv("/home/etmengiste/jobs/aps/sim_"+domain+"_"+str(sim_start))
 
 
+=======
+    #
+    # Save values
+    eff_str_vs_ratio = pd.DataFrame([[1]+ratios,vol_eff_pl_strain_alt,vol_eff_pl_strain_unalt])
+    eff_str_vs_ratio.to_csv(target_dir+"sim_"+domain+"_"+str(sim_start))
+    #
+    print("target_dir,",target_dir)
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     ax1.set_ylim([0,6])
     ax2.set_ylim([0,6])
     ax3.set_ylim([0,6])
@@ -821,9 +991,9 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     ax11.plot(1,total_altered_iso/total_altered_iso,"k*",ms=25)
     ax22.plot(1,total_unaltered_iso/total_unaltered_iso,"k*",ms=25)
     ax3.plot(1,total_altered_iso/total_altered_iso,"k*",ms=25)
-
+    #
     ax3.plot(1,1,"k*",ms=25)
-
+    #
     #ax1.set_title("$\sum \gamma^{\\alpha_{altered}}$")
     #ax2.set_title("$\sum \gamma^{\\alpha_{unaltered}}$")
     #ax11.set_title("$\sum \gamma^{\\alpha_{altered}}$")
@@ -835,82 +1005,151 @@ def slip_vs_aniso(sim_start,domain,slip_systems,debug=False,save_plot=False,df="
     #analysis_axes[-1].bar(comps,avg_slip_iso)
     #analysis_axes[-2].bar(comps,avg_slip_iso)
     #plt.tight_layout()
-    df[str(sim_start)+domain+"_unaltered"]= [1]+effective_pl_strain_unalt
-    df[str(sim_start)+domain+"_altered"]= [1]+effective_pl_strain_alt
     if save_plot:
+
+        df[str(sim_start)+domain+"_unaltered"]= [1]+effective_pl_strain_unalt
+        df[str(sim_start)+domain+"_altered"]= [1]+effective_pl_strain_alt
         plt.savefig("/home/etmengiste/jobs/aps/images/Largeval_e"+simulations[sim_start]+"_"+domain,bbox_inches=mtransforms.Bbox([[.68, 0], [.85, 0.5]]).transformed(fig.transFigure - fig.dpi_scale_trans))
         print("###--##==+++plotted to file: Largeval_e"+simulations[sim_start]+"_"+domain)
-    else:
+    elif show:
         plt.tight_layout()
         plt.show()
     #
   #
 #
 #
-def plot_eff_strain(start):
-    fig= plt.figure()
-    ax = fig.add_subplot(111)
-    for domain in ["Cube", "Elongated"]:
-        ax.cla()
-        ax.set_ylim([0,2.1])
-        ax.set_xlim([0.9,4.1])
-        for i in range(start,start+25,5):
-            dat = pd.read_csv(aps_home+"sim_"+domain+"_"+str(i)+"_eff_pl_str",index_col=0)
-            #print(dat)
-            print("--")
-            ratios= dat.iloc[0]
-            altered= dat.iloc[1]
-            unaltered= dat.iloc[2]
-            print(altered)
-            print(unaltered)
-            set =int((i-start)/5)
-            ax.plot(ratios,unaltered,"k-*",ls=sets[set],ms=25,lw=4,label="SET "+str(set+1))
-            ax.plot(ratios,altered,"r-D",ls=sets[set],ms=25,lw=4)
-            ax.set_xlabel("ratio")
-            ax.set_ylabel("$\\bar\\varepsilon^{p}$ (-)")
-            ax.set_title(domain)
-            ax.set_xticks(ratios)
-            ax.set_xticklabels(an)
-        sli = slips[int(start/25)]
-        ax.legend()
-        plt.tight_layout()
-        plt.savefig("/home/etmengiste/jobs/aps/images/eff_pl_strain_"+sli+"ss"+domain)
-    #plt.show()
-#
-#
-#
-#
-def plot_yield_stress(start):
-    fig= plt.figure()
-    ax = fig.add_subplot(111)
-    for domain in ["Cube", "Elongated"]:
-        ax.cla()
-        ax.set_ylim([127,175])
-        for i in range(start,start+25,5):
-            dat = pd.read_csv(aps_home+"sim_"+domain+"_"+str(i)+"_yields",index_col=0)
-            #print(dat)
-            print("--")
-            ratios= dat.iloc[0]
-            yields = dat.iloc[1]
-            print(ratios)
-            print(yields)
-            set =int((i-start)/5)
-            ax.plot(ratios,yields,"ko",ls=sets[set],ms=15,label="SET "+str(set+1))
-            ax.set_xlabel("ratio")
-            ax.set_ylabel("$\sigma_y$ (MPa)")
-            ax.set_title(domain)
-        sli = slips[int(start/25)]
-        ax.set_xticks(ratios)
-        ax.set_xticklabels(an)
-        ax.legend()
-        plt.tight_layout()
-        plt.savefig("/home/etmengiste/jobs/aps/images/yield_stress"+sli+"ss"+domain)
-    #plt.show()
+## Plot effective plastic strain
+def plot_eff_strain(start,all=False,marker_size=40,aps_home="/home/etmengiste/jobs/aps/eff_pl_str/"):
+    y_label="$\\bar\\varepsilon^{p}$ (-)"
+    for domain in ["Cube"]:
 
+        if all:
+            fig, axs = plt.subplots(1, 3,sharey="row")
+            for j in range(3):
+                ax = axs[j]
+                ax.cla()
+                ax.set_ylim([-0.1,2.1])
+                ax.set_xlim([0.9,4.1])
+                slip = slips[j]
+                ax.set_title(slip+" slip systems strengthened")
+                print(j+1)       
+                for i in range(30*j,30*j+30,6):
+                    print(i)
+                    name=aps_home+"sim_"+domain+"_"+str(i)+"_eff_pl_str"
+                    print(name)
+                    dat = pd.read_csv(name,index_col=0)
+                    #print(dat)
+                    print("--")
+                    ratios= dat.iloc[0]
+                    altered= dat.iloc[1]
+                    unaltered= dat.iloc[2]
+                    print("altered ",altered)
+                    print("unaltered ",unaltered)
+                    set =int((i-30*j)/6)
+                    print(set)
+                    ax.plot(ratios,unaltered,"k-o",ls=sets[set],ms=marker_size,label="Set "+str(set+1))
+                    ax.plot(ratios,altered,"kD",ls=sets[set],ms=marker_size)
+                    ax.set_xticks(ratios)
+                    ax.set_xticklabels(an,rotation=90)     
+                    ax.set_yticks([0,0.5,1,1.5,2])
+                    ax.set_yticklabels(["0.00","0.50","1.00","1.50","2.00"])  
+
+            axs[0].set_ylabel(y_label,labelpad=25)
+        else:
+            fig= plt.figure()
+            ax = fig.add_subplot(111)
+            ax.cla()
+            ax.set_ylim([0,2.1])
+            ax.set_xlim([0.9,4.1])
+            for i in range(start,start+25,5):
+                dat = pd.read_csv(aps_home+"sim_"+domain+"_"+str(i)+"_eff_pl_str",index_col=0)
+                #print(dat)
+                print("--")
+                ratios= dat.iloc[0]
+                altered= dat.iloc[1]
+                unaltered= dat.iloc[2]
+                print(altered)
+                print(unaltered)
+                set =int((i-start)/5)
+                ax.plot(ratios,unaltered,"k-*",ls=sets[set],ms=25,lw=4,label="Set "+str(set+1))
+                ax.plot(ratios,altered,"D",ls=sets[set],ms=25,lw=4)
+                ax.set_title(domain)
+                ax.set_xticks(ratios)
+                ax.set_xticklabels(an)
+
+        sli = slips[int(start/25)]
+        #ax.legend()
+        y_label="$\\bar\\varepsilon^{p}$ (-)"
+
+
+        fig.supxlabel(x_label,fontsize=SIZE)
+        fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
+    
+        plt.savefig("eff_pl_strain_"+sli+"ss"+domain)
+    #plt.show()
+  #
+ #
+#
+##
+##
+def plot_yield_stress(start,all=False,marker_size=40):
+    for domain in ["Cube", "Elongated"]:
+
+        if all:
+            fig, axs = plt.subplots(1, 3,sharey="row")
+            for j in range(3):
+                ax = axs[j]
+                ax.cla()
+                ax.set_ylim([127,175])
+                slip = slips[j]
+                ax.set_title(slip+" slip systems altered")
+                print(j+1)       
+                for i in range(25*j,25*j+25,5):
+                    name=aps_home+"sim_"+domain+"_"+str(i)+"_yields"
+                    dat = pd.read_csv(name,index_col=0)
+                    #print(dat)
+                    print("--")
+                    ratios= dat.iloc[0]
+                    yields = dat.iloc[1]
+                    print(ratios)
+                    print(yields)
+                    set =int((i-25*j)/5)
+                    ax.plot(ratios,yields,"ko",ls=sets[set],ms=marker_size,label="Set "+str(set+1))
+                    ax.set_xticks(ratios)
+                    ax.set_xticklabels(an,rotation=60)       
+            axs[0].legend()
+        else:   
+            fig= plt.figure()
+            ax = fig.add_subplot(111)
+            ax.cla()
+            ax.set_ylim([127,175])
+            for i in range(start,start+25,5):
+                dat = pd.read_csv(aps_home+"sim_"+domain+"_"+str(i)+"_yields",index_col=0)
+                #print(dat)
+                print("--")
+                ratios= dat.iloc[0]
+                yields = dat.iloc[1]
+                print(ratios)
+                print(yields)
+                set =int((i-start)/5)
+                ax.plot(ratios,yields,"ko",ls=sets[set],ms=15,label="SET "+str(set+1))
+
+                ax.set_title(domain)
+                ax.set_xticks(ratios)
+                ax.set_xticklabels(an)
+        sli = slips[int(start/25)]
+        y_label="$\sigma_y$ (MPa)"
+        
+
+        fig.supxlabel(x_label)
+        fig.supylabel(y_label)
+        fig.subplots_adjust(left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1)
+    
+        plt.savefig("yield_stress"+sli+"ss"+domain)
+    #plt.show()
+    #
     print("------------------------------")
     #exit(0)
-#
-#
 #
 ##
 def get_bulk_output(simulation_plotted,domain):
@@ -932,12 +1171,12 @@ def get_bulk_output(simulation_plotted,domain):
     g_0= normalize(sim.material_parameters["g_0"],maximum=1)
     del sim
     #pprint(sim_results, preamble="#\n--------\n#")
-
+    #
     fig = plt.figure(figsize=[60,60])
-
+    #
     width = 5
     length = 2
-
+    #
     plotted= 1
     #
     #
@@ -981,18 +1220,15 @@ def get_bulk_output(simulation_plotted,domain):
     ax.set_ylim([0,200])
     #
     #
-
-
     print("-------|---------|---------|---------|---------|---------|---------|---------|")
     print("-------|---------|---------|---------|---------|---------|---------|---------|")
-
+    #
     for value in values:
         val=value.split("=")[1]
         try:
             steps_val= sim_results[val]
             #print(step,steps_val)
             steps_val = normalize(steps_val,maximum=1)
-
             plotted+=1
             ax = fig.add_subplot(width,length,plotted)
             if isinstance(steps_val,float):
@@ -1006,20 +1242,15 @@ def get_bulk_output(simulation_plotted,domain):
         #print("\n\n\n++++++",value,"\n",steps_val)
     #pprint(sim_results)
     #
-
-    #
     #os.chdir("../../")
     #
     fig.suptitle("simulations "+simulation_plotted)
     plt.tight_layout()
     #plt.show()
-
     plt.savefig("/home/etmengiste/jobs/aps/images/tex_output/"+domain+"_"+simulation_plotted)
     #
     #
   #
-#
-#
 #
 ##
 def get_yield_v_aniso_ratio(sim_start,domain,home=home,plot=False,ratios=[ 1.25, 1.5, 1.75, 2.0, 4],ids=[0],step = "28",res ="mesh"):
@@ -1079,8 +1310,6 @@ def get_yield_v_aniso_ratio(sim_start,domain,home=home,plot=False,ratios=[ 1.25,
     #
   #
 #
-#
-#
 ##
 def package_oris(path,name="elset_ori.csv"):
     sim= fepx_sim(path[-9],path=path)
@@ -1110,13 +1339,14 @@ def package_oris(path,name="elset_ori.csv"):
             grain_data.append(steps["ori.step"+str(j)][i].split()[1])
             grain_data.append(steps["ori.step"+str(j)][i].split()[2])
         values.append(grain_data)
-
+    #
     arr= pd.DataFrame(values,columns=header)
     arr.to_csv("/home/etmengiste/jobs/aps/aps_add_slip_ori/"+name+".csv")
     print(" Wrote file "+name+".csv")
     #
   #
 #
+<<<<<<< HEAD
 #
 #
 P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
@@ -1124,6 +1354,18 @@ def calc_eff_pl_str(sim,domain,home=home,under="", debug=False):
     file = open(home+sim+"/"+domain+"_eff_pl_str.csv","w")
     file_iso = open(home+sim+"/"+domain+"_iso_eff_pl_str.csv","w")
 
+=======
+##
+P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
+#
+#
+def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=False):
+    if name=="":
+        name= domain
+    file = open(home+sim+"/"+name+"_alt_eff_pl_str.csv","w")
+    file_iso = open(iso_home+"isotropic"+"/"+name+"_eff_pl_str.csv","w")
+    #
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     sim= fepx_sim(sim,path=home+sim+"/"+domain)
     sim.post_process()
     num_elts = int(sim.sim['**general'].split()[2])
@@ -1134,18 +1376,27 @@ def calc_eff_pl_str(sim,domain,home=home,under="", debug=False):
     elt_vol_final = sim.get_output("elt"+under+"vol",step=step,res="elts",ids="all")
     mat_par = sim.material_parameters["g_0"]
     del sim
+<<<<<<< HEAD
     #
     #   ISO
     sim_iso= fepx_sim("name",path=isotropic_home+domain)
+=======
+    #   ISO
+    sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     sim_iso.post_process()
     step_iso = sim_iso.sim['**step']
     slip_iso = sim_iso.get_output("slip",step="28",res="elts",ids="all")
-    elt_vol_iso = sim_iso.get_output("elt_vol",step="0",res="elts",ids="all")
+    elt_vol_iso = sim_iso.get_output("eltvol",step="0",res="elts",ids="all")
     v_tot_iso = sum(elt_vol_iso[1]["0"])
-    elt_vol_final_iso = sim_iso.get_output("elt_vol",step=step_iso,res="elts",ids="all")
+    elt_vol_final_iso = sim_iso.get_output("eltvol",step=step_iso,res="elts",ids="all")
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
     #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
     del sim_iso
+<<<<<<< HEAD
+=======
+    #
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     strength = [ float(i.split("d")[0]) for i in mat_par]
     #exit(0)
     altered  =  []
@@ -1154,15 +1405,19 @@ def calc_eff_pl_str(sim,domain,home=home,under="", debug=False):
         if val>baseline:
             altered.append(index)
             ratio = val/baseline
+<<<<<<< HEAD
 
+=======
+    print(ratio)
+    #
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
     #
     avg_eff_pl_str_alt = []
     avg_eff_pl_str_unalt = []
-
-
+    #
     avg_eff_pl_str_alt_iso = []
     avg_eff_pl_str_unalt_iso = []
-
+    #
     print("***---***")
     #print(altered)
     #print(baseline)
@@ -1170,15 +1425,19 @@ def calc_eff_pl_str(sim,domain,home=home,under="", debug=False):
     values = "elt_vol, tot_vol, vol_frac, eff_pl_alt, eff_pl_unalt, vol_eff_pl_alt, vol_eff_pl_unalt"
     file.write(values+"\n")
     file_iso.write(values+"\n")
+<<<<<<< HEAD
 
     for el in range(num_elts):
 
+=======
+    #
+    for el in range(num_elts):
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         total_altered = 0
         total_unaltered = 0
-
         total_altered_iso = 0
         total_unaltered_iso = 0
-
+        #
         for i in range(12):
             schmid_val = P[i]
             shear_val = slip[0][str(el)][i]
@@ -1209,33 +1468,29 @@ def calc_eff_pl_str(sim,domain,home=home,under="", debug=False):
                     print("-----------------------------------##-------##-------##")
                     print("-----------------------------------##-------##-------##")
                     print("-----------------------------------##-------##\n\n\n")
-
+        #
         eff_pl_str_alt = math.sqrt((2/3)*inner_prod(total_altered,total_altered))
         eff_pl_str_unalt = math.sqrt((2/3)*inner_prod(total_unaltered,total_unaltered))
-
-
-
+        #
         eff_pl_str_alt_iso = math.sqrt((2/3)*inner_prod(total_altered_iso,total_altered_iso))
         eff_pl_str_unalt_iso = math.sqrt((2/3)*inner_prod(total_unaltered_iso,total_unaltered_iso))
-
+        #
+        #
         v_el = elt_vol_final[0][str(el)][0]
         v_frac = v_el/v_tot
-
+        #
         #iso
         v_el_iso = elt_vol_final_iso[0][str(el)][0]
         v_frac_iso = v_el_iso/v_tot_iso
-
+        #
         # altered
-
         avg_eff_pl_str_alt.append(eff_pl_str_alt*v_frac)
         avg_eff_pl_str_unalt.append(eff_pl_str_unalt*v_frac)
-
+        #
         #iso
-
         avg_eff_pl_str_alt_iso.append(eff_pl_str_alt_iso*v_frac_iso)
         avg_eff_pl_str_unalt_iso.append(eff_pl_str_unalt_iso*v_frac_iso)
-
-
+        #
         if debug:
             print("el vol", v_el)
             print("tot vol", v_tot)
@@ -1248,14 +1503,519 @@ def calc_eff_pl_str(sim,domain,home=home,under="", debug=False):
             print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_alt[el])
             print("\n Vol avg Effective plastic altered :",avg_eff_pl_str_unalt[el])
             print("-----------------------------------##-------##\n\n")
+<<<<<<< HEAD
 
         values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])
         file.write(values+"\n")
 
         values = str(v_el_iso)+"," + str(v_tot_iso)+","+ str(v_frac_iso)+","+ str(eff_pl_str_alt_iso)+ ","+ str(eff_pl_str_unalt_iso)+ ","+ str(avg_eff_pl_str_alt_iso[el])+ ","+ str(avg_eff_pl_str_unalt_iso[el])
+=======
+        #
+        values = str(v_el)+"," + str(v_tot)+","+ str(v_frac)+","+ str(eff_pl_str_alt)+ ","+ str(eff_pl_str_unalt)+ ","+ str(avg_eff_pl_str_alt[el])+ ","+ str(avg_eff_pl_str_unalt[el])
+        file.write(values+"\n")
+        #
+        values = str(v_el_iso)+"," + str(v_tot_iso)+","+ str(v_frac_iso)+","+ str(eff_pl_str_alt_iso)+ ","+ str(eff_pl_str_unalt_iso)+ ","+ str(avg_eff_pl_str_alt_iso[el])+ ","+ str(avg_eff_pl_str_unalt_iso[el])
+        #print(values)
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
         file_iso.write(values+"\n")
     file.close()
     file_iso.close()
     print("\n__")
     print(sum(avg_eff_pl_str_alt))
     print(sum(avg_eff_pl_str_unalt))
+<<<<<<< HEAD
+=======
+    file.close()
+    file_iso.close()
+  #
+ #
+#
+##
+def plot_svs_from_csv(name):
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({'font.size': 65})
+    #plt.rcParams['text.usetex'] = True
+    plt.rcParams['font.family'] = 'DejaVu Serif'
+    plt.rcParams["mathtext.fontset"] = "cm"
+    plt.rcParams['figure.figsize'] = 40,20
+    ax  = plt.subplot()
+    exx= pd.read_csv(name)
+    stress_exp = [float(i) for i in exx.iloc[:,2]]
+    strain_exp = [float(i) for i in exx.iloc[:,1]]
+    nam=name.replace("_",' ')
+    sampling_max = 125
+    yield_values = find_yield(stress_exp,strain_exp,number=sampling_max)
+
+    ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
+    pprint(yield_values)
+    ax.plot(strain_exp, stress_exp,"k-",markersize=2, lw=0.5)
+    ax.plot(ystrain,ystress,"k*",ms=50,label="$\sigma_y$="+str(yield_values["y_stress"]))
+    ax.hlines(sampling_max,xmin=0,xmax=0.02)
+    #ax.scatter(strain_exp[0:len(strain_exp):name[4]], stress_exp[0:len(stress_exp):name[4]]
+    #    , marker=yeild_markers[i],s=60,fc='w',color= 'k',zorder=i+3, label=nam[0:3])
+    stress = '$\sigma$'
+    strain='$\epsilon$'
+    x_label = f'{strain} (-)'
+    y_label = f'{stress} (MPa)'
+    ax.legend(loc="lower right")
+    # Compile labels for the graphs
+    ax.set_ylim([0,270])
+    ax.set_xlim([0,0.06])
+    #lines_labels = [a.get_legend_handles_labels() for a in plt.axes]
+    #lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+    #plt.legend(lines, labels,loc="best", fontsize="small")
+    #plt.title(title,loc='center')
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+
+    plt.tight_layout()
+    file_name =name[:-4]
+    plt.savefig(file_name+"_stress_v_strain.png")
+    ax.cla()
+#
+##
+def combined_ipf(arr):
+    unirr_insitu_ff = "/home/etmengiste/jobs/aps/2023/Fe9Cr HEDM data repository/Fe9Cr-61116 (unirr)/in-situ ff-HEDM/"
+    irr_insitu_ff1 = "/home/etmengiste/jobs/aps/2023/Fe9Cr HEDM data repository/KGT1119 (450C, 0.1 dpa)/In-situ ff HEDM/"
+    irr_insitu_ff2 = "/home/etmengiste/jobs/aps/2023/Fe9Cr HEDM data repository/KGT1147 (300C, 0.1 dpa)/In-situ ff HEDM/"
+
+    preamble= "In-situ FF Parent Grain Data "
+
+    #
+    #
+    # Generates the ori files in
+    for dirs in [unirr_insitu_ff, irr_insitu_ff1, irr_insitu_ff2]:
+    #for dirs in arr:
+        os.chdir(dirs)
+        dir = [i for i in os.listdir(dirs) if i.endswith(".csv") and i.startswith(preamble)]
+        dir.sort()
+        # initial
+        file = open(dirs+"ini","w")
+        csv = pd.read_csv(dirs+dir[0])
+        length = len(csv)
+        for i in range(length):
+            #print(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i]))
+            file.write(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i])+"\n")
+        # final
+        file = open(dirs+"fin","w")
+        csv = pd.read_csv(dirs+dir[-1])
+        length = len(csv)
+        for i in range(length):
+            #print(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i]))
+            file.write(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i])+"\n")
+        # all
+        file = open(dirs+"all","w")
+        for i in dir:
+                print(dirs+i[:-4].replace(" ","_")+"_ori")
+                csv = pd.read_csv(dirs+i)
+                length = len(csv)
+                for i in range(length):
+                    #print(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i]))
+                    file.write(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i])+"\n")
+        os.system("~/code/data_reduction_scripts/plot_ipf.sh")
+#
+##
+def get_stress_strain(path,dir="z1",strain_rate = 1e-3):
+    # Get the stress and strain for a given set of simulation
+    #
+    file = open(path+"post.force."+dir).readlines()[2:]
+    stress = []
+    strain = []
+    for i in file:
+        arr = i.split()[-3:]
+        #print("string version",arr)
+
+        arr = [float(n)  for n in arr]
+        #print("float",arr)
+        stress.append(arr[0]/arr[1])
+        strain.append(arr[2]*strain_rate)
+    return [stress,strain]
+#
+##
+def Cubic_sym_quats():
+    # Generate Cubic symetry angle axis pairs for the cubic fundamental region
+    pi = math.pi
+    AngleAxis =  np.array([[0.0     , 1 ,   1,    1 ],   # % identity
+                    [pi*0.5  , 1 ,   0,    0 ],   # % fourfold about x1
+                    [pi      , 1 ,   0,    0 ],   #
+                    [pi*1.5  , 1 ,   0,    0 ],   #
+                    [pi*0.5  , 0 ,   1,    0 ],   # % fourfold about x2
+                    [pi      , 0 ,   1,    0 ],   #
+                    [pi*1.5  , 0 ,   1,    0 ],   #
+                    [pi*0.5  , 0 ,   0,    1 ],   # % fourfold about x3
+                    [pi      , 0 ,   0,    1 ],   #
+                    [pi*1.5  , 0 ,   0,    1 ],   #
+                    [pi*2/3  , 1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,   1,    1 ],   #
+                    [pi*2/3  ,-1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,   1,    1 ],   #
+                    [pi*2/3  , 1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,  -1,    1 ],   #
+                    [pi*2/3  ,-1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,  -1,    1 ],   #
+                    [pi      , 1 ,   1,    0 ],   # % twofold about 110
+                    [pi      ,-1 ,   1,    0 ],   #
+                    [pi      , 1 ,   0,    1 ],   #
+                    [pi      , 1 ,   0,   -1 ],   #
+                    [pi      , 0 ,   1,    1 ],   #
+                    [pi      , 0 ,   1,   -1 ]])
+
+    cubic_sym = np.array([quat_of_angle_ax(a[0],a[1:]) for a in AngleAxis])
+    return cubic_sym
+#
+##
+def quat_prod(q1, q2,debug=False):
+       # Quaternion Product
+       # input a q1 and 4*1
+       many =False
+       try:
+              a = np.array([q[0] for q in q1.T])
+              b = np.array([q[0] for q in q2.T])
+              avect= np.array([q[1:] for q in q1.T])
+              bvect= np.array([q[1:] for q in q2.T])
+              if debug:
+                     print("a",avect.shape)
+                     print("b",bvect.shape)
+              many=True
+       except:
+              a=q1[0]
+              b=q2[0]
+              avect=q1[1:]
+              bvect=q2[1:]
+       #
+       a3 = np.tile(a,[3,1]).T
+       b3 = np.tile(b,[3,1]).T
+
+       if debug:
+              print("a3",a3.shape)
+       #
+       if many:
+              dotted_val = np.array([np.dot(a,b) for a,b in zip(avect,bvect)])
+              crossed_val = np.array([np.cross(a,b) for a,b in zip(avect,bvect)])
+       else:
+              dotted_val=np.dot(avect,bvect)
+              crossed_val=np.cross(avect, bvect)
+       
+       #
+       ind1 =a*b - dotted_val
+       if debug:
+              print(ind1.shape)
+
+       #print(crossed_val.shape)
+       #print((b3*avect).shape)
+       val=a3*bvect + b3*avect +crossed_val
+
+       if debug:
+              print(val)
+       quat = np.array([[i,v[0],v[1],v[2]] for i,v in zip(ind1, val)])
+       #
+       if many:
+              max = 0
+              max_ind=0
+              for ind,q in enumerate(quat):
+                     if q[0]<0:
+                            quat[ind] = -1*quat[ind]
+                     if ind==0:
+                            max= quat[ind][0]
+                            max_ind=ind
+                     elif quat[ind][0]>max:
+                            #print("larger")
+                            #print(quat[ind])
+                            max=quat[ind][0]
+                            max_ind=ind
+                     #
+              value = normalize_vector(quat[max_ind])
+              #print("--------",value)
+              return value
+       else:
+              if quat[0]<0:
+                     quat=-1*quat
+              #print(quat)
+              return quat
+#
+##
+def quat_of_angle_ax(angle, raxis):
+       # angle axis to quaternion
+       #
+       half_angle = 0.5*angle
+       #
+       cos_phi_by2 = math.cos(half_angle)
+       sin_phi_by2 = math.sin(half_angle)
+       #
+       rescale = sin_phi_by2 / np.sqrt(np.dot(raxis,raxis))
+       quat = np.append([cos_phi_by2],np.tile(rescale,[3])*raxis)
+       if cos_phi_by2<0:
+              quat = -1*quat
+       #
+       #
+       return quat
+#
+##
+def ret_to_funda(quat, sym_operators=Cubic_sym_quats(),debug=False):
+       #    Return quaternion to the fundamental region given symerty 
+       #        operatiors
+       #
+       m = len(sym_operators)
+       n = 1
+       # if passing a set of symetry operators make sure to [quat]
+       tiled_quat = np.tile(quat,(1,m))
+       #
+       reshaped_quat=tiled_quat.reshape(4,m*n,order='F').copy()
+       sym_operators=sym_operators.T
+       if debug:
+              print("\n\n\n+++++ ret to funda ++++")
+              pprint(tiled_quat,preamble="tiled")
+              print(tiled_quat.shape)
+              pprint(reshaped_quat,preamble="reshaped")
+              print("old shape",sym_operators.shape)
+              pprint(sym_operators)
+              print(sym_operators.shape)
+       equiv_quats = quat_prod(reshaped_quat,np.tile(sym_operators,(1,n)))
+       #pprint(equiv_quats)
+       #exit(0)
+       return equiv_quats
+#
+##
+def rod_to_quat(val,debug=False):
+       # Rodrigues vector to Quaternion
+       #
+       norm,mag = normalize_vector(val,magnitude=True)
+       omega= 2*math.atan(mag)
+       if debug:
+              print("an ax",quat_of_angle_ax(omega,norm))
+              print(omega)
+       s= math.sin(omega/2)
+       c= math.cos(omega/2)
+       values = np.array([c, s*norm[0],s*norm[1], s*norm[2]])
+       return values
+#
+##
+def quat_to_rod(val):
+       # Quaternion to Rodrigues vector
+       #
+       omega = 2*math.acos(val[0])
+       n = val[1:]/math.sin(omega/2)
+       r = math.tan(omega/2)*n
+       return r
+#
+#   Encorporate into fepx_sim class
+def get_elt_ids(home,grain_id,domain="Cube"):
+       file = open(home+"common_files/"+domain+".stelt").readlines()
+       elt_ids = [i for i,line in enumerate(file) if line.split()[1]==str(grain_id)]
+       return elt_ids
+#
+##
+def rot_mat(arr1,arr2):
+    #   Find the roation matrix from a basis matrix 
+    #       Q_ij = arr1 => arr2
+    #       Q_ji = arr1 => arr2
+    Q_ij = []
+    Q_ji = []
+    if len(arr1) ==len(arr2):
+        for a in arr1:
+            temp = []
+            for b in arr2:
+                    temp.append(np.dot(a,b))
+            Q_ij.append(temp)
+        for b in arr1:
+            temp = []
+            for a in arr2:
+                    temp.append(np.dot(a,b))
+            Q_ji.append(temp)                     
+        return [np.array(Q_ij),np.array(Q_ji)] 
+    else:  
+            print("not same size")
+#
+##
+def dif_degs(start,fin,debug=False):
+    q_ij,q_ji = rot_mat(start,fin)
+    #print(np.dot(q_ij.T,start[0]))
+    #print("---")
+    #print(np.dot(q_ij.T,fin[0]))
+    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    r1 = ret_to_funda(v1)
+    pi=math.pi
+    thet_ij =math.acos(min([r1[0],1]))*(180/pi)
+    if debug:
+        r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
+        thet_ji =math.acos(r2[0])*(180/pi)
+        return [thet_ij,thet_ji]
+    return thet_ij
+#
+##
+def plot_rod_outline(ax):
+    #
+    a = [ (2**0.5)-1,   3-(2*(2**0.5)),  ((2**0.5)-1)]
+    b = [ (2**0.5)-1,     ((2**0.5)-1), 3-(2*(2**0.5))]
+    c = [ 3-(2*(2**0.5)),   (2**0.5)-1,   ((2**0.5)-1)]
+    #
+    X= [a[0],b[0],c[0]]
+    Y= [a[1],b[1],c[1]]
+    Z= [a[2],b[2],c[2]]
+
+    #print("x",X)
+    #print("y",Y)
+    #print("z",Z)
+
+    neg_x= [-i for i in X]
+    neg_y= [-i for i in Y]
+    neg_z= [-i for i in Z]
+
+    X+=neg_x+X    +X    +neg_x+X    +neg_x+neg_x
+    Y+=neg_y+Y    +neg_y+Y    +neg_y+neg_y+Y
+    Z+=neg_z+neg_z+Z    +Z    +neg_z+Z    +neg_z
+
+
+    # Plot the 3D surface
+    ax.scatter(X,Y,Z,marker=".",c="k")
+    #ax.plot_trisurf(X, Y, Z,alpha=0.3)
+    ax.scatter(0, 0, 0,color="k")
+    ax.set(xlim=(-2.5, 2.5), ylim=(-2.5, 2.5), zlim=(-2.5, 2.5),
+            xlabel='X', ylabel='Y', zlabel='Z')
+
+    ax.set(xlim=(-.6, .6), ylim=(-.6, .6), zlim=(-.6, .6),
+            xlabel='X', ylabel='Y', zlabel='Z')
+    ax.set_aspect("equal")
+    #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
+    for i in range(0,len(X),3):
+            verts = [list(zip(X[i:i+3],Y[i:i+3],Z[i:i+3]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+
+    s = 3-(2*(2**0.5))
+    l = (2**0.5)-1
+    new_X= [l, l,  l,  l,  l,  l,  l, l]
+    new_Y= [l, s, -s, -l, -l, -s,  s, l]
+    new_Z= [s, l,  l,  s, -s, -l, -l, -s]
+    vals = [new_X,new_Y,new_Z]
+    for i in range(3):
+            verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+    #
+    #
+    new_X= [-l, -l,  -l,  -l,  -l,  -l,  -l, -l]
+    vals = [new_X,new_Y,new_Z]
+    for i in range(3):
+            verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+    #
+#
+##
+def plot_std_mean_data(NAME,ylims="",debug=False):
+    norm =False
+    result ={}
+    results = pd.read_csv(NAME+".csv").transpose()
+    for i in results:
+        result[results[i]["case"]]= [float(results[i]["mean"]),float(results[i]["std"])]
+        #print(results[i]["case"],result[results[i]["case"]])
+    DOMAIN = [ "CUB"]
+    DOM = [ "cubic"]
+    NSLIP  = ["2","4", "6"]
+    #NSLIP =["2"]
+    ANISO  = ["125", "150", "175", "200", "400"]
+    SETS    = ["1", "2", "3", "4", "5"]
+    an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+    #SETS = ["1"]
+    sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+    #
+    ###
+    aniso = [100, 125, 150, 175, 200, 300, 400]
+    differences= {}
+    difs2={}
+
+    if debug:
+        NSLIP =["2"]
+        DOMAIN = ["CUB"]
+        DOM = ["cubic"]
+
+    for dom in DOMAIN:
+        fig, axs = plt.subplots(2, 3,sharex="col",sharey="row",figsize=(23,13))
+        for slip in NSLIP:
+            #
+            ax0= axs[0][NSLIP.index(slip)]
+            ax1= axs[1][NSLIP.index(slip)]
+            #
+            ax0.set_title(slip+" slip systems strengthened")
+            #
+            ax0.set_xlim([90,410])
+            ax1.set_xlim([90,410])
+            if ylims!="":
+                ax0.set_ylim([0.95,2.0])
+                ax1.set_ylim([0.95,2.0])
+            else:
+                ax0.set_ylim([-0.4,20.4])
+                ax1.set_ylim([-0.4,10.4])
+            #fig, ax = plt.subplots(1, 1,figsize=(10,12))
+            for set,line in zip(SETS,sets):
+                #
+                try:
+                    iso_mean = result["DOM_"+dom+"_ISO"][0]
+                    iso_std =result["DOM_"+dom+"_ISO"][1]
+                    norm = True
+                except:
+                    iso_mean= 0
+                    iso_std = 0
+                index1 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_125"]
+                index2 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_150"]
+                index3 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_175"]
+                index4 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_200"]
+                index5 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_300"]
+                index6 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_400"]
+
+                list1 = [iso_mean,index1[0], index2[0],
+                    index3[0], index4[0], index5[0],index6[0]]
+                list2 = [iso_std,index1[1], index2[1],
+                    index3[1], index4[1], index5[1],index6[1]]
+                
+                differences[dom+"_"+slip+"_"+set] = list1
+                difs2[dom+"_"+slip+"_"+set] = list2
+                #print(list)
+                #
+                if norm == True:
+                    list1 = [i/result["DOM_"+dom+"_ISO"][0] for i in list1]
+                    list2 = [i/result["DOM_"+dom+"_ISO"][1] for i in list2]
+                #### Start of plotting code
+                #
+                ax0.plot(aniso,list1,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                ax1.plot(aniso,list2,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                #
+                marker_size =130
+                if set =="7":
+                    ax0.scatter(iso_mean,
+                        iso_mean, marker="o", s=marker_size,
+                        edgecolor="k", label="$\sigma$ : Isotropic", color="k")
+                    #
+                    ax1.scatter(iso_std,
+                        iso_std, marker="o", s=marker_size,
+                        edgecolor="k", label="Isotropic", color="k")
+                #
+                for a, l, l2 in zip(aniso, list1, list2):
+                    ax0.scatter(a, l, marker="o", s=marker_size,edgecolor="k",color= "k")
+                    ax1.scatter(a, l2, marker="o", s=marker_size,edgecolor="k",color= "k")
+                #
+                ax0.set_xticks(aniso)
+                ax0.set_xticklabels(an,rotation=90)
+
+                ax1.set_xticks(aniso)
+                ax1.set_xticklabels(an,rotation=90)
+        if norm:
+            val = "(-)"
+        else:
+             val= "($^{\circ}$)"
+        axs[1][0].set_ylabel("$\\tilde{\\theta}$  "+val,labelpad=25)
+        axs[0][0].set_ylabel("$\\bar{\\theta}$  "+val,labelpad=25)
+        ###
+        #
+        # Put title here
+        #title = "Deviation from Taylor Hypothesis: \n"+str(DOM[DOMAIN.index(dom)])+" domain, "+str(slip)+" slip systems\n"
+        #
+        deg = "$^{\circ}$"
+        #
+        x_label = f'$p$ (-)'
+        y_label = f'Normalized Misorienation ({deg})'
+        fig.supxlabel(x_label,fontsize=SIZE)
+        plt.subplots_adjust(left=0.09, right=0.98,top=0.95, bottom=0.124, wspace=0.07, hspace=0.1)
+        fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean_std.png",dpi=400)
+    
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7

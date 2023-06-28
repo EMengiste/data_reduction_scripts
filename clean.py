@@ -93,6 +93,7 @@ for i in list_of_sims:
                 print(domain+"/"+out[1])
                 output_file= open(domain+"/"+out[0],"r").readlines()
                 #
+<<<<<<< HEAD
                 step="0"
                 # Find out current step
                 for out in output_file:
@@ -121,6 +122,59 @@ for i in list_of_sims:
                         print("Completed "+completed_sims[-1])
                     if output == "_EVPS: Iterat":
                         pass
+=======
+                if j in os.listdir(domain):
+                    print("what are you doing here")
+                    list_of_duplicates.append(domain)
+                    print(domain)
+
+                    for file in os.listdir(domain+"/"+j):
+                        print(file)
+                        try:
+                            shutil.move(domain+"/"+j+"/"+file,domain)
+                        except:
+                            print("there's likely a double")
+                            pass
+                num=len(os.listdir(domain))
+                if num>9:
+                    #
+                    out = [item for item in os.listdir(domain) if item.startswith("output.")]
+                    #
+                    out.sort()
+                    #print(domain+"/"+out[1])
+                    output_file= open(domain+"/"+out[0],"r").readlines()
+                    #
+                    step="0"
+                    # Find out current step
+                    for out in output_file:
+                        if out.startswith("Info   : Running step"):
+                            step = out[17:]
+                    #
+                    output = output_file[-2]
+                    print(output)
+                    if output.startswith(completed):
+                        print("Simulation completed----move")
+                        # Show destination
+                        print(destination+i+"/"+j)
+                        completion_file.write("--Completed--")
+                        #print(os.getcwd())
+                        if debug_move:
+                            print( "---"+destination+i+"/")
+                            print(domain)
+                            completed_sims.append(i+" "+j)
+                        else:
+                            if j in os.listdir(destination+i+"/"+j):
+                                print("alread here bud")
+                            else:
+                                shutil.move(domain, destination+i+"/"+j)
+                                print( " Moved to "+destination+i+"/"+j)
+                            completed_sims.append(i+" "+j)
+                            print("Completed "+completed_sims[-1])
+                        if output == "_EVPS: Iterat":
+                            pass
+                        else:
+                            array.append(float(output_file[-3][23:-6])/3600)
+>>>>>>> 7b9bbbd011dc4c7f1974c1cfdfbc52ffdd8b49d7
                     else:
                         array.append(float(output_file[-3][23:-6])/3600)
                 else:
