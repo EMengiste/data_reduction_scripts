@@ -6,7 +6,12 @@ import matplotlib.transforms as mtransforms
 import math
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-plt.rcParams.update({'font.size': 45})
+from mpl_toolkits.mplot3d import axes3d
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from scipy.spatial.transform import Rotation as R
+SIZE=35
+# Latex interpretation for plots
+plt.rcParams.update({'font.size': SIZE})
 #plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"
@@ -16,7 +21,14 @@ plt.rcParams["figure.subplot.right"] = 0.995
 plt.rcParams["figure.subplot.top"] = 0.891
 plt.rcParams["figure.subplot.wspace"] = 0.21
 plt.rcParams["figure.subplot.hspace"] = 0.44
-plt.rcParams['figure.figsize'] = 23,8
+plt.rcParams['figure.figsize'] = 23,8#
+plt.rc('font', size=SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SIZE)    # legend fontsize
+plt.rc('figure', titlesize=SIZE)  #
 import numpy as np
 home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
 home ="/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
@@ -82,6 +94,18 @@ CUB_111 = [[1, 1, 1],
   #
  #
 #
+sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+ani_marker= ["k",
+             (10/255,10/255,10/255),
+             (70/255,70/255,70/255),
+             (150/255,150/255,150/255),
+             (200/255,200/255,200/255),
+             (215/255,215/255,215/255),
+             (255/255,255/255,255/255)]
+aps_home ="/home/etmengiste/jobs/aps/"
+slips=["2","4", "6"]
+x_label = f'$p$ (-)'
 ##
 class fepx_sim:
     #
@@ -421,6 +445,18 @@ def diad(a,b):
   #
  #
 #
+def sort_by_vals(arr,mat):
+       arr = np.ndarray.tolist(arr)
+       mat = np.ndarray.tolist(mat)
+       arr_sorted = sorted(arr)
+       arr_sorted.sort()
+       mat_sorted = []
+       for i in range(len(arr)):
+              curr_ind =arr.index(arr_sorted[i])
+              #print(curr_ind)
+              mat_sorted.append(mat[curr_ind])
+       return [arr_sorted,mat_sorted]
+#
 ##
 def inner_prod(a,b):
     tot = 0
@@ -434,7 +470,7 @@ def inner_prod(a,b):
 def to_matrix(arr):
     row1 = [arr[0],arr[-1],arr[-2]]
     row2 = [arr[-1],arr[1],arr[-3]]
-    row3 = [arr[-2],arr[-1],arr[2]]
+    row3 = [arr[-2],arr[-3],arr[2]]
     matrix = [row1 ,row2, row3]
     return matrix
 ##
@@ -893,22 +929,10 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
     #
   #
 #
-sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
-an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
-ani_marker= ["k",
-             (10/255,10/255,10/255),
-             (70/255,70/255,70/255),
-             (150/255,150/255,150/255),
-             (200/255,200/255,200/255),
-             (215/255,215/255,215/255),
-             (255/255,255/255,255/255)]
-aps_home ="/home/etmengiste/jobs/aps/"
-slips=["2","4", "6"]
-x_label = f'$p$ (-)'
-#
 #
 ## Plot effective plastic strain
 def plot_eff_strain(start,all=False,marker_size=40,aps_home="/home/etmengiste/jobs/aps/eff_pl_str/"):
+    y_label="$\\bar\\varepsilon^{p}$ (-)"
     for domain in ["Cube"]:
 
         if all:
@@ -938,8 +962,11 @@ def plot_eff_strain(start,all=False,marker_size=40,aps_home="/home/etmengiste/jo
                     ax.plot(ratios,unaltered,"k-o",ls=sets[set],ms=marker_size,label="Set "+str(set+1))
                     ax.plot(ratios,altered,"kD",ls=sets[set],ms=marker_size)
                     ax.set_xticks(ratios)
-                    ax.set_xticklabels(an,rotation=90)       
+                    ax.set_xticklabels(an,rotation=90)     
+                    ax.set_yticks([0,0.5,1,1.5,2])
+                    ax.set_yticklabels(["0.00","0.50","1.00","1.50","2.00"])  
 
+            axs[0].set_ylabel(y_label,labelpad=25)
         else:
             fig= plt.figure()
             ax = fig.add_subplot(111)
@@ -961,14 +988,14 @@ def plot_eff_strain(start,all=False,marker_size=40,aps_home="/home/etmengiste/jo
                 ax.set_title(domain)
                 ax.set_xticks(ratios)
                 ax.set_xticklabels(an)
+
         sli = slips[int(start/25)]
         #ax.legend()
         y_label="$\\bar\\varepsilon^{p}$ (-)"
 
 
-        fig.supxlabel(x_label)
-        fig.supylabel(y_label)
-        fig.subplots_adjust(left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
+        fig.supxlabel(x_label,fontsize=SIZE)
+        fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
     
         plt.savefig("eff_pl_strain_"+sli+"ss"+domain)
     #plt.show()
@@ -1415,8 +1442,8 @@ def plot_svs_from_csv(name):
     file_name =name[:-4]
     plt.savefig(file_name+"_stress_v_strain.png")
     ax.cla()
-
-
+#
+##
 def combined_ipf(arr):
     unirr_insitu_ff = "/home/etmengiste/jobs/aps/2023/Fe9Cr HEDM data repository/Fe9Cr-61116 (unirr)/in-situ ff-HEDM/"
     irr_insitu_ff1 = "/home/etmengiste/jobs/aps/2023/Fe9Cr HEDM data repository/KGT1119 (450C, 0.1 dpa)/In-situ ff HEDM/"
@@ -1456,9 +1483,11 @@ def combined_ipf(arr):
                     #print(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i]))
                     file.write(str(csv["ROD1"][i])+"  "+str(csv["ROD2"][i])+"  "+str(csv["ROD3"][i])+"\n")
         os.system("~/code/data_reduction_scripts/plot_ipf.sh")
-
-
+#
+##
 def get_stress_strain(path,dir="z1",strain_rate = 1e-3):
+    # Get the stress and strain for a given set of simulation
+    #
     file = open(path+"post.force."+dir).readlines()[2:]
     stress = []
     strain = []
@@ -1471,3 +1500,391 @@ def get_stress_strain(path,dir="z1",strain_rate = 1e-3):
         stress.append(arr[0]/arr[1])
         strain.append(arr[2]*strain_rate)
     return [stress,strain]
+#
+##
+def Cubic_sym_quats():
+    # Generate Cubic symetry angle axis pairs for the cubic fundamental region
+    pi = math.pi
+    AngleAxis =  np.array([[0.0     , 1 ,   1,    1 ],   # % identity
+                    [pi*0.5  , 1 ,   0,    0 ],   # % fourfold about x1
+                    [pi      , 1 ,   0,    0 ],   #
+                    [pi*1.5  , 1 ,   0,    0 ],   #
+                    [pi*0.5  , 0 ,   1,    0 ],   # % fourfold about x2
+                    [pi      , 0 ,   1,    0 ],   #
+                    [pi*1.5  , 0 ,   1,    0 ],   #
+                    [pi*0.5  , 0 ,   0,    1 ],   # % fourfold about x3
+                    [pi      , 0 ,   0,    1 ],   #
+                    [pi*1.5  , 0 ,   0,    1 ],   #
+                    [pi*2/3  , 1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,   1,    1 ],   #
+                    [pi*2/3  ,-1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,   1,    1 ],   #
+                    [pi*2/3  , 1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,  -1,    1 ],   #
+                    [pi*2/3  ,-1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,  -1,    1 ],   #
+                    [pi      , 1 ,   1,    0 ],   # % twofold about 110
+                    [pi      ,-1 ,   1,    0 ],   #
+                    [pi      , 1 ,   0,    1 ],   #
+                    [pi      , 1 ,   0,   -1 ],   #
+                    [pi      , 0 ,   1,    1 ],   #
+                    [pi      , 0 ,   1,   -1 ]])
+
+    cubic_sym = np.array([quat_of_angle_ax(a[0],a[1:]) for a in AngleAxis])
+    return cubic_sym
+#
+##
+def quat_prod(q1, q2,debug=False):
+       # Quaternion Product
+       # input a q1 and 4*1
+       many =False
+       try:
+              a = np.array([q[0] for q in q1.T])
+              b = np.array([q[0] for q in q2.T])
+              avect= np.array([q[1:] for q in q1.T])
+              bvect= np.array([q[1:] for q in q2.T])
+              if debug:
+                     print("a",avect.shape)
+                     print("b",bvect.shape)
+              many=True
+       except:
+              a=q1[0]
+              b=q2[0]
+              avect=q1[1:]
+              bvect=q2[1:]
+       #
+       a3 = np.tile(a,[3,1]).T
+       b3 = np.tile(b,[3,1]).T
+
+       if debug:
+              print("a3",a3.shape)
+       #
+       if many:
+              dotted_val = np.array([np.dot(a,b) for a,b in zip(avect,bvect)])
+              crossed_val = np.array([np.cross(a,b) for a,b in zip(avect,bvect)])
+       else:
+              dotted_val=np.dot(avect,bvect)
+              crossed_val=np.cross(avect, bvect)
+       
+       #
+       ind1 =a*b - dotted_val
+       if debug:
+              print(ind1.shape)
+
+       #print(crossed_val.shape)
+       #print((b3*avect).shape)
+       val=a3*bvect + b3*avect +crossed_val
+
+       if debug:
+              print(val)
+       quat = np.array([[i,v[0],v[1],v[2]] for i,v in zip(ind1, val)])
+       #
+       if many:
+              max = 0
+              max_ind=0
+              for ind,q in enumerate(quat):
+                     if q[0]<0:
+                            quat[ind] = -1*quat[ind]
+                     if ind==0:
+                            max= quat[ind][0]
+                            max_ind=ind
+                     elif quat[ind][0]>max:
+                            #print("larger")
+                            #print(quat[ind])
+                            max=quat[ind][0]
+                            max_ind=ind
+                     #
+              value = normalize_vector(quat[max_ind])
+              #print("--------",value)
+              return value
+       else:
+              if quat[0]<0:
+                     quat=-1*quat
+              #print(quat)
+              return quat
+#
+##
+def quat_of_angle_ax(angle, raxis):
+       # angle axis to quaternion
+       #
+       half_angle = 0.5*angle
+       #
+       cos_phi_by2 = math.cos(half_angle)
+       sin_phi_by2 = math.sin(half_angle)
+       #
+       rescale = sin_phi_by2 / np.sqrt(np.dot(raxis,raxis))
+       quat = np.append([cos_phi_by2],np.tile(rescale,[3])*raxis)
+       if cos_phi_by2<0:
+              quat = -1*quat
+       #
+       #
+       return quat
+#
+##
+def ret_to_funda(quat, sym_operators=Cubic_sym_quats(),debug=False):
+       #    Return quaternion to the fundamental region given symerty 
+       #        operatiors
+       #
+       m = len(sym_operators)
+       n = 1
+       # if passing a set of symetry operators make sure to [quat]
+       tiled_quat = np.tile(quat,(1,m))
+       #
+       reshaped_quat=tiled_quat.reshape(4,m*n,order='F').copy()
+       sym_operators=sym_operators.T
+       if debug:
+              print("\n\n\n+++++ ret to funda ++++")
+              pprint(tiled_quat,preamble="tiled")
+              print(tiled_quat.shape)
+              pprint(reshaped_quat,preamble="reshaped")
+              print("old shape",sym_operators.shape)
+              pprint(sym_operators)
+              print(sym_operators.shape)
+       equiv_quats = quat_prod(reshaped_quat,np.tile(sym_operators,(1,n)))
+       #pprint(equiv_quats)
+       #exit(0)
+       return equiv_quats
+#
+##
+def rod_to_quat(val,debug=False):
+       # Rodrigues vector to Quaternion
+       #
+       norm,mag = normalize_vector(val,magnitude=True)
+       omega= 2*math.atan(mag)
+       if debug:
+              print("an ax",quat_of_angle_ax(omega,norm))
+              print(omega)
+       s= math.sin(omega/2)
+       c= math.cos(omega/2)
+       values = np.array([c, s*norm[0],s*norm[1], s*norm[2]])
+       return values
+#
+##
+def quat_to_rod(val):
+       # Quaternion to Rodrigues vector
+       #
+       omega = 2*math.acos(val[0])
+       n = val[1:]/math.sin(omega/2)
+       r = math.tan(omega/2)*n
+       return r
+#
+#   Encorporate into fepx_sim class
+def get_elt_ids(home,grain_id,domain="Cube"):
+       file = open(home+"common_files/"+domain+".stelt").readlines()
+       elt_ids = [i for i,line in enumerate(file) if line.split()[1]==str(grain_id)]
+       return elt_ids
+#
+##
+def rot_mat(arr1,arr2):
+    #   Find the roation matrix from a basis matrix 
+    #       Q_ij = arr1 => arr2
+    #       Q_ji = arr1 => arr2
+    Q_ij = []
+    Q_ji = []
+    if len(arr1) ==len(arr2):
+        for a in arr1:
+            temp = []
+            for b in arr2:
+                    temp.append(np.dot(a,b))
+            Q_ij.append(temp)
+        for b in arr1:
+            temp = []
+            for a in arr2:
+                    temp.append(np.dot(a,b))
+            Q_ji.append(temp)                     
+        return [np.array(Q_ij),np.array(Q_ji)] 
+    else:  
+            print("not same size")
+#
+##
+def dif_degs(start,fin,debug=False):
+    q_ij,q_ji = rot_mat(start,fin)
+    #print(np.dot(q_ij.T,start[0]))
+    #print("---")
+    #print(np.dot(q_ij.T,fin[0]))
+    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    r1 = ret_to_funda(v1)
+    pi=math.pi
+    thet_ij =math.acos(min([r1[0],1]))*(180/pi)
+    if debug:
+        r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
+        thet_ji =math.acos(r2[0])*(180/pi)
+        return [thet_ij,thet_ji]
+    return thet_ij
+#
+##
+def plot_rod_outline(ax):
+    #
+    a = [ (2**0.5)-1,   3-(2*(2**0.5)),  ((2**0.5)-1)]
+    b = [ (2**0.5)-1,     ((2**0.5)-1), 3-(2*(2**0.5))]
+    c = [ 3-(2*(2**0.5)),   (2**0.5)-1,   ((2**0.5)-1)]
+    #
+    X= [a[0],b[0],c[0]]
+    Y= [a[1],b[1],c[1]]
+    Z= [a[2],b[2],c[2]]
+
+    #print("x",X)
+    #print("y",Y)
+    #print("z",Z)
+
+    neg_x= [-i for i in X]
+    neg_y= [-i for i in Y]
+    neg_z= [-i for i in Z]
+
+    X+=neg_x+X    +X    +neg_x+X    +neg_x+neg_x
+    Y+=neg_y+Y    +neg_y+Y    +neg_y+neg_y+Y
+    Z+=neg_z+neg_z+Z    +Z    +neg_z+Z    +neg_z
+
+
+    # Plot the 3D surface
+    ax.scatter(X,Y,Z,marker=".",c="k")
+    #ax.plot_trisurf(X, Y, Z,alpha=0.3)
+    ax.scatter(0, 0, 0,color="k")
+    ax.set(xlim=(-2.5, 2.5), ylim=(-2.5, 2.5), zlim=(-2.5, 2.5),
+            xlabel='X', ylabel='Y', zlabel='Z')
+
+    ax.set(xlim=(-.6, .6), ylim=(-.6, .6), zlim=(-.6, .6),
+            xlabel='X', ylabel='Y', zlabel='Z')
+    ax.set_aspect("equal")
+    #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
+    for i in range(0,len(X),3):
+            verts = [list(zip(X[i:i+3],Y[i:i+3],Z[i:i+3]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+
+    s = 3-(2*(2**0.5))
+    l = (2**0.5)-1
+    new_X= [l, l,  l,  l,  l,  l,  l, l]
+    new_Y= [l, s, -s, -l, -l, -s,  s, l]
+    new_Z= [s, l,  l,  s, -s, -l, -l, -s]
+    vals = [new_X,new_Y,new_Z]
+    for i in range(3):
+            verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+    #
+    #
+    new_X= [-l, -l,  -l,  -l,  -l,  -l,  -l, -l]
+    vals = [new_X,new_Y,new_Z]
+    for i in range(3):
+            verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+    #
+#
+##
+def plot_std_mean_data(NAME,ylims="",debug=False):
+    norm =False
+    result ={}
+    results = pd.read_csv(NAME+".csv").transpose()
+    for i in results:
+        result[results[i]["case"]]= [float(results[i]["mean"]),float(results[i]["std"])]
+        #print(results[i]["case"],result[results[i]["case"]])
+    DOMAIN = [ "CUB"]
+    DOM = [ "cubic"]
+    NSLIP  = ["2","4", "6"]
+    #NSLIP =["2"]
+    ANISO  = ["125", "150", "175", "200", "400"]
+    SETS    = ["1", "2", "3", "4", "5"]
+    an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+    #SETS = ["1"]
+    sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+    #
+    ###
+    aniso = [100, 125, 150, 175, 200, 300, 400]
+    differences= {}
+    difs2={}
+
+    if debug:
+        NSLIP =["2"]
+        DOMAIN = ["CUB"]
+        DOM = ["cubic"]
+
+    for dom in DOMAIN:
+        fig, axs = plt.subplots(2, 3,sharex="col",sharey="row",figsize=(23,13))
+        for slip in NSLIP:
+            #
+            ax0= axs[0][NSLIP.index(slip)]
+            ax1= axs[1][NSLIP.index(slip)]
+            #
+            ax0.set_title(slip+" slip systems strengthened")
+            #
+            ax0.set_xlim([90,410])
+            ax1.set_xlim([90,410])
+            if ylims!="":
+                ax0.set_ylim([0.95,2.0])
+                ax1.set_ylim([0.95,2.0])
+            else:
+                ax0.set_ylim([-0.4,20.4])
+                ax1.set_ylim([-0.4,10.4])
+            #fig, ax = plt.subplots(1, 1,figsize=(10,12))
+            for set,line in zip(SETS,sets):
+                #
+                try:
+                    iso_mean = result["DOM_"+dom+"_ISO"][0]
+                    iso_std =result["DOM_"+dom+"_ISO"][1]
+                    norm = True
+                except:
+                    iso_mean= 0
+                    iso_std = 0
+                index1 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_125"]
+                index2 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_150"]
+                index3 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_175"]
+                index4 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_200"]
+                index5 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_300"]
+                index6 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_400"]
+
+                list1 = [iso_mean,index1[0], index2[0],
+                    index3[0], index4[0], index5[0],index6[0]]
+                list2 = [iso_std,index1[1], index2[1],
+                    index3[1], index4[1], index5[1],index6[1]]
+                
+                differences[dom+"_"+slip+"_"+set] = list1
+                difs2[dom+"_"+slip+"_"+set] = list2
+                #print(list)
+                #
+                if norm == True:
+                    list1 = [i/result["DOM_"+dom+"_ISO"][0] for i in list1]
+                    list2 = [i/result["DOM_"+dom+"_ISO"][1] for i in list2]
+                #### Start of plotting code
+                #
+                ax0.plot(aniso,list1,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                ax1.plot(aniso,list2,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                #
+                marker_size =130
+                if set =="7":
+                    ax0.scatter(iso_mean,
+                        iso_mean, marker="o", s=marker_size,
+                        edgecolor="k", label="$\sigma$ : Isotropic", color="k")
+                    #
+                    ax1.scatter(iso_std,
+                        iso_std, marker="o", s=marker_size,
+                        edgecolor="k", label="Isotropic", color="k")
+                #
+                for a, l, l2 in zip(aniso, list1, list2):
+                    ax0.scatter(a, l, marker="o", s=marker_size,edgecolor="k",color= "k")
+                    ax1.scatter(a, l2, marker="o", s=marker_size,edgecolor="k",color= "k")
+                #
+                ax0.set_xticks(aniso)
+                ax0.set_xticklabels(an,rotation=90)
+
+                ax1.set_xticks(aniso)
+                ax1.set_xticklabels(an,rotation=90)
+        if norm:
+            val = "(-)"
+        else:
+             val= "($^{\circ}$)"
+        axs[1][0].set_ylabel("$\\tilde{\\theta}$  "+val,labelpad=25)
+        axs[0][0].set_ylabel("$\\bar{\\theta}$  "+val,labelpad=25)
+        ###
+        #
+        # Put title here
+        #title = "Deviation from Taylor Hypothesis: \n"+str(DOM[DOMAIN.index(dom)])+" domain, "+str(slip)+" slip systems\n"
+        #
+        deg = "$^{\circ}$"
+        #
+        x_label = f'$p$ (-)'
+        y_label = f'Normalized Misorienation ({deg})'
+        fig.supxlabel(x_label,fontsize=SIZE)
+        plt.subplots_adjust(left=0.09, right=0.98,top=0.95, bottom=0.124, wspace=0.07, hspace=0.1)
+        fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean_std.png",dpi=400)
+    
