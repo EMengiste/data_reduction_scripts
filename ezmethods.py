@@ -1751,12 +1751,6 @@ def plot_rod_outline(ax):
     ax.scatter(X,Y,Z,marker=".",c="k")
     #ax.plot_trisurf(X, Y, Z,alpha=0.3)
     ax.scatter(0, 0, 0,color="k")
-    ax.set(xlim=(-2.5, 2.5), ylim=(-2.5, 2.5), zlim=(-2.5, 2.5),
-            xlabel='X', ylabel='Y', zlabel='Z')
-
-    ax.set(xlim=(-.6, .6), ylim=(-.6, .6), zlim=(-.6, .6),
-            xlabel='X', ylabel='Y', zlabel='Z')
-    ax.set_aspect("equal")
     #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
     for i in range(0,len(X),3):
             verts = [list(zip(X[i:i+3],Y[i:i+3],Z[i:i+3]))]

@@ -19,66 +19,125 @@ plt.rcParams['figure.figsize'] = 20,20
 # left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1
 
 
-def plot_rod_outline():
-       b = [ (2**0.5)-1,   3-(2*(2**0.5)),  ((2**0.5)-1)]
-       c = [ (2**0.5)-1,     ((2**0.5)-1), 3-(2*(2**0.5))]
-       d = [ 3-(2*(2**0.5)),   (2**0.5)-1,   ((2**0.5)-1)]
-
-       X= [b[0],c[0],d[0]]
-       Y= [b[1],c[1],d[1]]
-       Z= [b[2],c[2],d[2]]
-
-       #print("x",X)
-       #print("y",Y)
-       #print("z",Z)
-
-       neg_x= [-i for i in X]
-       neg_y= [-i for i in Y]
-       neg_z= [-i for i in Z]
-
-       X+=neg_x+X    +X    +neg_x+X    +neg_x+neg_x
-       Y+=neg_y+Y    +neg_y+Y    +neg_y+neg_y+Y
-       Z+=neg_z+neg_z+Z    +Z    +neg_z+Z    +neg_z
-
-
-       # Plot the 3D surface
-       ax.scatter(X,Y,Z,marker=".",c="k",s=50)
-       #ax.plot_trisurf(X, Y, Z,alpha=0.3)
-       ax.scatter(0, 0, 0,color="k")
-       ax.set(xlim=(-2.5, 2.5), ylim=(-2.5, 2.5), zlim=(-2.5, 2.5),
-              xlabel='X', ylabel='Y', zlabel='Z')
-
-       ax.set(xlim=(-.6, .6), ylim=(-.6, .6), zlim=(-.6, .6),
-              xlabel='X', ylabel='Y', zlabel='Z')
-       ax.set_aspect("equal")
-       #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
-       for i in range(0,len(X),3):
-              verts = [list(zip(X[i:i+3],Y[i:i+3],Z[i:i+3]))]
-              ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
-
-       s = 3-(2*(2**0.5))
-       l = (2**0.5)-1
-       new_X= [l, l,  l,  l,  l,  l,  l, l]
-       new_Y= [l, s, -s, -l, -l, -s,  s, l]
-       new_Z= [s, l,  l,  s, -s, -l, -l, -s]
-       vals = [new_X,new_Y,new_Z]
-       for i in range(3):
-              verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
-              ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
-
-       new_X= [-l, -l,  -l,  -l,  -l,  -l,  -l, -l]
-       vals = [new_X,new_Y,new_Z]
-       for i in range(3):
-              verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
-              ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
-
 remote= "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
 remote = ""
 
 iso_home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
 
 home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
+def plot_std_mean_data(NAME,ylims="",debug=False):
+    norm =False
+    result ={}
+    results = pd.read_csv(NAME+".csv").transpose()
+    for i in results:
+        result[results[i]["case"]]= [float(results[i]["mean"]),float(results[i]["std"])]
+        #print(results[i]["case"],result[results[i]["case"]])
+    DOMAIN = [ "CUB"]
+    DOM = [ "cubic"]
+    NSLIP  = ["2","4", "6"]
+    #NSLIP =["2"]
+    ANISO  = ["125", "150", "175", "200", "400"]
+    SETS    = ["1", "2", "3", "4", "5"]
+    an = ["1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+    #SETS = ["1"]
+    sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+    #
+    ###
+    aniso = [125, 150, 175, 200, 300, 400]
+    y_ticks = [5.00,7.50,10.00,12.50,15.00]
+    y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
+    differences= {}
+    difs2={}
 
+    if debug:
+        NSLIP =["2"]
+        DOMAIN = ["CUB"]
+        DOM = ["cubic"]
+
+    for dom in DOMAIN:
+        fig, axs = plt.subplots(1, 3,sharex="col",sharey="row",figsize=( 23,8))
+        for slip in NSLIP:
+            #
+            ax0= axs[NSLIP.index(slip)]
+            #ax1= axs[1][NSLIP.index(slip)]
+            #
+            ax0.set_title(slip+" slip systems strengthened")
+            #
+            ax0.set_xlim([115,410])
+            #ax1.set_xlim([90,410])
+            if ylims!="":
+                ax0.set_ylim([0.95,2.0])
+                #ax1.set_ylim([0.95,2.0])
+            else:
+                ax0.set_ylim([4.6,15.1])
+                #ax1.set_ylim([-0.4,10.4])
+            #fig, ax = plt.subplots(1, 1,figsize=(10,12))
+            for set,line in zip(SETS,sets):
+                #
+                index1 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_125"]
+                index2 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_150"]
+                index3 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_175"]
+                index4 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_200"]
+                index5 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_300"]
+                index6 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_400"]
+
+                list1 = [index1[0], index2[0],
+                    index3[0], index4[0], index5[0],index6[0]]
+                list2 =[index1[1], index2[1],
+                    index3[1], index4[1], index5[1],index6[1]]
+                
+                differences[dom+"_"+slip+"_"+set] = list1
+                difs2[dom+"_"+slip+"_"+set] = list2
+                #print(list)
+                #
+                if norm == True:
+                    list1 = [i/result["DOM_"+dom+"_ISO"][0] for i in list1]
+                    list2 = [i/result["DOM_"+dom+"_ISO"][1] for i in list2]
+                #### Start of plotting code
+                #
+                ax0.plot(aniso,list1,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                #ax1.plot(aniso,list2,"k",lw=2,linestyle=line,
+                #    label="Set "+str(set))
+                #
+                marker_size =130
+                #
+                for a, l, l2 in zip(aniso, list1, list2):
+                    ax0.scatter(a, l, marker="o", s=marker_size,edgecolor="k",color= "k")
+                    #ax1.scatter(a, l2, marker="o", s=marker_size,edgecolor="k",color= "k")
+                #
+                ax0.set_xticks(aniso)
+                ax0.set_xticklabels(an,rotation=90)
+
+                #ax1.set_xticks(aniso)
+                #ax1.set_xticklabels(an,rotation=90)
+        if norm:
+            val = "(-)"
+        else:
+             val= "($^{\circ}$)"
+        #axs[1][0].set_ylabel("$\\tilde{\\phi}$  "+val,labelpad=25)
+        axs[0].set_yticks(y_ticks)
+        axs[0].set_yticklabels(y_tick_lables)
+        axs[0].set_ylabel("$\\bar{\\phi}$  "+val,labelpad=25)
+        ###
+        #
+        # Put title here
+        #title = "Deviation from Taylor Hypothesis: \n"+str(DOM[DOMAIN.index(dom)])+" domain, "+str(slip)+" slip systems\n"
+        #
+        deg = "$^{\circ}$"
+        #
+        x_label = f'$p$ (-)'
+        y_label = f'Normalized Misorienation ({deg})'
+        fig.supxlabel(x_label,fontsize=SIZE)
+        fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
+        fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean_std.png",dpi=400)
+    
+
+
+name = "calculation_stress_misori"
+#ax = plt.figure().add_subplot(projection='3d')
+plot_std_mean_data(name,debug=False)
+exit(0)
 
 
 def calc_grain_stress_misori(params):
@@ -166,7 +225,7 @@ df[1:].to_csv("calculation_stress_misori.csv")
 
 name = "calculation_stress_misori"
 #ax = plt.figure().add_subplot(projection='3d')
-#plot_std_mean_data(name,debug=False)
+plot_std_mean_data(name,debug=False)
 exit(0)
 
 

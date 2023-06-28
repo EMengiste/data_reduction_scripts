@@ -5,8 +5,8 @@ from ezmethods import *
 
 
 rem=""
-home=rem+"/media/schmid_2tb_1/etmengiste/files/slip_system_study"
-target_dir = "/home/etmengiste/jobs/aps/files/"
+home=rem+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
+target_dir = "/home/etmengiste/jobs/aps/files/new/"
 sample_num= 2000
 start = 0
 bin_size = 10
@@ -19,15 +19,14 @@ dirs = os.listdir()
 dirs.sort()
 grains = np.arange(0,2000,1)
 #
+num =6
 ##grains[28:29]
 #
-for grain_id in [102, 1502, 1961]:
+for grain_id in [102, 1502,129,148,165,169,173,497,606,880,997, 1961]:
     elts = get_elt_ids(home+"/",grain_id)
     #
-    print(elts)
-    exit(0)
     #
-    for sim_name in ["025","035"]:
+    for sim_name in dirs[num*4-num:num*4]+dirs[40+num*1-num:40+num*1]:
         if sim_name=="common_files":
             print("common_files")
             break
@@ -66,22 +65,27 @@ for grain_id in [102, 1502, 1961]:
             print(grain_id)
             #
             os.system("pwd") 
-            os.chdir(home+sim_name)       
+            os.chdir(target_dir)       
             os.system("pwd") 
             os.system("ls") 
             print(os.getcwd())
             #exit(0)
-            #
-            neper_comand = "neper -V"
-            file_names = "final(type=ori):file(Cubeoris28.txt),start(type=ori):file(Cubeoris0.txt)"
-            neper_comand+= " \""+file_names+"\" -space ipf -datastartrad 0.020 -datastartcol white   -datafinalrad  0.007 darkgrey -datafinaledgerad 0.01"
-            command = neper_comand+" -print "+str(grain_id)
-            print(command)
-            #os.system(command)
+            # neper -V "Two(type=ori):file(${cu}0.txt),One(type=ori):file(${cu}28.txt)"
+
+            os.system('sed -i "s/FILE_NAME/'+sim_name+"_"+str(grain_id)+'oris/g" batch_compiled_ori_ipfs.sh')            
+            os.system("./batch_compiled_ori_ipfs.sh")
+            os.system('sed -i "s/'+sim_name+"_"+str(grain_id)+'oris/FILE_NAME/g" batch_compiled_ori_ipfs.sh')
+
             #exit(0)
             #exit(0)
    
 exit(0)
+neper_comand = ""
+file_names = "neper -V \"final(type=ori):file("+sim_name+"_"+str(grain_id)+"oris"+str(final_step)+".txt),"
+file_names += "start(type=ori):file("+sim_name+"_"+str(grain_id)+"oris0.txt)\""
+neper_comand+= file_names+" -space ipf -datastartrad 0.020 -datastartcol white   -datafinalrad  0.007 black -datastartedgerad 0.01"
+command = neper_comand+" -print "+str(grain_id)
+print(command)
 for ind,dir in enumerate(dirs[:-1]):
     path= home+"/"+dir+"/Cube.sim/"
     print(path)
