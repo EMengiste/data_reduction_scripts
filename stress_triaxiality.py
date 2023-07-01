@@ -27,7 +27,7 @@ iso_home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/sl
 home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
 
 
-def plot_mean_data(NAME,ylims="",y_label="",
+def plot_mean_data(NAME,ylims="",y_label="", show="",
                        unit="",y_ticks ="",y_tick_lables="",debug=False):
     norm =False
     result ={}
@@ -131,9 +131,150 @@ def plot_mean_data(NAME,ylims="",y_label="",
         #y_label = f'Normalized Misorienation ({deg})'
         fig.supxlabel(x_label,fontsize=SIZE)
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
-        fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
+        if show:
+             plt.show()
+        else:
+            fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
     
 
+def plot_std_mean_data(NAME,ylims="",ylims2=[0,1],y_label="",y_label2="",base=True,norm=False,debug=False,show=False,**non_base):
+    result ={}
+    results = pd.read_csv(NAME+".csv").transpose()
+    for i in results:
+        result[results[i]["case"]]= [float(results[i]["mean"]),float(results[i]["std"])]
+        #print(results[i]["case"],result[results[i]["case"]])
+    if base==True:
+        DOMAIN = [ "CUB"]
+        DOM = [ "cubic"]
+        NSLIP  = ["2","4", "6"]
+        #NSLIP =["2"]
+        ANISO  = ["125", "150", "175", "200", "400"]
+        SETS    = ["1", "2", "3", "4", "5"]
+        an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+        #SETS = ["1"]
+        sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+        #
+        ###
+        aniso = [100, 125, 150, 175, 200, 300, 400]
+    else:
+        ## finish later
+        DOMAIN = non_base["DOMAIN"]
+        DOM = non_base["DOM"]
+        NSLIP  = non_base["NSLIP"]
+        #NSLIP =["2"]
+        ANISO  = non_base["ANISO"]
+        SETS    = non_base["SETS"]
+        an = non_base["an"]
+        #SETS = ["1"]
+        sets    =  non_base["sets"]
+        #
+        ###
+        aniso = non_base["aniso"]
+    differences= {}
+    difs2={}
+
+    if debug:
+        NSLIP =["2"]
+        DOMAIN = ["CUB"]
+        DOM = ["cubic"]
+    if norm:
+        NAME+="normalized_"
+        #ylims = [0.9*(ylims[1]/ylims[0]),1.1*(ylims[1]/ylims[0])]
+        #ylims2 = [0.9*(ylims[1]/ylims[0]),1.1*(ylims2[1]/ylims2[0])]
+        # make auto
+        ylims = [0.8,1.1]
+        ylims2 = [0.9,2]
+    for dom in DOMAIN:
+        fig, axs = plt.subplots(2, 3,sharex="col",sharey="row",figsize=(23,13))
+        for slip in NSLIP:
+            #
+            ax0= axs[0][NSLIP.index(slip)]
+            ax1= axs[1][NSLIP.index(slip)]
+            #
+            ax0.set_title(slip+" slip systems strengthened")
+            #
+            ax0.set_xlim([90,410])
+            ax1.set_xlim([90,410])
+            if ylims=="":
+                ax0.set_ylim([0.95,2.0])
+                ax1.set_ylim([0.95,2.0])
+            else:
+                ax0.set_ylim(ylims)
+                ax1.set_ylim(ylims2)
+            
+            #fig, ax = plt.subplots(1, 1,figsize=(10,12))
+            for set,line in zip(SETS,sets):
+                #
+                try:
+                    iso_mean = result["DOM_"+dom+"_ISO"][0]
+                    iso_std =result["DOM_"+dom+"_ISO"][1]
+                except:
+                    iso_mean= 0
+                    iso_std = 0
+                index1 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_125"]
+                index2 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_150"]
+                index3 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_175"]
+                index4 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_200"]
+                index5 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_300"]
+                index6 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_400"]
+
+                list1 = [iso_mean,index1[0], index2[0],
+                    index3[0], index4[0], index5[0],index6[0]]
+                list2 = [iso_std,index1[1], index2[1],
+                    index3[1], index4[1], index5[1],index6[1]]
+                
+                differences[dom+"_"+slip+"_"+set] = list1
+                difs2[dom+"_"+slip+"_"+set] = list2
+                #print(list)
+                #
+                if norm == True:
+                    list1 = [i/result["DOM_"+dom+"_ISO"][0] for i in list1]
+                    list2 = [i/result["DOM_"+dom+"_ISO"][1] for i in list2]
+                #### Start of plotting code
+                #
+                ax0.plot(aniso,list1,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                ax1.plot(aniso,list2,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                #
+                marker_size =130
+                if set =="7":
+                    ax0.scatter(iso_mean,
+                        iso_mean, marker="o", s=marker_size,
+                        edgecolor="k", label="$\sigma$ : Isotropic", color="k")
+                    #
+                    ax1.scatter(iso_std,
+                        iso_std, marker="o", s=marker_size,
+                        edgecolor="k", label="Isotropic", color="k")
+                #
+                for a, l, l2 in zip(aniso, list1, list2):
+                    ax0.scatter(a, l, marker="o", s=marker_size,edgecolor="k",color= "k")
+                    ax1.scatter(a, l2, marker="o", s=marker_size,edgecolor="k",color= "k")
+                #
+                ax0.set_xticks(aniso)
+                ax0.set_xticklabels(an,rotation=90)
+
+                ax1.set_xticks(aniso)
+                ax1.set_xticklabels(an,rotation=90)
+
+        axs[1][0].set_ylabel(y_label,labelpad=25)
+        axs[0][0].set_ylabel(y_label2,labelpad=25)
+        ###
+        #
+        # Put title here
+        #title = "Deviation from Taylor Hypothesis: \n"+str(DOM[DOMAIN.index(dom)])+" domain, "+str(slip)+" slip systems\n"
+        #
+        deg = "$^{\circ}$"
+        #
+        x_label = f'$p$ (-)'
+        y_label = f'Normalized Misorienation ({deg})'
+        fig.supxlabel(x_label,fontsize=SIZE)
+        plt.subplots_adjust(left=0.09, right=0.98,top=0.95, bottom=0.124, wspace=0.07, hspace=0.1)
+        if show:
+            plt.show()
+        else:
+            fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean_std.png",dpi=400)
+    
 
 home=remote+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 
@@ -163,34 +304,12 @@ def von_mises_stress(stress):
             ans_list.append(ans**0.5)
         return np.array(ans_list)
 
-def calc_grain_stress_delta(params):
-       #print(params)
-       sim_ind,base =params
-       sim_name = simulations[sim_ind]
-       sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-
-       set = str(sets[int(sim_ind/base)%num_sets])
-       #print(sim_name,sim_ind)
-       slip = str(slips[int(sim_ind/(base*num_sets))])  
-
-       stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids="all")
-       #print(stress_iso)
-       stress_iso = von_mises_stress(np.array(stress_iso))
-       stress = sim.get_output("stress",step=step,res="elsets",ids="all")
-       stress = von_mises_stress(np.array(stress))
-       delta = (abs(stress-stress_iso))
-       name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
-       print(name)
-       vals = [name ,np.mean(delta),np.std(delta)]
-       del sim
-       return vals
-
 def calc_grain_stress_triaxiality(params):
     #print(params)
     sim_ind,base =params
     sim_name = simulations[sim_ind]
     sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-    if sim_ind != 91:
+    if sim_name != "isotropic":
         set = str(sets[int(sim_ind/base)%num_sets])
         #print(sim_name,sim_ind)
         slip = str(slips[int(sim_ind/(base*num_sets))])  
@@ -209,46 +328,10 @@ def calc_grain_stress_triaxiality(params):
     #print(eig_val[:3,:3])
     #print(eig_val[0])
     psi =(eig_val[:,0]+eig_val[:,1]+eig_val[:,2])/(3*vm_stress)
+    #
+    #
     print(name)
     vals = [name ,np.mean(psi),np.std(psi)]
-    del sim
-    return vals
-
-def calc_grain_stress_misori(params):
-    #print(params)
-    sim_ind,grain_start,grain_end,base =params
-    sim_name = simulations[sim_ind]
-    sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-
-    set = str(sets[int(sim_ind/base)%num_sets])
-    slip = str(slips[int(sim_ind/(base*num_sets))])
-    
-    grain_start =int(grain_start)
-    grain_end = int(grain_end)
-    temp = []
-    for id in range(grain_start,grain_end):
-            stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(stress_iso)
-            eig_val_iso, eig_vect_iso = np.linalg.eig(stress_mat)
-            sorting = np.argsort(eig_val_iso)
-            eig_val_iso = eig_val_iso[sorting]
-            eig_vect_iso = eig_vect_iso[sorting]
-            #print("eig_vects iso",eig_vect_iso)
-            stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(stress)
-            eig_val, eig_vect = np.linalg.eig(stress_mat)
-            sorting = np.argsort(eig_val)
-            eig_val = eig_val[sorting]
-            eig_vect = eig_vect[sorting]
-            #print("eig_vects",eig_vect)
-            temp.append(dif_degs(eig_vect_iso,eig_vect))
-            #pprint(eig_vect_iso,preamble="iso")
-            #pprint(eig_vect,preamble="ani")
-            #print(temp)
-    #print(aniso[ind])
-    name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
-    print(name)
-    vals = [name ,np.mean(temp),np.std(temp)]
     del sim
     return vals
 
@@ -256,14 +339,11 @@ def calc_grain_stress_misori(params):
 simulations = os.listdir(home)
 simulations.sort()
 simulations.remove("common_files")
-sim_iso = fepx_sim("Cube.sim",path=home+"isotropic/Cube.sim")
 step= "28"
 means = []
 stds = []
 set_start = 0
 set_end = 5
-headers = ["case","mean","std"]
-data = [headers]
 ###
 aniso = ["125", "150", "175", "200", "300", "400"]
 slips = ["2","4","6"]
@@ -273,52 +353,66 @@ base = 6
 dom = "CUB"
 
 pool = multiprocessing.Pool(processes=90)
-print("starting code")
-tic = time.perf_counter()
 #
 #   main_code
 num__base=6
-base = len(simulations[:90])
-set_of_sims = [m for m in range(0,base,1)]
-sims = np.array([set_of_sims,np.tile(num__base,(base))]).T
+start=0
+base = len(simulations[:91])
+set_of_sims = [m for m in range(start,base,1)]
+sims = np.array([set_of_sims,np.tile(num__base,(base-start))]).T
 #value = pool.map(calc_grain_stress_delta,sims)
 #value = calc_grain_stress_delta(sims[-1])
-value = calc_grain_stress_triaxiality(sims[-1])
-data +=value   
-del sim_iso
-print("===")
-print("===")
-print("===")
-print(value)
-print("===")
-print("===")
-print("===")
+#value = calc_grain_stress_triaxiality(sims[-1])
 
-toc = time.perf_counter()
-print(f"Ran the code in {toc - tic:0.4f} seconds")
+name = "calculation_stress_triaxiality_"
+def calculate():
+    headers = ["case","mean","std"]
+    data = [headers]
+    print("starting code")
+    tic = time.perf_counter()
+    value = pool.map(calc_grain_stress_triaxiality,sims)
+    #exit(0)
+    data +=value   
+    print("===")
+    print("===")
+    print("===")
+    print(value[0])
+    print("===")
+    print("===")
+    print("===")
 
-#stress_calculation code
-name = "calculation_stress_delta_"
-y_lab ="$\Delta\sigma$ (MPa)"
-ylims = [0,250]
+    df1 = pd.DataFrame(data)
+    df1.columns=df1.iloc[0]
+    df1[1:].to_csv(name+".csv")
 
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
+    toc = time.perf_counter()
+    print(f"Ran the code in {toc - tic:0.4f} seconds")
 
+def plot():
+    #stress_calculation code
+    y_lab ="$\Psi$ (-)"
+    ylims = [0.26,0.325]
+    ylims2 = [0.15,0.31]    
 
-df1 = pd.DataFrame(data)
-df1.columns=df1.iloc[0]
-df1[1:].to_csv(name+".csv")
-
-#ax = plt.figure().add_subplot(projection='3d')
-plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False)
-
-
-toc = time.perf_counter()
-print(f"Generated plot in {toc - tic:0.4f} seconds")
-exit(0)
+    show = True
+    show = False
 
 
+    norm = True
+    #norm = False
+    y_ticks = [5.00,7.50,10.00,12.50,15.00]
+    y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
+
+    print("starting plotting")
+    tic = time.perf_counter()
+    #ax = plt.figure().add_subplot(projection='3d')
+    #plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False,show=True)
+    plot_std_mean_data(name,norm=norm,ylims=ylims,ylims2=ylims2,y_label=y_lab,base=True,show=show,debug=False)
+
+    toc = time.perf_counter()
+    print(f"Generated plot in {toc - tic:0.4f} seconds")
+#calculate()
+plot()
 exit(0)
 print("starting plotting")
 tic = time.perf_counter()

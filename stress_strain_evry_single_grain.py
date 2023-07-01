@@ -27,8 +27,8 @@ iso_home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/sl
 home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
 
 
-def plot_mean_data(NAME,ylims="",y_label="",
-                       unit="",y_ticks ="",y_tick_lables="",debug=False):
+def plot_stress_all(NAME,vals,ylims="",y_label="",
+                       unit="",y_ticks ="",y_tick_lables="",ax,debug=False):
     norm =False
     result ={}
     results = pd.read_csv(NAME+".csv").transpose()
@@ -56,59 +56,13 @@ def plot_mean_data(NAME,ylims="",y_label="",
         DOM = ["cubic"]
 
     for dom in DOMAIN:
-        fig, axs = plt.subplots(1, 3,sharex="col",sharey="row",figsize=( 23,8))
-        for slip in NSLIP:
-            #
-            ax0= axs[NSLIP.index(slip)]
-            #ax1= axs[1][NSLIP.index(slip)]
-            #
-            ax0.set_title(slip+" slip systems strengthened")
-            #
-            ax0.set_xlim([115,410])
-            #ax1.set_xlim([90,410])
-            if ylims!="":
-                ax0.set_ylim(ylims)
-                #ax1.set_ylim([0.95,2.0])
-            else:
-                ax0.set_ylim([4.6,15.1])
-                #ax1.set_ylim([-0.4,10.4])
-            #fig, ax = plt.subplots(1, 1,figsize=(10,12))
-            for set,line in zip(SETS,sets):
-                #
-                index1 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_125"]
-                index2 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_150"]
-                index3 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_175"]
-                index4 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_200"]
-                index5 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_300"]
-                index6 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_400"]
+       for grain in 
+        fig, axs = plt.subplots(3, 3,sharex="col",sharey="row",figsize=( 23,8))
+         #
 
-                list1 = [index1[0], index2[0],
-                    index3[0], index4[0], index5[0],index6[0]]
-                list2 =[index1[1], index2[1],
-                    index3[1], index4[1], index5[1],index6[1]]
-                
-                differences[dom+"_"+slip+"_"+set] = list1
-                difs2[dom+"_"+slip+"_"+set] = list2
-                #print(list)
-                #
-                if norm == True:
-                    list1 = [i/result["DOM_"+dom+"_ISO"][0] for i in list1]
-                    list2 = [i/result["DOM_"+dom+"_ISO"][1] for i in list2]
-                #### Start of plotting code
-                #
-                ax0.plot(aniso,list1,"k",lw=2,linestyle=line,
-                    label="Set "+str(set))
-                #ax1.plot(aniso,list2,"k",lw=2,linestyle=line,
-                #    label="Set "+str(set))
-                #
-                marker_size =130
-                #
-                for a, l, l2 in zip(aniso, list1, list2):
-                    ax0.scatter(a, l, marker="o", s=marker_size,edgecolor="k",color= "k")
-                    #ax1.scatter(a, l2, marker="o", s=marker_size,edgecolor="k",color= "k")
-                #
-                ax0.set_xticks(aniso)
-                ax0.set_xticklabels(an,rotation=90)
+
+        ax0.set_xticks(aniso)
+        ax0.set_xticklabels(an,rotation=90)
 
                 #ax1.set_xticks(aniso)
                 #ax1.set_xticklabels(an,rotation=90)
@@ -133,6 +87,51 @@ def plot_mean_data(NAME,ylims="",y_label="",
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
         fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
     
+def calc_grain_stress_plot(params,debug):
+       #print(params)
+       sim_ind,base =params
+       sim_name = simulations[sim_ind]
+       sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+       #find way to make yourslef
+       
+       set = str(sets[int(sim_ind/base)%num_sets])
+       #print(sim_name,sim_ind)
+       slip = str(slips[int(sim_ind/(base*num_sets))])  
+              
+       sim_ind,grain_start,grain_end,base =params
+       sim_name = simulations[sim_ind]
+       sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+
+       set = str(sets[int(sim_ind/base)%num_sets])
+       slip = str(slips[int(sim_ind/(base*num_sets))])
+       
+       grain_start =int(grain_start)
+       grain_end = int(grain_end)
+       temp = []
+       for id in range(grain_start,grain_end):
+              stress_iso = sim_iso.get_output("stress",step="malory_archer",res="elsets",ids=[id])
+              #print(stress_iso)
+              stress_iso = np.array(stress_iso)
+              stress = sim.get_output("stress",step="malory_archer",res="elsets",ids="all")
+              temp+=[stress_iso,stress]
+       #
+       stress = von_mises_stress(np.array(stress))
+       ##########
+       ###
+       ###
+       ###
+       #      Finish writing the code to make th e stress in a 6x2000 array then map that below to a 90 processor pool then use that to automate
+       #             the generation of images. Be efficient so you can save yourself the trouble later on
+       delta = (abs(stress-stress_iso))
+       name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
+       print(name)
+
+       if debug:
+              set_of_sims = [m for m in range(0,grain_end,1)]
+              sims = np.array([set_of_sims,np.tile(num__base,(base)),]).T
+              value = pool.map(calc_misorientation_angles,sims)
+       vals = [name]
+       return vals
 
 
 home=remote+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
@@ -142,116 +141,6 @@ home=remote+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 #ax = plt.figure().add_subplot(projection='3d')
 #plot_std_mean_data(name,debug=False)
 #exit(0)
-def von_mises_stress(stress):
-    if stress.shape == (6,):
-        s11,s22,s33,s23,s13,s12 = stress
-        ans =  (s11-s22)**2
-        ans += (s22-s33)**2
-        ans += (s33-s11)**2
-        ans += 6*(s12**2 +s23**2 + s13**2)
-        ans /=2
-        return ans**0.5
-    else:
-        ans_list=[]
-        for st in stress:
-            s11,s22,s33,s23,s13,s12 = st
-            ans =  (s11-s22)**2
-            ans += (s22-s33)**2
-            ans += (s33-s11)**2
-            ans += 6*(s12**2 +s23**2 + s13**2)
-            ans /=2
-            ans_list.append(ans**0.5)
-        return np.array(ans_list)
-
-def calc_grain_stress_delta(params):
-       #print(params)
-       sim_ind,base =params
-       sim_name = simulations[sim_ind]
-       sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-
-       set = str(sets[int(sim_ind/base)%num_sets])
-       #print(sim_name,sim_ind)
-       slip = str(slips[int(sim_ind/(base*num_sets))])  
-
-       stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids="all")
-       #print(stress_iso)
-       stress_iso = von_mises_stress(np.array(stress_iso))
-       stress = sim.get_output("stress",step=step,res="elsets",ids="all")
-       stress = von_mises_stress(np.array(stress))
-       delta = (abs(stress-stress_iso))
-       name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
-       print(name)
-       vals = [name ,np.mean(delta),np.std(delta)]
-       del sim
-       return vals
-
-def calc_grain_stress_triaxiality(params):
-    #print(params)
-    sim_ind,base =params
-    sim_name = simulations[sim_ind]
-    sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-    if sim_ind != 91:
-        set = str(sets[int(sim_ind/base)%num_sets])
-        #print(sim_name,sim_ind)
-        slip = str(slips[int(sim_ind/(base*num_sets))])  
-        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
-    else:
-        name = "DOM_"+dom+"_ISO"
-    print(name)
-    stress = sim.get_output("stress",step=step,res="elsets",ids="all")
-    stress_mat= to_matrix(np.array(stress))
-
-    vm_stress = von_mises_stress(np.array(stress))
-    eig_val= np.linalg.eigvals(stress_mat)
-    #
-    #print(vm_stress[0])
-
-    #print(eig_val[:3,:3])
-    #print(eig_val[0])
-    psi =(eig_val[:,0]+eig_val[:,1]+eig_val[:,2])/(3*vm_stress)
-    print(name)
-    vals = [name ,np.mean(psi),np.std(psi)]
-    del sim
-    return vals
-
-def calc_grain_stress_misori(params):
-    #print(params)
-    sim_ind,grain_start,grain_end,base =params
-    sim_name = simulations[sim_ind]
-    sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-
-    set = str(sets[int(sim_ind/base)%num_sets])
-    slip = str(slips[int(sim_ind/(base*num_sets))])
-    
-    grain_start =int(grain_start)
-    grain_end = int(grain_end)
-    temp = []
-    for id in range(grain_start,grain_end):
-            stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(stress_iso)
-            eig_val_iso, eig_vect_iso = np.linalg.eig(stress_mat)
-            sorting = np.argsort(eig_val_iso)
-            eig_val_iso = eig_val_iso[sorting]
-            eig_vect_iso = eig_vect_iso[sorting]
-            #print("eig_vects iso",eig_vect_iso)
-            stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(stress)
-            eig_val, eig_vect = np.linalg.eig(stress_mat)
-            sorting = np.argsort(eig_val)
-            eig_val = eig_val[sorting]
-            eig_vect = eig_vect[sorting]
-            #print("eig_vects",eig_vect)
-            temp.append(dif_degs(eig_vect_iso,eig_vect))
-            #pprint(eig_vect_iso,preamble="iso")
-            #pprint(eig_vect,preamble="ani")
-            #print(temp)
-    #print(aniso[ind])
-    name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
-    print(name)
-    vals = [name ,np.mean(temp),np.std(temp)]
-    del sim
-    return vals
-
 
 simulations = os.listdir(home)
 simulations.sort()
@@ -281,58 +170,22 @@ num__base=6
 base = len(simulations[:90])
 set_of_sims = [m for m in range(0,base,1)]
 sims = np.array([set_of_sims,np.tile(num__base,(base))]).T
-#value = pool.map(calc_grain_stress_delta,sims)
-#value = calc_grain_stress_delta(sims[-1])
-value = calc_grain_stress_triaxiality(sims[-1])
+#value = pool.map(calc_misorientation_angles,sims)
+#value = calc_misorientation_angles(sims[-1])
 data +=value   
 del sim_iso
-print("===")
-print("===")
-print("===")
-print(value)
-print("===")
-print("===")
-print("===")
 
 toc = time.perf_counter()
 print(f"Ran the code in {toc - tic:0.4f} seconds")
 
-#stress_calculation code
-name = "calculation_stress_delta_"
-y_lab ="$\Delta\sigma$ (MPa)"
-ylims = [0,250]
-
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
-
-df1 = pd.DataFrame(data)
-df1.columns=df1.iloc[0]
-df1[1:].to_csv(name+".csv")
-
-#ax = plt.figure().add_subplot(projection='3d')
-plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False)
-
-
-toc = time.perf_counter()
-print(f"Generated plot in {toc - tic:0.4f} seconds")
 exit(0)
 
-
-exit(0)
 print("starting plotting")
 tic = time.perf_counter()
-### misori plot code
-name = "calculation_stress_misori_"
-y_lab= "$\\bar{\\phi}$"
-ylims= [0.95,2.0]
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
 #stress_calculation code
-name = "calculation_stress_delta_"
-y_lab ="$\Delta\sigma$ (MPa)"
-ylims = [0,250]
+name = "calculation_misori_"
+y_lab ="$\\theta$ (MPa)"
+ylims = [0,3]
 
 y_ticks = [5.00,7.50,10.00,12.50,15.00]
 y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
@@ -349,7 +202,7 @@ plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False)
 toc = time.perf_counter()
 print(f"Generated plot in {toc - tic:0.4f} seconds")
 exit(0)
-
+##############
 
 fig, ax = plt.subplots(1, 2,sharey="row")
 

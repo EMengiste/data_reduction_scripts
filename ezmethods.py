@@ -342,6 +342,10 @@ class fepx_sim:
         if output in ["coo","disp","vel"] and res !="nodes":
             print("invalid output try again")
             return        
+        if step=="malory_archer":
+            num_steps = self.get_num_steps()
+            for step in range(self.get_num_steps()):
+                print(str(step))
         if self.path[-4:] == ".sim":
             step_file = self.path+"/results/"+res+"/"+output+"/"+output+".step"+step
         else:
@@ -355,6 +359,7 @@ class fepx_sim:
                 component_vals[str(component)] = []
             if ids =="all":
                 ids= [i for i in range(len(values))]
+                #print(ids)
             for id in ids:
                 #print(id,"--------")
                 value[str(id)] = [float(i) for i in values[id].split()]
@@ -365,7 +370,7 @@ class fepx_sim:
         if len(ids)==1:
             return value[str(ids[0])]
         else:
-            return [value,component_vals]
+            return [value[i] for i in value]
         #
        #
       #
@@ -476,11 +481,21 @@ def inner_prod(a,b):
  #
 #
 def to_matrix(arr):
-    row1 = [arr[0],arr[-1],arr[-2]]
-    row2 = [arr[-1],arr[1],arr[-3]]
-    row3 = [arr[-2],arr[-3],arr[2]]
-    matrix = [row1 ,row2, row3]
-    return matrix
+    if arr.shape ==(6,):
+        row1 = [arr[0],arr[-1],arr[-2]]
+        row2 = [arr[-1],arr[1],arr[-3]]
+        row3 = [arr[-2],arr[-3],arr[2]]
+        matrix = [row1 ,row2, row3]
+        return matrix
+    else:
+        matrix = []
+        for array in arr:
+            row1 = [array[0],array[-1],array[-2]]
+            row2 = [array[-1],array[1],array[-3]]
+            row3 = [array[-2],array[-3],array[2]]
+            matrix.append(np.array([row1 ,row2, row3]))
+        return matrix
+        
 ##
 def normalize_vector(vect,magnitude=False):
     value= 0
@@ -1723,6 +1738,11 @@ def dif_degs(start,fin,debug=False):
         return [thet_ij,thet_ji]
     return thet_ij
 #
+def eucledian_distance(arr1,arr2):
+    sum = 0
+    for a,b in zip(arr1,arr2):
+        sum+=(a-b)**2
+    return sum**0.5
 ##
 def plot_rod_outline(ax):
     #
@@ -1754,7 +1774,7 @@ def plot_rod_outline(ax):
     #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
     for i in range(0,len(X),3):
             verts = [list(zip(X[i:i+3],Y[i:i+3],Z[i:i+3]))]
-            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+            ax.add_collection3d(Poly3DCollection(verts,color="k",alpha=0.001))
 
     s = 3-(2*(2**0.5))
     l = (2**0.5)-1
@@ -1764,7 +1784,7 @@ def plot_rod_outline(ax):
     vals = [new_X,new_Y,new_Z]
     for i in range(3):
             verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
-            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+            ax.add_collection3d(Poly3DCollection(verts,color="k",alpha=0.001))
     #
     #
     new_X= [-l, -l,  -l,  -l,  -l,  -l,  -l, -l]
@@ -1775,25 +1795,40 @@ def plot_rod_outline(ax):
     #
 #
 ##
-def plot_std_mean_data(NAME,ylims="",debug=False):
+def plot_std_mean_data(NAME,ylims="",base=True,debug=False,**non_base):
     norm =False
     result ={}
     results = pd.read_csv(NAME+".csv").transpose()
     for i in results:
         result[results[i]["case"]]= [float(results[i]["mean"]),float(results[i]["std"])]
         #print(results[i]["case"],result[results[i]["case"]])
-    DOMAIN = [ "CUB"]
-    DOM = [ "cubic"]
-    NSLIP  = ["2","4", "6"]
-    #NSLIP =["2"]
-    ANISO  = ["125", "150", "175", "200", "400"]
-    SETS    = ["1", "2", "3", "4", "5"]
-    an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
-    #SETS = ["1"]
-    sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
-    #
-    ###
-    aniso = [100, 125, 150, 175, 200, 300, 400]
+    if base==True:
+        DOMAIN = [ "CUB"]
+        DOM = [ "cubic"]
+        NSLIP  = ["2","4", "6"]
+        #NSLIP =["2"]
+        ANISO  = ["125", "150", "175", "200", "400"]
+        SETS    = ["1", "2", "3", "4", "5"]
+        an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+        #SETS = ["1"]
+        sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+        #
+        ###
+        aniso = [100, 125, 150, 175, 200, 300, 400]
+    else:
+        ## finish later
+        DOMAIN = non_base["DOMAIN"]
+        DOM = non_base["DOM"]
+        NSLIP  = non_base["NSLIP"]
+        #NSLIP =["2"]
+        ANISO  = non_base["ANISO"]
+        SETS    = non_base["SETS"]
+        an = non_base["an"]
+        #SETS = ["1"]
+        sets    =  non_base["sets"]
+        #
+        ###
+        aniso = non_base["aniso"]
     differences= {}
     difs2={}
 
