@@ -181,44 +181,39 @@ simulations = os.listdir(home)
 simulations.sort()
 simulations.remove("common_files")
 sim_iso = fepx_sim("Cube.sim",path=home+"isotropic/Cube.sim")
-step= "28"
-means = []
-stds = []
-set_start = 0
-set_end = 5
+steps = [str(i) for i in range(0,28)]
+
+res = [0 for i in range(90)]
+res2 = [0 for i in range(90)]
+new_res = {}
+
+for step in steps:
+    print(step)
+
+    NAME = "calculation_misori_"+step
+    result ={}
+    results = pd.read_csv(NAME+".csv").transpose()
+    for i in results:
+        result[results[i]["case"]]= [float(results[i]["mean"]),float(results[i]["std"])]
+        res[i]= res[i]+result[results[i]["case"]][0]
+        new_res[results[i]["case"]]=[res[i]+float(results[i]["mean"]),res2[i]+float(results[i]["std"])]
+        print(i)
+
+###
 headers = ["case","mean","std"]
 data = [headers]
 ###
-aniso = ["125", "150", "175", "200", "300", "400"]
-slips = ["2","4","6"]
-sets = ["1","2","3","4","5"]
-num_sets = len(sets)
-base = 6
-dom = "CUB"
+for i in new_res:
+    data.append([i,new_res[i][0]/28,new_res[i][1]/28])
 
-pool = multiprocessing.Pool(processes=90)
-print("starting code")
-tic = time.perf_counter()
 #
-#   main_code
-num__base=6
-base = len(simulations[:90])
-set_of_sims = [m for m in range(0,base,1)]
-sims = np.array([set_of_sims,np.tile(num__base,(base))]).T
-value = pool.map(calc_misorientation_angles,sims)
-#value = calc_misorientation_angles(sims[-1])
-data +=value   
-del sim_iso
+name= "the_file"
+pprint(data)
+df = pd.DataFrame(data)
+df.columns=df.iloc[0]
+df[1:].to_csv("the_file.csv")
 
-toc = time.perf_counter()
-print(f"Ran the code in {toc - tic:0.4f} seconds")
 
-exit(0)
-
-print("starting plotting")
-tic = time.perf_counter()
-#stress_calculation code
-name = "calculation_misori_"
 y_lab ="$\\theta$ (MPa)"
 ylims = [0,3]
 
@@ -226,17 +221,65 @@ y_ticks = [5.00,7.50,10.00,12.50,15.00]
 y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
 
 
-df1 = pd.DataFrame(data)
-df1.columns=df1.iloc[0]
-df1[1:].to_csv(name+".csv")
-
-#ax = plt.figure().add_subplot(projection='3d')
 plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False)
-
-
-toc = time.perf_counter()
-print(f"Generated plot in {toc - tic:0.4f} seconds")
 exit(0)
+
+for step in steps:
+    means = []
+    stds = []
+    set_start = 0
+    set_end = 5
+    headers = ["case","mean","std"]
+    data = [headers]
+    ###
+    aniso = ["125", "150", "175", "200", "300", "400"]
+    slips = ["2","4","6"]
+    sets = ["1","2","3","4","5"]
+    num_sets = len(sets)
+    base = 6
+    dom = "CUB"
+
+    pool = multiprocessing.Pool(processes=90)
+    print("starting code")
+    tic = time.perf_counter()
+    #
+    #   main_code
+    num__base=6
+    base = len(simulations[:90])
+    set_of_sims = [m for m in range(0,base,1)]
+    sims = np.array([set_of_sims,np.tile(num__base,(base))]).T
+    value = pool.map(calc_misorientation_angles,sims)
+    #value = calc_misorientation_angles(sims[-1])
+    data +=value   
+
+    toc = time.perf_counter()
+    print(f"Ran the code in {toc - tic:0.4f} seconds")
+    print("starting plotting")
+    tic = time.perf_counter()
+    #stress_calculation code
+    name = "calculation_misori_"+step
+    y_lab ="$\\theta$ (MPa)"
+    ylims = [0,3]
+
+    y_ticks = [5.00,7.50,10.00,12.50,15.00]
+    y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
+
+
+    df1 = pd.DataFrame(data)
+    df1.columns=df1.iloc[0]
+    df1[1:].to_csv(name+".csv")
+
+    #ax = plt.figure().add_subplot(projection='3d')
+    plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False)
+
+
+    toc = time.perf_counter()
+    print(f"Generated plot in {toc - tic:0.4f} seconds")
+    print("end of code!")
+
+del sim_iso
+exit(0)
+
 ##############
 
 fig, ax = plt.subplots(1, 2,sharey="row")
