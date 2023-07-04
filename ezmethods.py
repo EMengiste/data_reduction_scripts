@@ -154,6 +154,7 @@ class fepx_sim:
         #
         ##@ Status checks
         self.sim=""
+        self.is_sim=False
         self.results_dir=os.listdir(path)
         self.completed = "post.report" in self.results_dir
         self.has_config = "simulation.config" in self.results_dir
@@ -351,21 +352,15 @@ class fepx_sim:
         else:
             step_file = self.path+".sim/results/"+res+"/"+output+"/"+output+".step"+step
         
-        with open(step_file) as file:
-            values=file.readlines()
-            num_components= len(values[0].split())
-            component_vals = {}
-            for component in range(num_components):
-                component_vals[str(component)] = []
-            if ids =="all":
-                ids= [i for i in range(len(values))]
-                #print(ids)
-            for id in ids:
-                #print(id,"--------")
-                value[str(id)] = [float(i) for i in values[id].split()]
-                #print(component_vals)
-                for component in range(num_components):
-                    component_vals[str(component)].append(value[str(id)][component])
+        file = open(step_file)
+        values=file.readlines()
+        num_components= len(values[0].split())
+        if ids =="all":
+            ids= [i for i in range(len(values))]
+        #print(ids)
+        for id in ids:
+            #print(id,"--------")
+            value[str(id)] = [float(i) for i in values[id].split()]
             #pprint(value,max=1000)
         if len(ids)==1:
             return value[str(ids[0])]

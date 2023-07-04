@@ -18,22 +18,94 @@ plt.rcParams['figure.figsize'] = 20,20
 
 # left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1
 
-home = "/home/etmengiste/code/FEPX-dev/tests/01_bcc"
-print(os.listdir(home))
-file = open(home+"/simulation.msh").readlines()
+home = "/Users/ezramengiste/Documents/work_stuff/the_sims/"
+#print(os.listdir(home))
+### inni
 elts=False
-for i in file:
-    if i =='$Elements':
-       print(i)
-       elts=True
-    elif i=="$EndElements":
-          print(i)
-          elts=False
-          
-    if elts:
-          print(i)
+fs=0.6
+sty = "solid"
+val = 1
+leng = 0.05
+lw=1
+##
 
+elset_ids={}
+for i in range(1,51):
+       elset_ids[str(i)] = []
+file = open(home+"simulation.stelt").readlines()
+for i in file:
+       splitted=i.split()
+       elset_ids[splitted[1]].append(splitted[0])
+
+pprint(elset_ids,max=1000)
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+
+#add get num grains function
+sim = fepx_sim("file",home+"1_uniaxial")
+
+file = open(home+"1_uniaxial/simulation.msh").readlines()
+values=[]
+for i in file:
+       splitted=i.split()
+       if splitted[0] == "$Elements":
+              print(i)
+              elts=True
+       elif splitted[0] == "$EndElements":
+              print(i)
+              elts=False
+       if elts:
+              if len(splitted)>1 and splitted[1]=="11":
+                     values.append(splitted)
+print(len(values))
+
+grain_id = "3"
+#pprint(elset_ids[grain_id])
+
+
+for val in elset_ids[grain_id]:
+       vals= values[int(val)-1]
+       print(vals)
+       vals= [int(i)-1 for i in vals[6:]]
+       print(vals)
+       #exit(0)
+       nodes = np.array(sim.get_output("coo",ids=vals,step="2",res="nodes")).T
+       oris = np.array(sim.get_output("ori",id=val,step="2",res="elts"))
+       x,y,z = avg(nodes[0]), avg(nodes[1]), avg(nodes[2])
+       start = [x,y,z]
+       ax.scatter(nodes[0],nodes[1],nodes[2],s=3)
+       axis_basis = R.from_mrp(np.array(oris)).as_matrix().T
+       for ind,eig in enumerate(axis_basis):
+              ax.quiver(start[0],start[1],start[2],
+                     eig[0],eig[1],eig[2]
+                     ,length=leng,normalize=True
+                     ,color="k", linestyle = sty,linewidth=lw)
+
+ele,azi,roll =[31,-28,0]
+#ele,azi,roll =[26,62,0],roll=roll
+ax.view_init(elev=ele, azim=azi)
+ax.set_ylim([0,0.5])
+ax.set_xlim([0,0.5])
+ax.set_zlim([0,0.5])
+show = True
+#show = False
+if show:
+       plt.show()
+else:
+       #fig.savefig("funda_region")
+       fig.savefig("bad_elt")
+       #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 exit(0)
+exit(0)
+nodes = np.array(sim.get_output("coo",ids=vals,step="0",res="nodes")).T
+pprint(nodes)
+node = np.array(sim.get_output("coo",ids=val,step="0",res="nodes")).T
+pprint(node)
+
+ax.plot(nodes[0],nodes[1],nodes[2],"ko",ms=30)
+ax.plot(node[0],node[1],node[2],"ro",ms=30)
+exit(0)
+# read the 3d elements file
 
 simulations = os.listdir(home)
 simulations.sort()
