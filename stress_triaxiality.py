@@ -128,6 +128,7 @@ def plot_mean_data(NAME,ylims="",y_label="", show="",
         deg = "$^{\circ}$"
         #
         x_label = f'$p$ (-)'
+        show=False
         #y_label = f'Normalized Misorienation ({deg})'
         fig.supxlabel(x_label,fontsize=SIZE)
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
@@ -406,8 +407,8 @@ def plot():
     print("starting plotting")
     tic = time.perf_counter()
     #ax = plt.figure().add_subplot(projection='3d')
-    #plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False,show=True)
-    plot_std_mean_data(name,norm=norm,ylims=ylims,ylims2=ylims2,y_label=y_lab,base=True,show=show,debug=False)
+    plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False,show=True)
+    #plot_std_mean_data(name,norm=norm,ylims=ylims,ylims2=ylims2,y_label=y_lab,base=True,show=show,debug=False)
 
     toc = time.perf_counter()
     print(f"Generated plot in {toc - tic:0.4f} seconds")

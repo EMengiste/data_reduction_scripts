@@ -19,6 +19,7 @@ plt.rcParams['figure.figsize'] = 20,20
 # left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1
 
 home = "/Users/ezramengiste/Documents/work_stuff/the_sims/"
+home="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 #print(os.listdir(home))
 ### inni
 elts=False
@@ -26,25 +27,32 @@ fs=0.6
 sty = "solid"
 val = 1
 leng = 0.05
-lw=1
+lw=2
+step ="28"
+grain_id = "55"
 ##
 
 elset_ids={}
-for i in range(1,51):
+for i in range(1,2001):
        elset_ids[str(i)] = []
-file = open(home+"simulation.stelt").readlines()
+file = open("Cube.stelt").readlines()
 for i in file:
        splitted=i.split()
        elset_ids[splitted[1]].append(splitted[0])
 
-pprint(elset_ids,max=1000)
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
 #add get num grains function
-sim = fepx_sim("file",home+"1_uniaxial")
+#sim = fepx_sim("file",home+"1_uniaxial")
+slips,set_num = ["2",4]
 
-file = open(home+"1_uniaxial/simulation.msh").readlines()
+#
+sim_name="024"
+#
+sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+#
+file = open(home+"isotropic/Cube.sim/inputs/simulation.msh").readlines()
 values=[]
 for i in file:
        splitted=i.split()
@@ -59,34 +67,46 @@ for i in file:
                      values.append(splitted)
 print(len(values))
 
-grain_id = "3"
 #pprint(elset_ids[grain_id])
-
-
-for val in elset_ids[grain_id]:
+print("made it this far firsty")
+elts = elset_ids[grain_id]
+#exit(0)
+cols = ["k","k","k"]
+for val in elts:
        vals= values[int(val)-1]
-       print(vals)
+       #print(vals)
        vals= [int(i)-1 for i in vals[6:]]
-       print(vals)
+       #print(vals)
        #exit(0)
-       nodes = np.array(sim.get_output("coo",ids=vals,step="2",res="nodes")).T
-       oris = np.array(sim.get_output("ori",id=val,step="2",res="elts"))
+       nodes = np.array(sim.get_output("coo",ids=vals,step=step,res="nodes")).T
+       # try orientation rot mat
+       #oris = np.array(sim.get_output("ori",id=val,step=step,res="elts"))
+       #ax.scatter(nodes[0],nodes[1],nodes[2],s=3)
+       #axis_basis = R.from_mrp(np.array(oris)).as_matrix().T
+       #axis_basis = [oris]
+       #
+       # try plotting stress triad
+       stress = sim.get_output("stress",step=step,res="elts",id=val)
+       stress_mat= to_matrix(np.array(stress))
+       eig_val, eig_vect = np.linalg.eig(stress_mat)
+       norm_eigval=normalize_vector(eig_val)
+       ind_max = list(norm_eigval).index(max(norm_eigval))
+       cols[ind_max]="r"
+       #
        x,y,z = avg(nodes[0]), avg(nodes[1]), avg(nodes[2])
        start = [x,y,z]
-       ax.scatter(nodes[0],nodes[1],nodes[2],s=3)
-       axis_basis = R.from_mrp(np.array(oris)).as_matrix().T
-       for ind,eig in enumerate(axis_basis):
+       #
+       col="k"
+       for ind,eig in enumerate(eig_vect):
+
               ax.quiver(start[0],start[1],start[2],
                      eig[0],eig[1],eig[2]
-                     ,length=leng,normalize=True
-                     ,color="k", linestyle = sty,linewidth=lw)
-
-ele,azi,roll =[31,-28,0]
+                     ,length=norm_eigval[ind]*leng,normalize=True
+                     ,color=cols[ind], linestyle = sty,linewidth=lw)
+       cols = ["k","k","k"]
+#ele,azi,roll =[31,-28,0]
 #ele,azi,roll =[26,62,0],roll=roll
-ax.view_init(elev=ele, azim=azi)
-ax.set_ylim([0,0.5])
-ax.set_xlim([0,0.5])
-ax.set_zlim([0,0.5])
+#ax.view_init(elev=ele, azim=azi)
 show = True
 #show = False
 if show:
@@ -96,6 +116,10 @@ else:
        fig.savefig("bad_elt")
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 exit(0)
+#####################################################
+#####################################################
+#####################################################
+#####################################################
 exit(0)
 nodes = np.array(sim.get_output("coo",ids=vals,step="0",res="nodes")).T
 pprint(nodes)

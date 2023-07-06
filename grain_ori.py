@@ -37,7 +37,7 @@ start_6ss = 90-6
 #["isotropic"]+dirs[num*4-num:num*4]+dirs[30+num*1-num:30+num*1]+
 # 102,165,
 for grain_id in [26]:
-    elts = get_elt_ids(homefull,grain_id,)
+    elts = get_elt_ids(homefull,grain_id)
     #
     # ["isotropic"]+
     for sim_name in ["isotropic"]+dirs[30:37]:

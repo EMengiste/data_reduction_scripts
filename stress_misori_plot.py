@@ -17,14 +17,10 @@ plt.rcParams["figure.dpi"] = 100
 plt.rcParams['figure.figsize'] = 20,20
 
 # left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1
-
-
-remote= "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
-remote = ""
-
-iso_home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
-
-home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
+#remote= "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
+#remote = ""
+#iso_home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+#home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
 
 
 def plot_mean_data(NAME,ylims="",y_label="",
@@ -121,6 +117,7 @@ def plot_mean_data(NAME,ylims="",y_label="",
             axs[0].set_yticklabels(y_tick_lables)
             axs[0].set_ylabel(y_label+unit,labelpad=25)
         ###
+        axs[0].legend()
         #
         # Put title here
         #title = "Deviation from Taylor Hypothesis: \n"+str(DOM[DOMAIN.index(dom)])+" domain, "+str(slip)+" slip systems\n"
@@ -133,10 +130,6 @@ def plot_mean_data(NAME,ylims="",y_label="",
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
         fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
     
-
-
-home=remote+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
-
 
 #name = "calculation_stress_misori"
 #ax = plt.figure().add_subplot(projection='3d')
@@ -216,26 +209,27 @@ def calc_grain_stress_triaxiality(params):
 
 def calc_grain_stress_misori(params):
     #print(params)
-    sim_ind,grain_start,grain_end,base =params
+    sim_ind,base =params
     sim_name = simulations[sim_ind]
     sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
 
     set = str(sets[int(sim_ind/base)%num_sets])
     slip = str(slips[int(sim_ind/(base*num_sets))])
     
-    grain_start =int(grain_start)
-    grain_end = int(grain_end)
+    step= "28"
+    grain_start =1
+    grain_end = 2000
     temp = []
     for id in range(grain_start,grain_end):
             stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(stress_iso)
+            stress_mat= to_matrix(np.array(stress_iso))
             eig_val_iso, eig_vect_iso = np.linalg.eig(stress_mat)
             sorting = np.argsort(eig_val_iso)
             eig_val_iso = eig_val_iso[sorting]
             eig_vect_iso = eig_vect_iso[sorting]
             #print("eig_vects iso",eig_vect_iso)
             stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(stress)
+            stress_mat= to_matrix(np.array(stress))
             eig_val, eig_vect = np.linalg.eig(stress_mat)
             sorting = np.argsort(eig_val)
             eig_val = eig_val[sorting]
@@ -252,6 +246,9 @@ def calc_grain_stress_misori(params):
     del sim
     return vals
 
+
+iso_home="/home/etmengiste/jobs/aps/slip_study/isotropic/"
+home="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 
 simulations = os.listdir(home)
 simulations.sort()
@@ -272,7 +269,7 @@ num_sets = len(sets)
 base = 6
 dom = "CUB"
 
-pool = multiprocessing.Pool(processes=90)
+pool = multiprocessing.Pool(processes=30)
 print("starting code")
 tic = time.perf_counter()
 #
@@ -283,16 +280,42 @@ set_of_sims = [m for m in range(0,base,1)]
 sims = np.array([set_of_sims,np.tile(num__base,(base))]).T
 #value = pool.map(calc_grain_stress_delta,sims)
 #value = calc_grain_stress_delta(sims[-1])
-value = calc_grain_stress_triaxiality(sims[-1])
-data +=value   
+#value = calc_grain_stress_misori(sims[-1])
+##value = pool.map(calc_grain_stress_misori,sims)
+##data +=value   
+value = calc_grain_stress_misori(sims[29])
+print(value)
+toc = time.perf_counter()
 del sim_iso
 print("===")
 print("===")
 print("===")
-print(value)
+print(f"Generated data in {toc - tic:0.4f} seconds")
+exit(0)
 print("===")
 print("===")
 print("===")
+print("starting plotting")
+tic = time.perf_counter()
+### misori plot code
+name = "calculation_stress_misori_"
+y_lab= "$\\bar{\\phi}$"
+ylims= [0.95,2.0]
+y_ticks = [5.00,7.50,10.00,12.50,15.00]
+y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
+
+
+df1 = pd.DataFrame(data)
+df1.columns=df1.iloc[0]
+df1[1:].to_csv(name+".csv")
+
+#ax = plt.figure().add_subplot(projection='3d')
+plot_mean_data(name,y_label=y_lab,debug=False)
+
+
+toc = time.perf_counter()
+print(f"Generated plot in {toc - tic:0.4f} seconds")
+exit(0)
 
 toc = time.perf_counter()
 print(f"Ran the code in {toc - tic:0.4f} seconds")
@@ -320,36 +343,6 @@ exit(0)
 
 
 exit(0)
-print("starting plotting")
-tic = time.perf_counter()
-### misori plot code
-name = "calculation_stress_misori_"
-y_lab= "$\\bar{\\phi}$"
-ylims= [0.95,2.0]
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
-#stress_calculation code
-name = "calculation_stress_delta_"
-y_lab ="$\Delta\sigma$ (MPa)"
-ylims = [0,250]
-
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
-
-df1 = pd.DataFrame(data)
-df1.columns=df1.iloc[0]
-df1[1:].to_csv(name+".csv")
-
-#ax = plt.figure().add_subplot(projection='3d')
-plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False)
-
-
-toc = time.perf_counter()
-print(f"Generated plot in {toc - tic:0.4f} seconds")
-exit(0)
-
 
 fig, ax = plt.subplots(1, 2,sharey="row")
 
