@@ -29,7 +29,7 @@ val = 1
 leng = 0.05
 lw=2
 step ="28"
-grain_id = "55"
+grain_id = "584"
 ##
 
 elset_ids={}

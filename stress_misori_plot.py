@@ -209,7 +209,12 @@ def calc_grain_stress_triaxiality(params):
 
 def calc_grain_stress_misori(params):
     #print(params)
-    sim_ind,base =params
+    sim_ind,base,home,basic =params
+    sim_ind = int(sim_ind)
+    base= int(base)
+    print(params)
+    print(simulations)
+    #exit(0)
     sim_name = simulations[sim_ind]
     sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
 
@@ -227,27 +232,31 @@ def calc_grain_stress_misori(params):
             sorting = np.argsort(eig_val_iso)
             eig_val_iso = eig_val_iso[sorting]
             eig_vect_iso = eig_vect_iso[sorting]
-            #print("eig_vects iso",eig_vect_iso)
+            print("eig_vects iso",eig_vect_iso)
             stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
             stress_mat= to_matrix(np.array(stress))
             eig_val, eig_vect = np.linalg.eig(stress_mat)
             sorting = np.argsort(eig_val)
             eig_val = eig_val[sorting]
             eig_vect = eig_vect[sorting]
-            #print("eig_vects",eig_vect)
+            print("eig_vects",eig_vect)
+            exit(0)
             temp.append(dif_degs(eig_vect_iso,eig_vect))
             #pprint(eig_vect_iso,preamble="iso")
             #pprint(eig_vect,preamble="ani")
             #print(temp)
     #print(aniso[ind])
-    name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
+    if basic:
+       name = "DOM_"+dom+"_"+sim_name
+    else:
+        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
     print(name)
     vals = [name ,np.mean(temp),np.std(temp)]
     del sim
     return vals
 
 
-iso_home="/home/etmengiste/jobs/aps/slip_study/isotropic/"
+iso_home="/home/etmengiste/jobs/aps/slip_study/"
 home="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 
 simulations = os.listdir(home)
@@ -268,23 +277,36 @@ sets = ["1","2","3","4","5"]
 num_sets = len(sets)
 base = 6
 dom = "CUB"
+basic = True
+#basic = False
 
-pool = multiprocessing.Pool(processes=30)
+pool = multiprocessing.Pool(processes=90)
 print("starting code")
 tic = time.perf_counter()
 #
 #   main_code
 num__base=6
-base = len(simulations[:90])
-set_of_sims = [m for m in range(0,base,1)]
-sims = np.array([set_of_sims,np.tile(num__base,(base))]).T
+if basic:        
+    simulations = ["isotropic_2","isotropic_3"]
+    home = iso_home
+    base = len(simulations)
+    set_of_sims = [m for m in range(0,base,1)]
+else:
+    base = len(simulations[:90])
+    set_of_sims = [m for m in range(0,base,1)]
+
+sims = np.array([set_of_sims,np.tile(num__base,(base)),np.tile(home,(base)),np.tile(basic,(base))]).T
 #value = pool.map(calc_grain_stress_delta,sims)
 #value = calc_grain_stress_delta(sims[-1])
 #value = calc_grain_stress_misori(sims[-1])
-##value = pool.map(calc_grain_stress_misori,sims)
-##data +=value   
-value = calc_grain_stress_misori(sims[29])
-print(value)
+if basic:
+    value = calc_grain_stress_misori(sims[0])
+    pprint(value)
+    value = calc_grain_stress_misori(sims[1])
+    pprint(value)
+else:
+    value = pool.map(calc_grain_stress_misori,sims)
+    data +=value   
 toc = time.perf_counter()
 del sim_iso
 print("===")
@@ -298,7 +320,7 @@ print("===")
 print("starting plotting")
 tic = time.perf_counter()
 ### misori plot code
-name = "calculation_stress_misori_"
+name = "calculation_stress_misori"
 y_lab= "$\\bar{\\phi}$"
 ylims= [0.95,2.0]
 y_ticks = [5.00,7.50,10.00,12.50,15.00]

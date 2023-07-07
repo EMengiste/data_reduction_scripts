@@ -1720,9 +1720,9 @@ def rot_mat(arr1,arr2):
 ##
 def dif_degs(start,fin,debug=False):
     q_ij,q_ji = rot_mat(start,fin)
-    #print(np.dot(q_ij.T,start[0]))
-    #print("---")
-    #print(np.dot(q_ij.T,fin[0]))
+    print(np.dot(q_ij.T,start[0]))
+    print("---")
+    print(np.dot(q_ij.T,fin[0]))
     v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
     r1 = ret_to_funda(v1)
     pi=math.pi
@@ -1731,6 +1731,7 @@ def dif_degs(start,fin,debug=False):
         r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
         thet_ji =math.acos(r2[0])*(180/pi)
         return [thet_ij,thet_ji]
+    
     return thet_ij
 #
 def eucledian_distance(arr1,arr2):
