@@ -4,7 +4,7 @@ plt.rcParams.update({'font.size': 20})
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"#
-plt.rcParams["figure.dpi"] = 100
+plt.rcParams["figure.dpi"] =100
 plt.rcParams['figure.figsize'] = 23,23
 plt.rcParams['axes.edgecolor'] = 'k'
 
@@ -20,6 +20,7 @@ size = 0.4
 remote= "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
 #remote=""
 home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
+rem="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu"
 rem=""
 home=rem+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 
@@ -39,57 +40,29 @@ sims =[simulations.index("isotropic")]
 sims += [i for i in range(start_sim,start_sim+6)]
 print([simulations[i] for i in sims])
 value=[]
-def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
-                    xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]]):
-       #
-       #      defult params need to be fixed for each axis
-       debug = True
-       debug = False
-       rod_labs = ["$r_1 , x$","$r_2 , y$","$r_3, z$"]
-       axis_basis = [[1,0,0],[0,1,0],[0,0,1]]
-       offset= np.array([0.01,0,-0.0001])
-       start = np.array(ori)+offset
-       lab_offset = -0.0002
-       fs=60
-       ##
-       ##     make into function
-       ##
-       for ind,eig in enumerate(axis_basis):
-              lw= 4
-              print(axis_basis)
-              ax.quiver(start[0],start[1],start[2],
-                     eig[0],eig[1],eig[2]
-                     ,length=leng,normalize=True
-                     ,color="k", linestyle = sty,linewidth=lw)
-              #
-              leng_text=offset_text*leng
-              val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
-              ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, color='k')
-              
-              if debug:
-                     start = np.array([0,0,0])
-                     leng = 0.6
-                     lab_offset = np.array([0.0005,0.00,0.0007])
-                     lw= 5.6
-                     val_txt = start+val*(leng+lab_offset)
-                     ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, color='k')
-                     ax.quiver(start[0],start[1],start[2],
-                            eig[0],eig[1],eig[2]
-                            ,length=leng,normalize=True
-                            ,color="k", linestyle = sty,linewidth=lw)
-                     #
 
+find_grain=True
+#find_grain=False
 
+show_circles=False
+show_circles=True
 
-grain_of_interest = 585
-fig = plt.figure()
+grain_of_interest = 545
+grain_of_interest_2 = 592
+
+grain_of_interest_2 = 574
+fig = plt.figure(figsize=(15,23))
 ax = fig.add_subplot(projection='3d')
+fig_g2 = plt.figure(figsize=(15,23))
+ax_g2 = fig_g2.add_subplot(projection='3d')
+
 fig_large = plt.figure()
 ax_large = fig_large.add_subplot(projection='3d')
 plot_rod_outline(ax_large)
-
-for grain_id in [i for i in range(500,600)]:
-       sty = "solid"
+grain_ids=[i for i in range(500,600)]
+grain_ids=[grain_of_interest,grain_of_interest_2]
+for grain_id in grain_ids:#[-60:-40]:
+       sty="solid"
        for val,alp in zip(sims,aniso):
               print(simulations[val])
               sim = fepx_sim("Cube.sim",path=home+simulations[val]+"/Cube.sim")
@@ -129,11 +102,9 @@ for grain_id in [i for i in range(500,600)]:
               #pprint(eig_vect)
               if simulations[val]=="isotropic":
                      first=ori
-              if val == start_sim and grain_id == grain_of_interest :
-                     #ax.text(ori[0],ori[1],ori[2], simulations[val],fontsize=10, color='red')
-                     #ax_large.scatter(ori[0],ori[1],ori[2],s=2700,color="white",edgecolor="r")
-                     ax_large.scatter(ori[0],ori[1],ori[2],color="white",edgecolor="r",lw=100,s=200)
-                     
+                     if find_grain:
+                            ax_large.text(ori[0],ori[1],ori[2], str(grain_id),fontsize=30, color='red')
+
                      #ax.text(ori[0],ori[1],ori[2], str(id),fontsize=10, color='k')
               #ax.scatter(ori[0],ori[1],ori[2],s=150,color=col,edgecolor="k")
               #
@@ -152,9 +123,17 @@ for grain_id in [i for i in range(500,600)]:
                                    ,length=leng,normalize=True
                                    ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw,
                                    edgecolor="k")
+                     if grain_id == grain_of_interest_2:
+                            ax_g2.quiver(start[0],start[1],start[2],
+                                   eig[0],eig[1],eig[2]
+                                   ,length=leng,normalize=True
+                                   ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw,
+                                   edgecolor="k")
                             
               if grain_id == grain_of_interest:
                      ax.scatter(ori[0],ori[1],ori[2],s=marker_size,color="k",edgecolor="k")
+              if grain_id == grain_of_interest_2:
+                     ax_g2.scatter(ori[0],ori[1],ori[2],s=marker_size,color="k",edgecolor="k")
               ax_large.scatter(ori[0],ori[1],ori[2],s=marker_size/80,color="k",edgecolor="k")
               
               #print("\n\n\nmin==",min(max_v_mineigs))
@@ -163,19 +142,42 @@ for grain_id in [i for i in range(500,600)]:
               #print("avg",np.mean(max_v_mineigs))
               #print("std",np.std(max_v_mineigs))
               #print("max==",max(max_v_mineigs))
+              if val == start_sim and show_circles and (grain_id == grain_of_interest or grain_id==grain_of_interest_2) :
+                     #ax.text(ori[0],ori[1],ori[2], str(grain_id),fontsize=10, color='red')
+                     #ax_large.scatter(ori[0],ori[1],ori[2],s=2700,color="white",edgecolor="r")
+                     ax_large.scatter(ori[0],ori[1],ori[2],color="white",edgecolor="r",lw=100,s=200)
+                     pass
               #exit(0)
 
 
        print("\n\n\n_____",ori,"_______\n\n\n")
        if grain_id == grain_of_interest:
-              coordinate_axis(ax,first)
               #
-              xyz_offset = [[0.05,-0.03,0],[0,-0.001,0],[0,-0.001,-0.002]]
+
+              offset= np.array([-0.01,0,-0.003]) # old vals for 545
+              offset= np.array([-0.001,-0.001,-0.015])
+              xyz_offset = [[0.003,0.0003,0],[0.0013,0.0003,-0.0001],[.0013,0,0.001]]
+              xyz_offset = [[0.0003,0,0],[0,0,0],[0,0,0]]# 
+              coordinate_axis(ax,first,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
+              #
+              xyz_offset = [[0.05,-0.03,0],[0.04,-0.02,0],[0.08,-0.003,-0.0001]]
+              xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]# for 574
               bottom = np.array([0.6,0,-0.6])
-              coordinate_axis(ax_large,bottom,leng=0.2,offset_text=1.3,xyz_offset =xyz_offset )
+              coordinate_axis(ax_large,bottom,leng=0.2,offset_text=1.5,xyz_offset =xyz_offset )
               #
+       if grain_id ==grain_of_interest_2:
+
+              offset= np.array([-0.002,-0.003,-0.005])
+              offset= np.array([-0.015,0.0004,-0.01])
+              xyz_offset = [[0.0006,-0.0004,0],[0,0,-0.0001],[0.0015,0,0.0009]]# for 592
+              xyz_offset = [[0,0,0],[-0.0007,0.001,0],[0,0,0]]# for 574
+              coordinate_axis(ax_g2,first,leng=0.003,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
+              
+              
 ax.set_aspect("equal")
 ax.axis("off")
+ax_g2.set_aspect("equal")
+ax_g2.axis("off")
 ax_large.set_aspect("equal")
 ax_large.axis("off")
 plt.grid(False)
@@ -186,17 +188,25 @@ plt.grid(False)
 
 #ax.set_proj_type('ortho')  # ax2.view_init(elev=45., azim=-160)
 #ax.view_init(elev=45., azim=-160)
-ele,azi,roll =[31,-28,0]
-#ele,azi,roll =[26,62,0]
+#ele,azi,roll =[31,-28,0]
+ele,azi,roll =[43,75,0]
 ax.view_init(elev=ele, azim=azi,roll=roll)
+ele,azi,roll =[38,126,0]
+ele,azi,roll =[32,141,0]
+#ele,azi,roll =[25,155,0]
+ax_g2.view_init(elev=ele, azim=azi,roll=roll)
 ax_large.view_init(elev=35,azim=45)
 plt.tight_layout()
 show = True
 show = False
 if show:
        plt.show()
-else:
-       fig_large.savefig("funda_region")
-       fig.savefig("funda_region_zoomed")
-       #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+else:  
+       name_1 = "funda_region_zoomed_grain_id_"+str(grain_of_interest)+".png"
+       name_2 = "funda_region_zoomed_grain_id_"+str(grain_of_interest_2)+".png"
+       fig_large.savefig("funda_region_grain_id_"+str(grain_of_interest)+"_grain_id_"+str(grain_of_interest_2))
+       #fig.savefig("funda_region_zoomed")
+       fig_g2.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest_2),dpi=70)
+       fig.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest),dpi=70)
+       os.system("./circle_merge.sh")
 exit(0)

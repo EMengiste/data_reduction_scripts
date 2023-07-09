@@ -117,7 +117,7 @@ def plot_mean_data(NAME,ylims="",y_label="",
             axs[0].set_yticklabels(y_tick_lables)
             axs[0].set_ylabel(y_label+unit,labelpad=25)
         ###
-        axs[0].legend()
+        #axs[0].legend()
         #
         # Put title here
         #title = "Deviation from Taylor Hypothesis: \n"+str(DOM[DOMAIN.index(dom)])+" domain, "+str(slip)+" slip systems\n"
@@ -128,13 +128,20 @@ def plot_mean_data(NAME,ylims="",y_label="",
         #y_label = f'Normalized Misorienation ({deg})'
         fig.supxlabel(x_label,fontsize=SIZE)
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
-        fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
+        fig.savefig(NAME+"_"+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
     
 
-#name = "calculation_stress_misori"
-#ax = plt.figure().add_subplot(projection='3d')
-#plot_std_mean_data(name,debug=False)
-#exit(0)
+### misori plot code
+name = "calculation_stress_misori"
+y_lab= "$\\phi_m$"
+ylims= [0.95,2.0]
+y_ticks = [5.00,7.50,10.00,12.50,15.00]
+y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
+
+plot_mean_data(name,y_label=y_lab,debug=False)
+exit(0)
+
+
 def von_mises_stress(stress):
     if stress.shape == (6,):
         s11,s22,s33,s23,s13,s12 = stress
@@ -232,21 +239,19 @@ def calc_grain_stress_misori(params):
             sorting = np.argsort(eig_val_iso)
             eig_val_iso = eig_val_iso[sorting]
             eig_vect_iso = eig_vect_iso[sorting]
-            print("eig_vects iso",eig_vect_iso)
+            #print("eig_vects iso",eig_vect_iso)
             stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
             stress_mat= to_matrix(np.array(stress))
             eig_val, eig_vect = np.linalg.eig(stress_mat)
             sorting = np.argsort(eig_val)
             eig_val = eig_val[sorting]
             eig_vect = eig_vect[sorting]
-            print("eig_vects",eig_vect)
-            exit(0)
             temp.append(dif_degs(eig_vect_iso,eig_vect))
             #pprint(eig_vect_iso,preamble="iso")
             #pprint(eig_vect,preamble="ani")
             #print(temp)
     #print(aniso[ind])
-    if basic:
+    if basic=="True":
        name = "DOM_"+dom+"_"+sim_name
     else:
         name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
@@ -277,13 +282,14 @@ sets = ["1","2","3","4","5"]
 num_sets = len(sets)
 base = 6
 dom = "CUB"
-basic = True
-#basic = False
+#basic = True
+basic = False
 
 pool = multiprocessing.Pool(processes=90)
 print("starting code")
 tic = time.perf_counter()
 #
+print(tic)
 #   main_code
 num__base=6
 if basic:        
@@ -294,11 +300,14 @@ if basic:
 else:
     base = len(simulations[:90])
     set_of_sims = [m for m in range(0,base,1)]
-
+print("----")
 sims = np.array([set_of_sims,np.tile(num__base,(base)),np.tile(home,(base)),np.tile(basic,(base))]).T
 #value = pool.map(calc_grain_stress_delta,sims)
 #value = calc_grain_stress_delta(sims[-1])
 #value = calc_grain_stress_misori(sims[-1])
+#print("sims 01",sims[-1],value)
+#exit(0)
+
 if basic:
     value = calc_grain_stress_misori(sims[0])
     pprint(value)
@@ -313,7 +322,7 @@ print("===")
 print("===")
 print("===")
 print(f"Generated data in {toc - tic:0.4f} seconds")
-exit(0)
+#exit(0)
 print("===")
 print("===")
 print("===")
@@ -321,11 +330,10 @@ print("starting plotting")
 tic = time.perf_counter()
 ### misori plot code
 name = "calculation_stress_misori"
-y_lab= "$\\bar{\\phi}$"
+y_lab= "$\\phi_m$"
 ylims= [0.95,2.0]
 y_ticks = [5.00,7.50,10.00,12.50,15.00]
 y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
 
 df1 = pd.DataFrame(data)
 df1.columns=df1.iloc[0]

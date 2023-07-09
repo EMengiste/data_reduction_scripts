@@ -25,7 +25,7 @@ plt.rc('figure', titlesize=SIZE)  #
 denoised= 0
 iso_home= "/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic/Cube"
 #iso_home= "/media/schmid_2tb_1/etmengiste/files/update_03_29_2022/current_param"
-iso_home ="/media/etmengiste/acmelabpc2_2TB/DATA/files/update_03_29_2022/current_param"
+iso_home ="/media/schmid_2tb_1/etmengiste/files/update_03_29_2022/current_param"
 fig, ax = plt.subplots(1, 1)
 #
 #
@@ -33,8 +33,8 @@ offset = 0.002
 #
 exp= pd.read_csv("fe9cr.csv")
 
-sample_stress=[exp["'stress'"][i]for i in range(0,len(exp["'stress'"]),120)]
-sample_strain=[exp["'strain'"][i]for i in range(0,len(exp["'strain'"]),120)]
+sample_stress=[exp["'stress'"][i]for i in range(0,len(exp["'stress'"]),500)]
+sample_strain=[exp["'strain'"][i]for i in range(0,len(exp["'strain'"]),500)]
 
 name= ["current","initial"]
 marker= ['-','-']  # Same as '-.'
@@ -51,9 +51,9 @@ for i in range(num):
 stress[0]=0
 ymax= max(stress)
 # simulation
-ax.plot(strain, stress,"k",linestyle="-",markersize=2, label="Simiulation")
+ax.plot(strain, stress,"k",linestyle="-",markersize=2,linewidth=4, label="Simiulation")
 # Experimental
-ax.plot(sample_strain,sample_stress,"k>",markersize=5, label="Experimental")
+ax.plot(sample_strain,sample_stress,"ko",markersize=20, label="Experimental")
 title = "Optimized Parameters"
 stress = '$\sigma_{eq}$'
 strain='$'
@@ -63,7 +63,7 @@ x_label = f'{strain} (\%)'
 y_label = f'{stress} (MPa)'
 
 # Compile labels for the graphs
-plt.ylim([0,ymax*1.01])
+plt.ylim([0,201])
 plt.xlim([0.00001,2.5])
 lines_labels = [a.get_legend_handles_labels() for a in fig.axes]
 lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]

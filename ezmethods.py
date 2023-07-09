@@ -345,7 +345,7 @@ class fepx_sim:
             return        
         if step=="malory_archer":
             num_steps = self.get_num_steps()
-            for step in range(self.get_num_steps()):
+            for step in range(num_steps):
                 print(str(step))
         if self.path[-4:] == ".sim":
             step_file = self.path+"/results/"+res+"/"+output+"/"+output+".step"+step
@@ -372,7 +372,7 @@ class fepx_sim:
      #
     #
     #
-    def post_process(self,options=""):
+    def post_process(self,options="",debug=False):
         #
         if self.post_processed:
             print("Already post processed")
@@ -387,10 +387,11 @@ class fepx_sim:
                         if line.startswith("***"):
                             print(line,"\n")
                         elif line.startswith("**"):
-                            values[line]= sim_file[sim_file.index(line)+1].strip()
+                            values[line[2:]]= sim_file[sim_file.index(line)+1].strip()
                 self.sim= values
-            pprint(values)
-            print(values["**general"][8])
+            if debug:
+                pprint(values)
+                print(values["general"][8])
             return
         #
         elif options!="":
@@ -1923,4 +1924,47 @@ def plot_std_mean_data(NAME,ylims="",base=True,debug=False,**non_base):
         fig.supxlabel(x_label,fontsize=SIZE)
         plt.subplots_adjust(left=0.09, right=0.98,top=0.95, bottom=0.124, wspace=0.07, hspace=0.1)
         fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean_std.png",dpi=400)
-    
+#
+#
+#
+def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,offset= np.array([0.01,0,-0.0001]),
+                    xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
+                    sty = "solid",space="rod_real", fs=60):
+    #
+    #      defult params need to be fixed for each axis
+    debug = True
+    debug = False
+    if space == "rod_real":
+        rod_labs = ["$r_1,x$","$r_2,y$","$r_3,z$"]
+    elif space== "real":        
+        rod_labs = ["X","Y","Z"]
+    axis_basis = [[1,0,0],[0,1,0],[0,0,1]]
+    start = np.array(ori)+offset
+    lab_offset = -0.0002
+    ##
+    ##     make into function
+    ##
+    for ind,eig in enumerate(axis_basis):
+            lw= 4
+            print(axis_basis)
+            ax.quiver(start[0],start[1],start[2],
+                    eig[0],eig[1],eig[2]
+                    ,length=leng,normalize=True
+                    ,color="k", linestyle = sty,linewidth=lw)
+            #
+            leng_text=offset_text*leng
+            val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
+            ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
+            
+            if debug:
+                    start = np.array([0,0,0])
+                    leng = 0.6
+                    lab_offset = np.array([0.0005,0.00,0.0007])
+                    lw= 5.6
+                    val_txt = start(leng+lab_offset)
+                    ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, color='k')
+                    ax.quiver(start[0],start[1],start[2],
+                        eig[0],eig[1],eig[2]
+                        ,length=leng,normalize=True
+                        ,color="k", linestyle = sty,linewidth=lw)
+                    #
