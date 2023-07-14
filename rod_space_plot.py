@@ -26,10 +26,10 @@ home=rem+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 
 simulations = os.listdir(home)
 simulations.sort()
-show_axies=True
-marker_size=1000
 simulations.remove("common_files")
 
+show_axies=True
+marker_size=1000
 lw= 10
 sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
 aniso = [1,1.25,1.50,1.75,2.00,3.00,4.00]
@@ -41,26 +41,36 @@ sims += [i for i in range(start_sim,start_sim+6)]
 print([simulations[i] for i in sims])
 value=[]
 
-find_grain=True
-#find_grain=False
+find_grain=False
+#find_grain=True
 
 show_circles=False
-show_circles=True
+#show_circles=True
+fs = 90
+grain_of_interest_1 = 592
 
-grain_of_interest = 545
-grain_of_interest_2 = 592
+grain_of_interest_1 = 574
+fig_g1 = plt.figure(figsize=(13.5,23))
+ax_g1 = fig_g1.add_subplot(projection='3d')
+ax_g1.set_title("Grain 1",fontsize=fs)
 
-grain_of_interest_2 = 574
-fig = plt.figure(figsize=(15,23))
-ax = fig.add_subplot(projection='3d')
-fig_g2 = plt.figure(figsize=(15,23))
+
+
+
+grain_of_interest_2 = 545
+fig_g2 = plt.figure(figsize=(13.5,23))
 ax_g2 = fig_g2.add_subplot(projection='3d')
+ax_g2.set_title("Grain 2",fontsize=fs)
 
-fig_large = plt.figure()
+
+of_lab_1=[0.5,0 ,0.244] #label offset grain 1
+of_lab_2=[-0.15,-0.01 ,-0.112] #label offset grain 2
+
+fig_large = plt.figure(figsize=(27,23))
 ax_large = fig_large.add_subplot(projection='3d')
 plot_rod_outline(ax_large)
 grain_ids=[i for i in range(500,600)]
-grain_ids=[grain_of_interest,grain_of_interest_2]
+grain_ids=[grain_of_interest_2,grain_of_interest_1]
 for grain_id in grain_ids:#[-60:-40]:
        sty="solid"
        for val,alp in zip(sims,aniso):
@@ -117,12 +127,13 @@ for grain_id in grain_ids:#[-60:-40]:
                             ,length=leng*15,normalize=True
                             ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw/5,
                             edgecolor="k")
-                     if grain_id == grain_of_interest:
-                            ax.quiver(start[0],start[1],start[2],
+                     if grain_id == grain_of_interest_1:
+                            ax_g1.quiver(start[0],start[1],start[2],
                                    eig[0],eig[1],eig[2]
                                    ,length=leng,normalize=True
                                    ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw,
                                    edgecolor="k")
+                            
                      if grain_id == grain_of_interest_2:
                             ax_g2.quiver(start[0],start[1],start[2],
                                    eig[0],eig[1],eig[2]
@@ -130,10 +141,16 @@ for grain_id in grain_ids:#[-60:-40]:
                                    ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw,
                                    edgecolor="k")
                             
-              if grain_id == grain_of_interest:
-                     ax.scatter(ori[0],ori[1],ori[2],s=marker_size,color="k",edgecolor="k")
-              if grain_id == grain_of_interest_2:
+              if grain_id == grain_of_interest_2:  
+                     if simulations[val]=="isotropic":
+                            ax_large.text(ori[0]+of_lab_2[0],ori[1]+of_lab_2[1],ori[2]+of_lab_2[2],
+                                           "Grain 2",fontsize=fs, color='k')
                      ax_g2.scatter(ori[0],ori[1],ori[2],s=marker_size,color="k",edgecolor="k")
+              if grain_id == grain_of_interest_1:
+                     if simulations[val]=="isotropic":
+                            ax_large.text(ori[0]+of_lab_1[0],ori[1]+of_lab_1[1],ori[2]+of_lab_1[2],
+                                           "Grain 1",fontsize=fs, color='k')
+                     ax_g1.scatter(ori[0],ori[1],ori[2],s=marker_size,color="k",edgecolor="k")
               ax_large.scatter(ori[0],ori[1],ori[2],s=marker_size/80,color="k",edgecolor="k")
               
               #print("\n\n\nmin==",min(max_v_mineigs))
@@ -142,7 +159,7 @@ for grain_id in grain_ids:#[-60:-40]:
               #print("avg",np.mean(max_v_mineigs))
               #print("std",np.std(max_v_mineigs))
               #print("max==",max(max_v_mineigs))
-              if val == start_sim and show_circles and (grain_id == grain_of_interest or grain_id==grain_of_interest_2) :
+              if val == start_sim and show_circles and (grain_id == grain_of_interest_2 or grain_id==grain_of_interest_2_1) :
                      #ax.text(ori[0],ori[1],ori[2], str(grain_id),fontsize=10, color='red')
                      #ax_large.scatter(ori[0],ori[1],ori[2],s=2700,color="white",edgecolor="r")
                      ax_large.scatter(ori[0],ori[1],ori[2],color="white",edgecolor="r",lw=100,s=200)
@@ -151,33 +168,33 @@ for grain_id in grain_ids:#[-60:-40]:
 
 
        print("\n\n\n_____",ori,"_______\n\n\n")
-       if grain_id == grain_of_interest:
+       if grain_id == grain_of_interest_2:
               #
 
               offset= np.array([-0.01,0,-0.003]) # old vals for 545
-              offset= np.array([-0.001,-0.001,-0.015])
+              offset= np.array([-0.001,-0.00,-0.0233])
               xyz_offset = [[0.003,0.0003,0],[0.0013,0.0003,-0.0001],[.0013,0,0.001]]
-              xyz_offset = [[0.0003,0,0],[0,0,0],[0,0,0]]# 
-              coordinate_axis(ax,first,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
+              xyz_offset = [[0.002,-0.0001,0],[0,0,0],[0,0,0.0008]]# 
+              coordinate_axis(ax_g2,first,fs=fs,leng=0.004,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
               #
               xyz_offset = [[0.05,-0.03,0],[0.04,-0.02,0],[0.08,-0.003,-0.0001]]
               xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]# for 574
               bottom = np.array([0.6,0,-0.6])
-              coordinate_axis(ax_large,bottom,leng=0.2,offset_text=1.5,xyz_offset =xyz_offset )
+              coordinate_axis(ax_large,bottom,fs=fs,leng=0.15,offset_text=1.5,xyz_offset =xyz_offset )
               #
-       if grain_id ==grain_of_interest_2:
+       if grain_id ==grain_of_interest_1:
 
               offset= np.array([-0.002,-0.003,-0.005])
-              offset= np.array([-0.015,0.0004,-0.01])
+              offset= np.array([-0.011,0.005,-0.02])
               xyz_offset = [[0.0006,-0.0004,0],[0,0,-0.0001],[0.0015,0,0.0009]]# for 592
-              xyz_offset = [[0,0,0],[-0.0007,0.001,0],[0,0,0]]# for 574
-              coordinate_axis(ax_g2,first,leng=0.003,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
+              xyz_offset = [[0.002,0.0015,0],[-.0,0.001,0],[-0.004,0,0.0045]]# for 574
+              coordinate_axis(ax_g1,first,fs=fs,leng=0.007,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
               
               
-ax.set_aspect("equal")
-ax.axis("off")
 ax_g2.set_aspect("equal")
 ax_g2.axis("off")
+ax_g1.set_aspect("equal")
+ax_g1.axis("off")
 ax_large.set_aspect("equal")
 ax_large.axis("off")
 plt.grid(False)
@@ -189,12 +206,12 @@ plt.grid(False)
 #ax.set_proj_type('ortho')  # ax2.view_init(elev=45., azim=-160)
 #ax.view_init(elev=45., azim=-160)
 #ele,azi,roll =[31,-28,0]
-ele,azi,roll =[43,75,0]
-ax.view_init(elev=ele, azim=azi,roll=roll)
-ele,azi,roll =[38,126,0]
-ele,azi,roll =[32,141,0]
-#ele,azi,roll =[25,155,0]
+ele,azi,roll =[45,76,0]
 ax_g2.view_init(elev=ele, azim=azi,roll=roll)
+ele,azi,roll =[38,126,0]
+ele,azi,roll =[48,144,0]
+#ele,azi,roll =[25,155,0]
+ax_g1.view_init(elev=ele, azim=azi,roll=roll)
 ax_large.view_init(elev=35,azim=45)
 plt.tight_layout()
 show = True
@@ -202,11 +219,12 @@ show = False
 if show:
        plt.show()
 else:  
-       name_1 = "funda_region_zoomed_grain_id_"+str(grain_of_interest)+".png"
-       name_2 = "funda_region_zoomed_grain_id_"+str(grain_of_interest_2)+".png"
-       fig_large.savefig("funda_region_grain_id_"+str(grain_of_interest)+"_grain_id_"+str(grain_of_interest_2))
+       name_1 = "funda_region_zoomed_grain_id_"+str(grain_of_interest_2)+".png"
+       name_2 = "funda_region_zoomed_grain_id_"+str(grain_of_interest_1)+".png"
+       #fig_large.savefig("funda_region_grain_id_"+str(grain_of_interest_2)+"_grain_id_"+str(grain_of_interest_2_1))
+       fig_large.savefig("funda_region_clean.png")
        #fig.savefig("funda_region_zoomed")
-       fig_g2.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest_2),dpi=70)
-       fig.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest),dpi=70)
+       fig_g1.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest_1))
+       fig_g2.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest_2))
        os.system("./circle_merge.sh")
 exit(0)

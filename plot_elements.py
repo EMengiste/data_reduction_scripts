@@ -1,10 +1,10 @@
+# 
 import os
 from ezmethods import *
 import pandas as pd
 from mpl_toolkits.mplot3d import axes3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.pyplot as plt
-
 import multiprocessing
 import time
 # Latex interpretation for plots
@@ -59,7 +59,7 @@ file = open(home+sim_name+"/Cube.sim/inputs/simulation.msh").readlines()
 sim.post_process()
 num_elts = int(sim.sim["general"].split()[2])
 
-elt_cols = [0 for i in range(num_elts)]
+elt_cols = ["0:0:0" for i in range(num_elts)]
 
 values=[]
 for i in file:
@@ -144,10 +144,10 @@ for ind,val in enumerate(elts):
        color = "k"
        if ind in top:
               color="r"
-              elt_cols[int(val)-1] = 1
+              elt_cols[int(val)-1] = "109:205:89"
        if ind in bottom:
               color="b"
-              elt_cols[int(val)-1] = 3
+              elt_cols[int(val)-1] = "62:74:137"
        x,y,z = nodes[0], nodes[1], nodes[2]
        ax.scatter(x,y,z,s=20,c=color)
        x,y,z = avg(nodes[0]), avg(nodes[1]), avg(nodes[2])
@@ -186,7 +186,7 @@ for i in elt_cols:
 offset= np.array([0,0,0])
 start=np.array([0.2,0.230,0.755])
 xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]
-coordinate_axis(ax,start,space="real",fs=40,leng=0.04,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
+coordinate_axis(ax,start,space="real_latex",fs=40,leng=0.04,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
 #
 #ele,azi,roll =[31,-28,0]
 ele,azi,roll =[45,45,0]

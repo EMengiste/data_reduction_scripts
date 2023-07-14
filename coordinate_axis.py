@@ -1,17 +1,40 @@
+import os
 from ezmethods import *
 from itertools import chain, combinations
 # Latex interpretation for plots
-plt.rcParams.update({'font.size': 2})
+plt.rcParams.update({'font.size': 55})
 plt.rcParams['text.usetex'] = True
-plt.rcParams['font.family'] = 'DejaVu Serif'
+plt.rcParams['font.family'] = 'Dejvu Sans'
 plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 100
-plt.rcParams['figure.figsize'] = 20,20
-plt.rcParams['axes.edgecolor'] = 'k'
+plt.rcParams['figure.figsize'] = 7,10
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
+offset= np.array([0,0,0])
+start=np.array([0,0,0])
+xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]
+coordinate_axis(ax,start,space="real",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
+#
+#ele,azi,roll =[31,-28,0]
+ele,azi,roll =[45,45,0]
+ax.view_init(elev=ele, azim=azi)
+ax.set_aspect("equal")
+ax.axis("off")
+plt.grid(False)
+show = True
+show = False
+if show:
+       plt.show()
+else:
+       #fig.savefig("funda_region")
+       fig.savefig("coo_ax")
+       #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+os.system("convert coo_ax.png -crop 380x400+190+300 coo_ax.png")
+os.system("convert -gravity south +append coo_ax.png grain.png combined_grain_coo_ax.png")
+os.system("convert combined_grain_coo_ax.png -chop 180x0+380+0 axis_grain.png")
+exit(0)
 #plot_rod_outline(ax)
 start= [0,0,0]
 show_axies = True

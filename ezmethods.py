@@ -1660,7 +1660,7 @@ def ret_to_funda(quat, sym_operators=Cubic_sym_quats(),debug=False):
               print(tiled_quat.shape)
               pprint(reshaped_quat,preamble="reshaped")
               print("old shape",sym_operators.shape)
-              pprint(sym_operators)
+              pprint(sym_operators,max = 200)
               print(sym_operators.shape)
        equiv_quats = quat_prod(reshaped_quat,np.tile(sym_operators,(1,n)))
        #pprint(equiv_quats)
@@ -1927,7 +1927,8 @@ def plot_std_mean_data(NAME,ylims="",base=True,debug=False,**non_base):
 #
 #
 #
-def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,offset= np.array([0.01,0,-0.0001]),
+def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
+            lw= 4, offset= np.array([0.01,0,-0.0001]),
                     xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
                     sty = "solid",space="rod_real", fs=60):
     #
@@ -1937,7 +1938,9 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,offset= np.array([0.01,0
     if space == "rod_real":
         rod_labs = ["$r_1,x$","$r_2,y$","$r_3,z$"]
     elif space== "real":        
-        rod_labs = ["X","Y","Z"]
+        rod_labs = ["x","y","z"]
+    elif space== "real_latex":        
+        rod_labs = ["$x$","$y$","$z$"]
     axis_basis = [[1,0,0],[0,1,0],[0,0,1]]
     start = np.array(ori)+offset
     lab_offset = -0.0002
@@ -1945,7 +1948,6 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,offset= np.array([0.01,0
     ##     make into function
     ##
     for ind,eig in enumerate(axis_basis):
-            lw= 4
             print(axis_basis)
             ax.quiver(start[0],start[1],start[2],
                     eig[0],eig[1],eig[2]
