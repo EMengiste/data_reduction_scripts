@@ -55,6 +55,7 @@ sim_name="000"+str(sim_name)
 sim_name = sim_name[-3:]
 #
 sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+# make part of the fepx sim class
 file = open(home+sim_name+"/Cube.sim/inputs/simulation.msh").readlines()
 sim.post_process()
 num_elts = int(sim.sim["general"].split()[2])
