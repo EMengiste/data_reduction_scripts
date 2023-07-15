@@ -15,16 +15,23 @@ ax = fig.add_subplot(projection='3d')
 offset= np.array([0,0,0])
 start=np.array([0,0,0])
 xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]
-coordinate_axis(ax,start,space="real",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
+coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.3,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
+#coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
 #
+x=[1,1,0,0,0,1,1,0]
+y=[1,0,1,0,1,0,1,0]
+z=[1,0,0,1,1,1,0,0]
+ax.scatter(x,y,z,"o")
+ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
+# 28,-58
 ele,azi,roll =[45,45,0]
 ax.view_init(elev=ele, azim=azi)
 ax.set_aspect("equal")
 ax.axis("off")
 plt.grid(False)
 show = True
-show = False
+#show = False
 if show:
        plt.show()
 else:
