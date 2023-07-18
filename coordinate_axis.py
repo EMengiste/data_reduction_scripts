@@ -7,37 +7,57 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'Dejvu Sans'
 plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 100
-plt.rcParams['figure.figsize'] = 7,10
+plt.rcParams['figure.figsize'] = 3,3
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
+
+def vect_to_azim_elev(vect):
+    x,y,z = vect
+    mag_tot = (x**2 +y**2 +z**2)**0.5
+    mag_xy = (x**2 +y**2)**0.5
+    azi = math.degrees(math.asin(y/mag_xy))
+    ele = math.degrees(math.atan(z/mag_xy))
+    return [ele,azi]
+
 offset= np.array([0,0,0])
 start=np.array([0,0,0])
-xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]
-coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.3,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
+xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
+coordinate_axis(ax,start,space="real_latex",fs=55,leng=.9,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 #coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
 #
 x=[1,1,0,0,0,1,1,0]
 y=[1,0,1,0,1,0,1,0]
 z=[1,0,0,1,1,1,0,0]
-ax.scatter(x,y,z,"o")
-ax.scatter(4,-5,4,"ko")
+#ax.scatter(x,y,z,"o")
+#ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
 # 28,-58
-ele,azi,roll =[45,45,0]
+ax.set_xlim([-.2,0.7])
+ax.set_ylim([-.2,0.7])
+ax.set_zlim([-.2,0.7])
+ele,azi,roll =[35,45,0]
+ele,azi = vect_to_azim_elev([4,-5,4])
+print(ele,azi)
 ax.view_init(elev=ele, azim=azi)
 ax.set_aspect("equal")
+ax.set_proj_type("persp")
 ax.axis("off")
 plt.grid(False)
 show = True
-#show = False
+show = False
 if show:
        plt.show()
 else:
        #fig.savefig("funda_region")
        fig.savefig("coo_ax")
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+
+#exit(0)
+os.system('convert -gravity south +append coo_ax.png /media/schmid_2tb_1/etmengiste/files/slip_system_study/common_files/Cube_msh.png Cube_msh.png')
+os.system("convert -chop 195x0+265+0 Cube_msh.png Cube_msh.png")
+exit(0)
 os.system("convert coo_ax.png -crop 380x400+190+300 coo_ax.png")
 os.system("convert -gravity south +append coo_ax.png grain.png combined_grain_coo_ax.png")
 os.system("convert combined_grain_coo_ax.png -chop 180x0+380+0 axis_grain.png")

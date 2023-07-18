@@ -12,7 +12,7 @@ homefull=rem+"/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 if fractal:
     home=rem+"/media/schmid_1tb_2/etmengiste/aps_add_slip/"
     fract_name="_fractal_"
-target_dir = "/home/etmengiste/jobs/aps/fragmented_grains/"
+target_dir = "/home/etmengiste/jobs/aps/frag_grains_step_27/"
 sample_num= 2000
 start = 0
 bin_size = 10
@@ -31,12 +31,13 @@ ANISO  = ["1.25", "1.50", "1.75", "2.00", "3.00","4.00"]
 slips = ["2","4","6"]
 num =6
 start_6ss = 90-6
+step = "27"
 
-
+final_step ="28"
 ##grains[28:29]
 #["isotropic"]+dirs[num*4-num:num*4]+dirs[30+num*1-num:30+num*1]+
 # 102,165,
-for grain_id in [26]:
+for grain_id in [26,165,102]:
     elts = get_elt_ids(homefull,grain_id)
     #
     # ["isotropic"]+
@@ -48,22 +49,19 @@ for grain_id in [26]:
             path = sim_name+"/"+dom[0]
             sim= fepx_sim("sim",path=home+path+".sim")
             sim.post_process()
-            final_step = sim.get_num_steps()
-            print(sim.sim['**general'])
-            num_elts = int(sim.sim['**general'].split()[2])
-            step = sim.sim['**step']
+            num_elts = int(sim.sim['general'].split()[2])
             nums= elts
             print("num elts ",len(nums))
             #
             ori_s = sim.get_output("ori",step="0",res="elts",ids=nums)
-            ori_f = sim.get_output("ori",step=final_step,res="elts",ids=nums)
+            ori_f = sim.get_output("ori",step=step,res="elts",ids=nums)
             #
             print("num oris step 0",len(ori_s))
-            print("num oris step"+str(final_step),len(ori_f))
+            print("num oris step"+str(step),len(ori_f))
             #
             file_name = str(grain_id)+"_"+sim_name+"_oris"+fract_name
             file_s = open(target_dir+file_name+"0.txt","w")
-            file_f= open(target_dir+file_name+str(final_step)+".txt","w")
+            file_f= open(target_dir+file_name+str(step)+".txt","w")
             #os.system(n)
             for i in range(len(nums)):
                 var=""

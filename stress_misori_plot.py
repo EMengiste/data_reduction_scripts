@@ -1,12 +1,5 @@
 import os
 from ezmethods import *
-import pandas as pd
-from mpl_toolkits.mplot3d import axes3d
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import matplotlib.pyplot as plt
-
-import multiprocessing
-import time
 # Latex interpretation for plots
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': 55})
@@ -130,18 +123,6 @@ def plot_mean_data(NAME,ylims="",y_label="",
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
         fig.savefig(NAME+"_"+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
     
-
-### misori plot code
-name = "calculation_stress_misori"
-y_lab= "$\\phi_m$"
-ylims= [0.95,2.0]
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
-plot_mean_data(name,y_label=y_lab,debug=False)
-exit(0)
-
-
 def von_mises_stress(stress):
     if stress.shape == (6,):
         s11,s22,s33,s23,s13,s12 = stress
@@ -216,7 +197,7 @@ def calc_grain_stress_triaxiality(params):
 
 def calc_grain_stress_misori(params):
     #print(params)
-    sim_ind,base,home,basic =params
+    sim_ind,base,home,basic,step =params
     sim_ind = int(sim_ind)
     base= int(base)
     print(params)
@@ -228,7 +209,6 @@ def calc_grain_stress_misori(params):
     set = str(sets[int(sim_ind/base)%num_sets])
     slip = str(slips[int(sim_ind/(base*num_sets))])
     
-    step= "28"
     grain_start =1
     grain_end = 2000
     temp = []
@@ -268,83 +248,91 @@ simulations = os.listdir(home)
 simulations.sort()
 simulations.remove("common_files")
 sim_iso = fepx_sim("Cube.sim",path=home+"isotropic/Cube.sim")
-step= "28"
-means = []
-stds = []
-set_start = 0
-set_end = 5
-headers = ["case","mean","std"]
-data = [headers]
-###
-aniso = ["125", "150", "175", "200", "300", "400"]
-slips = ["2","4","6"]
-sets = ["1","2","3","4","5"]
-num_sets = len(sets)
-base = 6
-dom = "CUB"
-#basic = True
-basic = False
-
+step= "27"
+num_steps = sim_iso.get_num_steps()
+destination = "/home/etmengiste/jobs/aps/stress_misori/"
+steps = [str(i) for i in range(num_steps)]
 pool = multiprocessing.Pool(processes=90)
-print("starting code")
-tic = time.perf_counter()
-#
-print(tic)
-#   main_code
-num__base=6
-if basic:        
-    simulations = ["isotropic_2","isotropic_3"]
-    home = iso_home
-    base = len(simulations)
-    set_of_sims = [m for m in range(0,base,1)]
-else:
-    base = len(simulations[:90])
-    set_of_sims = [m for m in range(0,base,1)]
-print("----")
-sims = np.array([set_of_sims,np.tile(num__base,(base)),np.tile(home,(base)),np.tile(basic,(base))]).T
-#value = pool.map(calc_grain_stress_delta,sims)
-#value = calc_grain_stress_delta(sims[-1])
-#value = calc_grain_stress_misori(sims[-1])
-#print("sims 01",sims[-1],value)
-#exit(0)
 
-if basic:
-    value = calc_grain_stress_misori(sims[0])
-    pprint(value)
-    value = calc_grain_stress_misori(sims[1])
-    pprint(value)
-else:
-    value = pool.map(calc_grain_stress_misori,sims)
-    data +=value   
-toc = time.perf_counter()
+for step in steps:
+    means = []
+    stds = []
+    set_start = 0
+    set_end = 5
+    headers = ["case","mean","std"]
+    data = [headers]
+    ###
+    aniso = ["125", "150", "175", "200", "300", "400"]
+    slips = ["2","4","6"]
+    sets = ["1","2","3","4","5"]
+    num_sets = len(sets)
+    base = 6
+    dom = "CUB"
+    basic = False
+    #basic = True
+
+    print("starting code")
+    tic = time.perf_counter()
+    #
+    print(tic)
+    #   main_code
+    num__base=6
+    if basic:        
+        simulations = ["isotropic_2","isotropic_3"]
+        home = iso_home
+        base = len(simulations)
+        set_of_sims = [m for m in range(0,base,1)]
+    else:
+        base = len(simulations[:90])
+        set_of_sims = [m for m in range(0,base,1)]
+    print("----")
+    sims = np.array([set_of_sims,np.tile(num__base,(base))
+                    ,np.tile(home,(base)),np.tile(basic,(base))
+                    ,np.tile(step,(base))]).T
+    #value = pool.map(calc_grain_stress_delta,sims)
+    #value = calc_grain_stress_delta(sims[-1])
+    #value = calc_grain_stress_misori(sims[-1])
+    #print("sims 01",sims[-1],value)
+    #exit(0)
+
+    if basic:
+        value = calc_grain_stress_misori(sims[0])
+        pprint(value)
+        value = calc_grain_stress_misori(sims[1])
+        pprint(value)
+    else:
+        value = pool.map(calc_grain_stress_misori,sims)
+        data +=value   
+    toc = time.perf_counter()
+    print("===")
+    print("===")
+    print("===")
+    print(f"Generated data in {toc - tic:0.4f} seconds")
+    #exit(0)
+    print("===")
+    print("===")
+    print("===")
+    print("starting plotting")
+    tic = time.perf_counter()
+    ### misori plot code
+    name = "calculation_stress_misori_step_"+step
+    y_lab= "$\\phi_m$"
+    ylims= [0.95,2.0]
+    y_ticks = [5.00,7.50,10.00,12.50,15.00]
+    y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
+
+    df1 = pd.DataFrame(data)
+    df1.columns=df1.iloc[0]
+    df1[1:].to_csv(destination+name+".csv")
+
+    #ax = plt.figure().add_subplot(projection='3d')
+    plot_mean_data(destination+name,y_label=y_lab,debug=False)
+
+
+    toc = time.perf_counter()
+    print(f"Generated plot in {toc - tic:0.4f} seconds")
+
 del sim_iso
-print("===")
-print("===")
-print("===")
-print(f"Generated data in {toc - tic:0.4f} seconds")
-#exit(0)
-print("===")
-print("===")
-print("===")
-print("starting plotting")
-tic = time.perf_counter()
-### misori plot code
-name = "calculation_stress_misori"
-y_lab= "$\\phi_m$"
-ylims= [0.95,2.0]
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
-df1 = pd.DataFrame(data)
-df1.columns=df1.iloc[0]
-df1[1:].to_csv(name+".csv")
-
-#ax = plt.figure().add_subplot(projection='3d')
-plot_mean_data(name,y_label=y_lab,debug=False)
-
-
-toc = time.perf_counter()
-print(f"Generated plot in {toc - tic:0.4f} seconds")
 exit(0)
 
 toc = time.perf_counter()

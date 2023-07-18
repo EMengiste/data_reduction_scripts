@@ -8,7 +8,10 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from mpl_toolkits.mplot3d import axes3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-from scipy.spatial.transform import Rotation as R
+import matplotlib.pyplot as plt
+
+import multiprocessing
+import time
 SIZE=35
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': SIZE})
@@ -29,7 +32,7 @@ plt.rc('xtick', labelsize=SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SIZE)    # legend fontsize
 plt.rc('figure', titlesize=SIZE)  #
-import numpy as np
+
 home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
 home ="/media/schmid_1tb_2/etmengiste/aps_add_slip/"
 ist= "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic"
@@ -705,13 +708,14 @@ def avg(arr):
  #
 #
 ##
-def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etmengiste/jobs/aps/eff_pl_str/",base=5,iso_home=home,path=home,debug=False,save_plot=False,df="", ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
+def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etmengiste/jobs/aps/eff_pl_str/",base=5,iso_home=home,path=home,debug=False,save_plot=False,df="",
+                   ids=[0],ratios=[ 1.25, 1.5, 1.75, 2.0, 4],step = "28",res ="mesh"):
     P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
     sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
     #sim_iso.post_process(options ="neper -S . -reselset slip,crss,stress,sliprate")
     sim_iso.post_process()
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
-    val =sim_iso.sim["**general"].split()
+    val =sim_iso.sim["general"].split()
     slip_iso = normalize(sim_iso.get_output("slip",step=step,res=res,ids=ids),absolute=True)
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
     #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
@@ -742,7 +746,6 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
     ax1.set_xlim(0.9,4.1)
     ax2.set_ylim(0,0.3)
     ax2.set_xlim(0.9,4.1)
-
     ax1.set_xlabel("ratio")
     ax2.set_xlabel("ratio")
     ax3.set_xlabel("ratio")
@@ -940,8 +943,8 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
 
         df[str(sim_start)+domain+"_unaltered"]= [1]+effective_pl_strain_unalt
         df[str(sim_start)+domain+"_altered"]= [1]+effective_pl_strain_alt
-        plt.savefig("/home/etmengiste/jobs/aps/images/Largeval_e"+simulations[sim_start]+"_"+domain,bbox_inches=mtransforms.Bbox([[.68, 0], [.85, 0.5]]).transformed(fig.transFigure - fig.dpi_scale_trans))
-        print("###--##==+++plotted to file: Largeval_e"+simulations[sim_start]+"_"+domain)
+        #plt.savefig("/home/etmengiste/jobs/aps/images/Largeval_e"+simulations[sim_start]+"_"+domain,bbox_inches=mtransforms.Bbox([[.68, 0], [.85, 0.5]]).transformed(fig.transFigure - fig.dpi_scale_trans))
+        #print("###--##==+++plotted to file: Largeval_e"+simulations[sim_start]+"_"+domain)
     elif show:
         plt.tight_layout()
         plt.show()
@@ -951,9 +954,8 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
 #
 ## Plot effective plastic strain
 def plot_eff_strain(start,all=False,marker_size=40,aps_home="/home/etmengiste/jobs/aps/eff_pl_str/"):
-    y_label="$\\bar\\varepsilon^{p}$ (-)"
+    
     for domain in ["Cube"]:
-
         if all:
             fig, axs = plt.subplots(1, 3,sharey="row")
             for j in range(3):
@@ -1281,29 +1283,30 @@ def package_oris(path,name="elset_ori.csv"):
 P = [ calculate_schmid(CUB_111[i],CUB_110[i]) for i in range(12)]
 #
 #
-def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=False):
+def calc_eff_pl_str(sim,domain,out=False,step="28",name="",under="",home=home,iso_home=home,destination="", debug=False):
     if name=="":
         name= domain
     file = open(home+sim+"/"+name+"_alt_eff_pl_str.csv","w")
-    file_iso = open(iso_home+"isotropic"+"/"+name+"_eff_pl_str.csv","w")
+
+    file_iso = open(home+sim+"/"+name+"isotropic"+"_eff_pl_str.csv","w")
     #
     sim= fepx_sim(sim,path=home+sim+"/"+domain)
     sim.post_process()
-    num_elts = int(sim.sim['**general'].split()[2])
-    step = sim.sim['**step']
-    slip = sim.get_output("slip",step="28",res="elts",ids="all")
+    num_elts = int(sim.sim['general'].split()[2])
+    step = sim.get_num_steps()
+    slip = sim.get_output("slip",step=step,res="elts",ids="all")
     elt_vol = sim.get_output("elt"+under+"vol",step="0",res="elts",ids="all")
-    v_tot = sum(elt_vol[1]["0"])
+    v_tot = sum([i[0] for i in elt_vol])
     elt_vol_final = sim.get_output("elt"+under+"vol",step=step,res="elts",ids="all")
     mat_par = sim.material_parameters["g_0"]
     del sim
     #   ISO
     sim_iso= fepx_sim("name",path=iso_home+"isotropic/"+domain)
     sim_iso.post_process()
-    step_iso = sim_iso.sim['**step']
-    slip_iso = sim_iso.get_output("slip",step="28",res="elts",ids="all")
+    step_iso = sim_iso.get_num_steps()
+    slip_iso = sim_iso.get_output("slip",step=step,res="elts",ids="all")
     elt_vol_iso = sim_iso.get_output("eltvol",step="0",res="elts",ids="all")
-    v_tot_iso = sum(elt_vol_iso[1]["0"])
+    v_tot_iso = sum([i[0] for i in elt_vol_iso])
     elt_vol_final_iso = sim_iso.get_output("eltvol",step=step_iso,res="elts",ids="all")
     baseline = float(sim_iso.material_parameters["g_0"][0].split("d")[0])
     #stress_iso = [normalize(sim_iso.get_output("stress",step=step,res=res,ids=ids)[str(i)]) for i in ids]
@@ -1342,8 +1345,8 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
         #
         for i in range(12):
             schmid_val = P[i]
-            shear_val = slip[0][str(el)][i]
-            shear_val_iso = slip_iso[0][str(el)][i]
+            shear_val = slip[el][i]
+            shear_val_iso = slip_iso[el][i]
             if i in altered:
                 total_altered+= schmid_val*shear_val
                 total_altered_iso+= schmid_val*shear_val_iso
@@ -1378,11 +1381,11 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
         eff_pl_str_unalt_iso = math.sqrt((2/3)*inner_prod(total_unaltered_iso,total_unaltered_iso))
         #
         #
-        v_el = elt_vol_final[0][str(el)][0]
+        v_el = elt_vol_final[el][0]
         v_frac = v_el/v_tot
         #
         #iso
-        v_el_iso = elt_vol_final_iso[0][str(el)][0]
+        v_el_iso = elt_vol_final_iso[el][0]
         v_frac_iso = v_el_iso/v_tot_iso
         #
         # altered
@@ -1415,10 +1418,10 @@ def calc_eff_pl_str(sim,domain,name="",under="",home=home,iso_home=home, debug=F
     file.close()
     file_iso.close()
     print("\n__")
-    print(sum(avg_eff_pl_str_alt))
-    print(sum(avg_eff_pl_str_unalt))
     file.close()
     file_iso.close()
+    if out:            
+        return [sum(avg_eff_pl_str_alt)/sum(avg_eff_pl_str_alt_iso),sum(avg_eff_pl_str_unalt)/sum(avg_eff_pl_str_unalt_iso), ratio]
   #
  #
 #
@@ -1693,7 +1696,11 @@ def quat_to_rod(val):
 #   Encorporate into fepx_sim class
 def get_elt_ids(home,grain_id,domain="Cube"):
        file = open(home+"common_files/"+domain+".stelt").readlines()
+       if file== []:
+            os.chdir(home)
+            os.system("neper -M -loadmesh "+domain+".msh -statelt id,elset3d")
        elt_ids = [i for i,line in enumerate(file) if line.split()[1]==str(grain_id)]
+       #print(home,grain_id,file)
        return elt_ids
 #
 ##

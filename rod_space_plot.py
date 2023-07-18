@@ -70,13 +70,14 @@ fig_large = plt.figure(figsize=(27,23))
 ax_large = fig_large.add_subplot(projection='3d')
 plot_rod_outline(ax_large)
 grain_ids=[i for i in range(500,600)]
-grain_ids=[grain_of_interest_2,grain_of_interest_1]
+#grain_ids=[grain_of_interest_2,grain_of_interest_1]
+destination = "/home/etmengiste/jobs/aps/rod_space_plots"
+step= "27"
 for grain_id in grain_ids:#[-60:-40]:
        sty="solid"
        for val,alp in zip(sims,aniso):
               print(simulations[val])
               sim = fepx_sim("Cube.sim",path=home+simulations[val]+"/Cube.sim")
-              step= "28"
               max_v_mineigs=[]
               eig_vects = []
               id= grain_id
@@ -222,9 +223,10 @@ else:
        name_1 = "funda_region_zoomed_grain_id_"+str(grain_of_interest_2)+".png"
        name_2 = "funda_region_zoomed_grain_id_"+str(grain_of_interest_1)+".png"
        #fig_large.savefig("funda_region_grain_id_"+str(grain_of_interest_2)+"_grain_id_"+str(grain_of_interest_2_1))
-       fig_large.savefig("funda_region_clean.png")
+       fig_large.savefig(destination+"/funda_region_clean.png")
        #fig.savefig("funda_region_zoomed")
-       fig_g1.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest_1))
-       fig_g2.savefig("funda_region_zoomed_grain_id_"+str(grain_of_interest_2))
+       fig_g1.savefig(destination+"/"+name_1)
+       fig_g2.savefig(destination+"/"+name_2)
+       os.chdir(destination)
        os.system("./circle_merge.sh")
 exit(0)

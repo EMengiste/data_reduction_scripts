@@ -21,11 +21,15 @@ slip_systems = ["$(01-1)[111]$",
                 "$(110)[1-1-1]$"]
 remote = "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
 #remote=""
-home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
-iso_home =remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
+
+
+iso_home="/home/etmengiste/jobs/aps/slip_study/"
+home="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
+destination = "/home/etmengiste/jobs/aps/eff_pl_strain/"
 for i in range(0,90,6):
     tic = time.perf_counter()
-    slip_vs_aniso(i,"Cube.sim",slip_systems,base=6,iso_home=iso_home,target_dir=remote+"/home/etmengiste/jobs/aps/eff_pl_str/sim_",ratios=[ 1.25, 1.50, 1.75, 2.00,3.00, 4.0],path=home,debug=False,save_plot=False,res="elts")
+    slip_vs_aniso(i,"Cube.sim",slip_systems, step="27",base=6,iso_home=iso_home,target_dir=destination
+                  ,ratios=[ 1.25, 1.50, 1.75, 2.00,3.00, 4.0],path=home,debug=False,save_plot=False,ids="all",res="elts")
 
     toc = time.perf_counter()
     print(f"calculated the eff pl strain for {dir} in {toc - tic:0.4f} seconds")
