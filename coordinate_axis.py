@@ -12,6 +12,53 @@ plt.rcParams['figure.figsize'] = 3,3
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
+
+
+def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
+            lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
+                    xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
+                    sty = "solid",space="rod_real", fs=60):
+    #
+    #      defult params need to be fixed for each axis
+    debug = True
+    debug = False
+    if space == "rod_real":
+        rod_labs = ["$r_1,x$","$r_2,y$","$r_3,z$"]
+    elif space== "real":        
+        rod_labs = ["x","y","z"]
+    elif space== "real_latex":        
+        rod_labs = ["$x$","$y$","$z$"]
+    start = np.array(ori)+offset
+    lab_offset = -0.0002
+    ##
+    ##     make into function
+    ##
+    for ind,eig in enumerate(axis_basis):
+            print(axis_basis)
+            ax.quiver(start[0],start[1],start[2],
+                    eig[0],eig[1],eig[2]
+                    ,length=leng,normalize=True
+                    ,color="k", linestyle = sty,linewidth=lw)
+            #
+            leng_text=offset_text*leng
+            val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
+            ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
+            
+            if debug:
+                    start = np.array([0,0,0])
+                    leng = 0.6
+                    lab_offset = np.array([0.0005,0.00,0.0007])
+                    lw= 5.6
+                    val_txt = start(leng+lab_offset)
+                    ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, color='k')
+                    ax.quiver(start[0],start[1],start[2],
+                        eig[0],eig[1],eig[2]
+                        ,length=leng,normalize=True
+                        ,color="k", linestyle = sty,linewidth=lw)
+                    #
+
+
+
 def angle_axis_to_mat(angle,axis):
     cos_thet = math.cos(angle)
     sin_thet = math.sin(angle)
@@ -58,7 +105,11 @@ ax.plot(X,Y,Z,"ro")
 axis = [0,1,1]
 angle = 45
 matrix = angle_axis_to_mat(angle,axis)
-vects = [np.dot(np.array([x,y,z]),np.array(matrix)) for x,y,z in zip(X,Y,Z) ]
+
+start = np.array([0.5,0.5,0.5])
+coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=55,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+
+vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
 X,Y,Z = np.array(vects).T
 ax.plot(X,Y,Z,"bo")
 print(X)
