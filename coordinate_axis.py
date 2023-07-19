@@ -12,6 +12,25 @@ plt.rcParams['figure.figsize'] = 3,3
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
+def angle_axis_to_mat(angle,axis):
+    cos_thet = math.cos(angle)
+    sin_thet = math.sin(angle)
+    u_x,u_y,u_z = axis
+    r11 = cos_thet + (u_x ** 2 * (1-cos_thet))
+    r12 = (u_x * u_y * (1-cos_thet)) - (u_z * sin_thet)
+    r13 = (u_x * u_z * (1-cos_thet)) + (u_y * sin_thet)
+
+    r21 = (u_y * u_x * (1-cos_thet)) + (u_z * sin_thet)
+    r22 = cos_thet + (u_y ** 2 * (1-cos_thet))
+    r23 = (u_y * u_z * (1-cos_thet)) - (u_x * sin_thet)
+
+    r31 = (u_z * u_x * (1-cos_thet)) - (u_y * sin_thet)
+    r32 = (u_z * u_y * (1-cos_thet)) + (u_x * sin_thet)
+    r33 = cos_thet + (u_z ** 2 * (1-cos_thet))
+    Rot_Mat = [ [r11,r12,r13],
+                [r21,r22,r23],
+                [r31,r32,r33]]
+    return Rot_Mat
 
 def vect_to_azim_elev(vect):
     x,y,z = vect
@@ -24,29 +43,44 @@ def vect_to_azim_elev(vect):
 offset= np.array([0,0,0])
 start=np.array([0,0,0])
 xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
-coordinate_axis(ax,start,space="real_latex",fs=55,leng=.9,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+coordinate_axis(ax,start,space="real_latex",fs=55,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 #coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
 #
-x=[1,1,0,0,0,1,1,0]
-y=[1,0,1,0,1,0,1,0]
-z=[1,0,0,1,1,1,0,0]
-#ax.scatter(x,y,z,"o")
+X=[1,1,0,0,0,1,1,0]
+Y=[1,0,1,0,1,0,1,0]
+Z=[1,0,0,1,1,1,0,0]
+print(X)
+print(Y)
+print(Z)
+ax.plot(X,Y,Z,"ro")
+
+
+axis = [0,1,1]
+angle = 45
+matrix = angle_axis_to_mat(angle,axis)
+vects = [np.dot(np.array([x,y,z]),np.array(matrix)) for x,y,z in zip(X,Y,Z) ]
+X,Y,Z = np.array(vects).T
+ax.plot(X,Y,Z,"bo")
+print(X)
+print(Y)
+print(Z)
 #ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
 # 28,-58
-ax.set_xlim([-.2,0.7])
-ax.set_ylim([-.2,0.7])
-ax.set_zlim([-.2,0.7])
+ax.set_xlim([-2,2])
+ax.set_ylim([-2,2])
+ax.set_zlim([-2,2])
 ele,azi,roll =[35,45,0]
 ele,azi = vect_to_azim_elev([4,-5,4])
 print(ele,azi)
 ax.view_init(elev=ele, azim=azi)
-ax.set_aspect("equal")
+#ax.set_aspect("equal")
 ax.set_proj_type("persp")
 ax.axis("off")
 plt.grid(False)
 show = True
-show = False
+#show = False
+
 if show:
        plt.show()
 else:
@@ -54,7 +88,7 @@ else:
        fig.savefig("coo_ax")
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 
-#exit(0)
+exit(0)
 os.system('convert -gravity south +append coo_ax.png /media/schmid_2tb_1/etmengiste/files/slip_system_study/common_files/Cube_msh.png Cube_msh.png')
 os.system("convert -chop 195x0+265+0 Cube_msh.png Cube_msh.png")
 exit(0)
