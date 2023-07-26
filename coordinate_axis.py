@@ -17,7 +17,7 @@ ax = fig.add_subplot(projection='3d')
 def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
             lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
                     xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
-                    sty = "solid",space="rod_real", fs=60):
+                    sty = "solid",space="",coo_labs=["x","y","z"], fs=60):
     #
     #      defult params need to be fixed for each axis
     debug = True
@@ -28,6 +28,8 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
         rod_labs = ["x","y","z"]
     elif space== "real_latex":        
         rod_labs = ["$x$","$y$","$z$"]
+    else:
+        rod_labs =coo_labs
     start = np.array(ori)+offset
     lab_offset = -0.0002
     ##
@@ -59,6 +61,7 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
 
 
 
+
 def angle_axis_to_mat(angle,axis):
     cos_thet = math.cos(angle)
     sin_thet = math.sin(angle)
@@ -87,42 +90,28 @@ def vect_to_azim_elev(vect):
     ele = math.degrees(math.atan(z/mag_xy))
     return [ele,azi]
 
+for_domain =True
+
+
 offset= np.array([0,0,0])
 start=np.array([0,0,0])
-xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
-coordinate_axis(ax,start,space="real_latex",fs=55,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+xyz_offset = [[0,0,0],[0,0,0],[0,0,0.2]]
+ele,azi,roll =[35,45,0]
+ax.set_xlim([-.2,0.8])
+ax.set_ylim([-.2,0.8])
+ax.set_zlim([-.2,0.8])
+if for_domain:
+    ele,azi = vect_to_azim_elev([4,-5,4])
+    xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0.2]]
+    ax.set_xlim([-.2,0.7])
+    ax.set_ylim([-.2,0.7])
+    ax.set_zlim([-.2,0.7])
+coordinate_axis(ax,start,coo_labs=["$z$","$x$","$y$"],fs=55,leng=.9,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 #coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
-#
-X=[1,1,0,0,0,1,1,0]
-Y=[1,0,1,0,1,0,1,0]
-Z=[1,0,0,1,1,1,0,0]
-print(X)
-print(Y)
-print(Z)
-ax.plot(X,Y,Z,"ro")
 
-
-axis = [0,1,1]
-angle = 45
-matrix = angle_axis_to_mat(angle,axis)
-
-start = np.array([0.5,0.5,0.5])
-coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=55,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
-
-vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
-X,Y,Z = np.array(vects).T
-ax.plot(X,Y,Z,"bo")
-print(X)
-print(Y)
-print(Z)
 #ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
 # 28,-58
-ax.set_xlim([-2,2])
-ax.set_ylim([-2,2])
-ax.set_zlim([-2,2])
-ele,azi,roll =[35,45,0]
-ele,azi = vect_to_azim_elev([4,-5,4])
 print(ele,azi)
 ax.view_init(elev=ele, azim=azi)
 #ax.set_aspect("equal")
@@ -130,7 +119,7 @@ ax.set_proj_type("persp")
 ax.axis("off")
 plt.grid(False)
 show = True
-#show = False
+show = False
 
 if show:
        plt.show()
@@ -138,15 +127,16 @@ else:
        #fig.savefig("funda_region")
        fig.savefig("coo_ax")
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
-
-exit(0)
-os.system('convert -gravity south +append coo_ax.png /media/schmid_2tb_1/etmengiste/files/slip_system_study/common_files/Cube_msh.png Cube_msh.png')
-os.system("convert -chop 195x0+265+0 Cube_msh.png Cube_msh.png")
-exit(0)
-os.system("convert coo_ax.png -crop 380x400+190+300 coo_ax.png")
-os.system("convert -gravity south +append coo_ax.png grain.png combined_grain_coo_ax.png")
-os.system("convert combined_grain_coo_ax.png -chop 180x0+380+0 axis_grain.png")
-exit(0)
+if for_domain:
+    #exit(0)
+    os.system('convert -gravity south +append coo_ax.png /media/schmid_2tb_1/etmengiste/files/slip_system_study/common_files/Cube_msh.png Cube_msh.png')
+    os.system("convert -chop 170x0+270+0 Cube_msh.png Cube_msh.png")
+    exit(0)
+else:
+    os.system("convert coo_ax.png -crop 380x400+190+300 coo_ax.png")
+    os.system("convert -gravity south +append coo_ax.png grain.png combined_grain_coo_ax.png")
+    os.system("convert combined_grain_coo_ax.png -chop 170x0+300+0 axis_grain.png")
+    exit(0)
 #plot_rod_outline(ax)
 start= [0,0,0]
 show_axies = True

@@ -11,12 +11,7 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'Dejvu Sans'
 plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 100
-plt.rcParams['figure.figsize'] = 3,3
-
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
-
-
+plt.rcParams['figure.figsize'] =10,10
 
 def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
             lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
@@ -49,8 +44,6 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
             ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
 
 
-
-
 def angle_axis_to_mat(angle,axis):
     cos_thet = math.cos(angle)
     sin_thet = math.sin(angle)
@@ -71,7 +64,10 @@ def angle_axis_to_mat(angle,axis):
                 [r31,r32,r33]]
     return Rot_Mat
 
-def plot_box(X,Y,Z,col="b"):
+def plot_box(X,Y,Z,scale=1,col="b"):
+    X = X*scale
+    Y = Y*scale
+    Z = Z*scale
     ax.plot(X,Y,Z,col+"o")
     j=4
     #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
@@ -94,29 +90,61 @@ X=[1,1,1,1,0,0,0,0]
 Y=[1,0,0,1,1,1,0,0]
 Z=[1,1,0,0,0,1,1,0]
 
+target_dir = "/home/etmengiste/code/deformation_tests/"
+type_disp = "rigid_motion/"
+axis = [0,0,1]
+angle = 0
+shear_component = 0.3
+time_inc = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+inc_size=10
+show = True
+show = False
 
 offset= np.array([0,0,0])
 start=np.array([0,0,0])
 xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
-coordinate_axis(ax,start,space="real_latex",fs=55,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+
+for inc in time_inc[:1]:
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    step= 0+(inc/inc_size)
+    matrix = angle_axis_to_mat(angle,axis)
+    
+    start = np.array([0,0,0])
+    coordinate_axis(ax,start,space="real_latex",fs=15,leng=.5,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+    start = np.array([0+step,0,0])
+    vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
+    X1,Y1,Z1= np.array(vects).T
+    #ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
+    plot_box(X1,Y1,Z1,scale=2,col="r")
+
+
+    ele,azi,roll =[30,-70,0]
+    print(ele,azi)
+    ax.view_init(elev=ele, azim=azi)
+    ax.set_xlim([-1,10])
+    ax.set_ylim([-1,5])
+    ax.set_zlim([-1,3])
+    ax.set_aspect("equal")
+    ax.set_proj_type("persp")
+    ax.axis("off")
+    plt.grid(False)
+
+    if show:
+        plt.show()
+    else:
+        #fig.savefig("funda_region")
+        fig.savefig(target_dir+type_disp+"deformations"+str(inc))
+        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+
+
+#####
+exit(0)
+#####
+coordinate_axis(ax,start,space="real_latex",fs=5,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 #coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
 ax.text(X[0],Y[0],Z[0]," Original")
 plot_box(X,Y,Z,col="k")
-
-
-axis = [0,0,1]
-angle = 20
-shear_component = 0.3
-
-
-matrix = angle_axis_to_mat(angle,axis)
-start = np.array([4,0,0])
-
-vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
-X1,Y1,Z1= np.array(vects).T
-
-ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
-plot_box(X1,Y1,Z1,col="r")
 
 start = np.array([2,0,0])
 
@@ -126,7 +154,7 @@ X2,Y2,Z2 = np.array(vects).T
 
 ax.text(X2[0],Y2[0],Z2[0]," simple shear")
 plot_box(X2,Y2,Z2,col="g")
-coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=55,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=5,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 
 
 start = np.array([6,0,0])
@@ -137,21 +165,42 @@ X3,Y3,Z3 = np.array(vects).T
 
 ax.text(X3[0],Y3[0],Z3[0]," pure shear")
 plot_box(X3,Y3,Z3,col="b")
-coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=55,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=5,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+
+
+start = np.array([0,3,0])
+
+matrix = [[1.5,0,0],[0,1,0],[0 ,0,1]]
+vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
+X3,Y3,Z3 = np.array(vects).T
+
+ax.text(X3[0],Y3[0],Z3[0]," elastic stretch in x")
+plot_box(X3,Y3,Z3,col="b")
+coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=5,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+
+start = np.array([3,3,0])
+
+matrix = [[1.5,0,0.4],[0,1,0],[0.4 ,0,1]]
+vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
+X3,Y3,Z3 = np.array(vects).T
+
+ax.text(X3[0],Y3[0],Z3[0]," elastic stretch in x pure shear in xz zx")
+plot_box(X3,Y3,Z3,col="b")
+coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=5,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 
 
 
+ax.set_title("types of deformation")
 #ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
 # 28,-58
-ele,azi,roll =[35,45,0]
-ele,azi = vect_to_azim_elev([4,-5,4])
+ele,azi,roll =[60,-90,0]
 print(ele,azi)
 ax.view_init(elev=ele, azim=azi)
-ax.set_xlim([-1,6])
-ax.set_ylim([-1,3])
-ax.set_zlim([-1,2])
-#ax.set_aspect("equal")
+ax.set_xlim([-1,10])
+ax.set_ylim([-1,5])
+ax.set_zlim([-1,4])
+ax.set_aspect("equal")
 ax.set_proj_type("persp")
 ax.axis("off")
 plt.grid(False)
@@ -162,7 +211,7 @@ if show:
        plt.show()
 else:
        #fig.savefig("funda_region")
-       fig.savefig("coo_ax")
+       fig.savefig("deformations")
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 
 exit(0)

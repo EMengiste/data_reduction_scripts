@@ -13,6 +13,18 @@ plt.rcParams['axes.edgecolor'] = 'k'
 #fig = plt.figure()
 #ax = fig.add_subplot(projection='3d')
 size = 0.4
+fs = 90
+leng = 0.004
+show_axies=True
+marker_size=1000
+lw= 10
+start_sim = 30
+sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+aniso = [1,1.25,1.50,1.75,2.00,3.00,4.00]
+colors = [[1-1/i,1-1/i,1-1/i] for i in aniso]
+
+destination = "/home/etmengiste/jobs/aps/step27/rod_space_plots"
+step= "27"
 #ax.set(xlim=(-size, size), ylim=(-size, size), zlim=(-size, size),
 #       xlabel='X', ylabel='Y', zlabel='Z')
 
@@ -28,14 +40,8 @@ simulations = os.listdir(home)
 simulations.sort()
 simulations.remove("common_files")
 
-show_axies=True
-marker_size=1000
-lw= 10
-sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
-aniso = [1,1.25,1.50,1.75,2.00,3.00,4.00]
 cub = Cubic_sym_quats()
 #
-start_sim = 30
 sims =[simulations.index("isotropic")]
 sims += [i for i in range(start_sim,start_sim+6)]
 print([simulations[i] for i in sims])
@@ -46,7 +52,7 @@ find_grain=False
 
 show_circles=False
 #show_circles=True
-fs = 90
+#
 grain_of_interest_1 = 592
 
 grain_of_interest_1 = 574
@@ -70,25 +76,20 @@ fig_large = plt.figure(figsize=(27,23))
 ax_large = fig_large.add_subplot(projection='3d')
 plot_rod_outline(ax_large)
 grain_ids=[i for i in range(500,600)]
-#grain_ids=[grain_of_interest_2,grain_of_interest_1]
-destination = "/home/etmengiste/jobs/aps/rod_space_plots"
-step= "27"
+grain_ids=[grain_of_interest_2,grain_of_interest_1]
 for grain_id in grain_ids:#[-60:-40]:
        sty="solid"
-       for val,alp in zip(sims,aniso):
+       for val,alp,col in zip(sims,aniso,colors):
               print(simulations[val])
               sim = fepx_sim("Cube.sim",path=home+simulations[val]+"/Cube.sim")
               max_v_mineigs=[]
               eig_vects = []
               id= grain_id
-              leng = 20
               print("-----====",simulations[val],id,"=====---")
               stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
               ori = sim.get_output("ori",step=step,res="elsets",ids=[id])
               #print("rod ini",ori)
-              ori= rod_to_quat(ori)
-              #print("quat ini",ori)
-              ori = ret_to_funda(ori,cub)
+              ori = ret_to_funda(rod=ori,sym_operators=cub)
               #print("quat fin",ori)
 
               ori= quat_to_rod(ori)
@@ -121,8 +122,8 @@ for grain_id in grain_ids:#[-60:-40]:
               #
               #ax.text(ori[0],ori[1],ori[2], eig_val,fontsize=10, color='red')
               start = ori#[0, 0 ,0]
-              leng = 0.003
               for ind,eig in enumerate(eig_vect):
+                     print(start)
                      ax_large.quiver(start[0],start[1],start[2],
                             eig[0],eig[1],eig[2]
                             ,length=leng*15,normalize=True
@@ -132,15 +133,15 @@ for grain_id in grain_ids:#[-60:-40]:
                             ax_g1.quiver(start[0],start[1],start[2],
                                    eig[0],eig[1],eig[2]
                                    ,length=leng,normalize=True
-                                   ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw,
-                                   edgecolor="k")
+                                   ,facecolor=col,alpha=1, linestyle = sty,linewidth=lw,
+                                   edgecolor=col)
                             
                      if grain_id == grain_of_interest_2:
                             ax_g2.quiver(start[0],start[1],start[2],
                                    eig[0],eig[1],eig[2]
                                    ,length=leng,normalize=True
-                                   ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw,
-                                   edgecolor="k")
+                                   ,facecolor=col,alpha=1, linestyle = sty,linewidth=lw,
+                                   edgecolor=col)
                             
               if grain_id == grain_of_interest_2:  
                      if simulations[val]=="isotropic":
@@ -176,12 +177,12 @@ for grain_id in grain_ids:#[-60:-40]:
               offset= np.array([-0.001,-0.00,-0.0233])
               xyz_offset = [[0.003,0.0003,0],[0.0013,0.0003,-0.0001],[.0013,0,0.001]]
               xyz_offset = [[0.002,-0.0001,0],[0,0,0],[0,0,0.0008]]# 
-              coordinate_axis(ax_g2,first,fs=fs,leng=0.004,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
+              coordinate_axis(ax_g2,first,coo_labs=["$r_1,z$","$r_2,x$","$r_3,y$"],fs=fs,leng=0.004,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
               #
               xyz_offset = [[0.05,-0.03,0],[0.04,-0.02,0],[0.08,-0.003,-0.0001]]
               xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]# for 574
               bottom = np.array([0.6,0,-0.6])
-              coordinate_axis(ax_large,bottom,fs=fs,leng=0.15,offset_text=1.5,xyz_offset =xyz_offset )
+              coordinate_axis(ax_large,bottom,coo_labs=["$r_1,z$","$r_2,x$","$r_3,y$"],fs=fs,leng=0.15,offset_text=1.5,xyz_offset =xyz_offset )
               #
        if grain_id ==grain_of_interest_1:
 
@@ -189,15 +190,32 @@ for grain_id in grain_ids:#[-60:-40]:
               offset= np.array([-0.011,0.005,-0.02])
               xyz_offset = [[0.0006,-0.0004,0],[0,0,-0.0001],[0.0015,0,0.0009]]# for 592
               xyz_offset = [[0.002,0.0015,0],[-.0,0.001,0],[-0.004,0,0.0045]]# for 574
-              coordinate_axis(ax_g1,first,fs=fs,leng=0.007,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
+              coordinate_axis(ax_g1,first,coo_labs=["$r_1,z$","$r_2,x$","$r_3,y$"],fs=fs,leng=0.007,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
               
               
 ax_g2.set_aspect("equal")
 ax_g2.axis("off")
+ax_g2.margins(0.24)
 ax_g1.set_aspect("equal")
 ax_g1.axis("off")
+ax_g1.margins(0.24)
+
 ax_large.set_aspect("equal")
 ax_large.axis("off")
+
+frame=False
+
+if frame:
+       size=0.01
+       core = [0.16830541, -0.35592484, -0.39711903]
+       ax_g1.set_xlim([core[0]-size,core[0]+size])
+       ax_g1.set_ylim([core[1]-size,core[1]+size])
+       ax_g1.set_zlim([core[2]-size,core[2]+size])
+       core = [0.14299445, -0.36123213, -0.40368418]
+       ax_g2.set_xlim([core[0]-size,core[0]+size])
+       ax_g2.set_ylim([core[1]-size,core[1]+size])
+       ax_g2.set_zlim([core[2]-size,core[2]+size])
+
 plt.grid(False)
 
 #ax.set(xlim=(-size+start[0], size+start[0]), ylim=(-size+start[1], size+start[1]), zlim=(-size+start[2], size+start[2]),

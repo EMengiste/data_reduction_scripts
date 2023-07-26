@@ -56,7 +56,7 @@ def match_grain(set_1,set_2,ang_res=0.001,dist_res=0.001,debug=False):
 
 
 
-sim_path = "/Users/ezramengiste/Documents/work_stuff/the_sims/1_uniaxial.sim"
+sim_path = "/home/etmengiste/jobs/hexa_try/03_hcp.sim"
 sim=fepx_sim("name",path=sim_path)
 file = open(sim_path+"/inputs/simulation.msh").readlines()
 sim.post_process()

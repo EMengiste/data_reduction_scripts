@@ -38,7 +38,7 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
             val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
             ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
 
-def angle_axis_to_mat(angle,axis):
+def angle_axis_to_mat(angle,axis,scale=1):
     cos_thet = math.cos(angle)
     sin_thet = math.sin(angle)
     u_x,u_y,u_z = axis
@@ -60,36 +60,6 @@ def angle_axis_to_mat(angle,axis):
 
 def plot_box(matrix,start=[0,0,0],bcc=False,fcc=False,col="b",ms=5):
 
-    ### Top of X
-    X= [1,1,1,1]
-    Y= [1,0,0,1]
-    Z= [1,1,0,0]
-
-    # Bottom of x
-    X+=[0,0,0,0]
-    Y+=[1,1,0,0]
-    Z+=[0,1,1,0]
-
-
-    #Top of y
-    X+=[1,0,0,1]
-    Y+=[0,0,0,0]
-    Z+=[1,1,0,0]
-
-    #Bottom of y
-    X+=[1,0,0,1]
-    Y+=[1,1,1,1]
-    Z+=[1,1,0,0]
-
-    #Top of z
-    X+=[1,0,0,1]
-    Y+=[1,1,0,0]
-    Z+=[1,1,1,1]
-
-    #Bottom of z
-    X+=[1,0,0,1]
-    Y+=[1,1,0,0]
-    Z+=[0,0,0,0]
 
     if fcc:
         ### Top of X
@@ -127,6 +97,29 @@ def plot_box(matrix,start=[0,0,0],bcc=False,fcc=False,col="b",ms=5):
 
     
     return [dots,boxes]
+
+def plot_crystal(ax,start=[0,0,0],type="",lw=5,matrix="",c="k",c2="r",ec="k",ms=20):
+    X=[1,0,0,0,0,1,1,1,1]
+    Y=[1,1,1,0,0,1,0,0,1]
+    Z=[1,0,1,1,0,1,1,0,0]
+    if matrix=="":
+        matrix = [[1,0,0],[0,1,0],[0,0,1]]
+    if type == "bcc":
+        X+=[1/2]
+        Y+=[1/2]
+        Z+=[1/2]
+    if type == "fcc":
+        X+=[  1,1/2,1/2,1/2,1/2,  0]
+        Y+=[1/2,  1,1/2,1/2,  0,1/2]
+        Z+=[1/2,1/2,  1,  0,1/2,1/2]
+
+    vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start
+                        for x,y,z in zip(X,Y,Z) ]
+    X,Y,Z= np.array(vects).T
+    ax.scatter(X[:9],Y[:9],Z[:9],c=c,s=ms,ec=ec,lw=lw)
+    ax.scatter(X[9:],Y[9:],Z[9:],c=c2,s=ms,ec=ec,lw=lw)
+
+
 def vect_to_azim_elev(vect):
     x,y,z = vect
     mag_tot = (x**2 +y**2 +z**2)**0.5
@@ -134,6 +127,16 @@ def vect_to_azim_elev(vect):
     azi = math.degrees(math.asin(y/mag_xy))
     ele = math.degrees(math.atan(z/mag_xy))
     return [ele,azi]
+
+
+def draw_lattice(type="bcc",scale=20,dims=[1,1,1],axis = [1,0,0],lw=5,ec="k",ms=50,angle = 0,offset=np.array([0,0,0])):
+    for i in range(0,dims[0]):
+        for j in range(0,dims[1]):
+            for k in range(0,dims[2]):
+                #scale up square
+                matrix = np.array(angle_axis_to_mat(angle,axis))*scale
+                start = np.dot(np.array([i,j,k])+offset,matrix)
+                plot_crystal(ax,start=start,type=type,lw=lw,ec=ec,matrix=matrix,ms=ms)
 
 def update(frame):
     # for each frame, update the data stored on each artist.
@@ -155,13 +158,126 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'Dejvu Sans'
 plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 100
-plt.rcParams['figure.figsize'] = 3,3
+plt.rcParams['figure.figsize'] = 8,8
 
-
+destination = "/home/etmengiste/documents/proposal_slides/slides_proposal/figures/"
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
+scale=60
+ms=200
+width=50
+lw=3
+axis = [1,0,0]
+angle = 0
+ec="k"
+type="bcc"
+plot_crystals=False
+spacing=scale+width
+offset=np.array([2.3,0,0])
 
+dims = [1,1,1]
+draw_lattice(type="",scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+
+offset=np.array([0,0,0])
+
+dims = [1,1,1]
+draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+
+offset=np.array([-2.3,0,0])
+
+dims = [1,1,1]
+draw_lattice(type="fcc",scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+
+
+ele,azi,roll =[10,100,0]
+#ele,azi = vect_to_azim_elev([4,-5,4])
+print(ele,azi)
+print(spacing)
+ax.view_init(elev=ele, azim=azi)
+ax.set_xlim([-spacing,spacing])
+ax.set_ylim([-50,60])
+#ax.set_zlim([-1,60])
+ax.set_aspect("equal")
+ax.set_proj_type("ortho")
+ax.axis("off")
+plt.grid(False)
+plt.tight_layout()
+
+show = True
+show = False
+
+if show:
+       plt.show()
+else:
+       #fig.savefig("funda_region")
+       fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+       bbox = fig.bbox_inches.from_bounds(1.7,2,5, 4)
+       fig.savefig(destination+"crystal_types.png", bbox_inches=bbox)
+       #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+
+exit(0)
+
+dims = [1,3,3]
+draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+
+
+offset=np.array([0,2,0])
+angle = 45
+draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+offset=np.array([0,-3,-4])
+dims = [1,2,4]
+angle = 70
+draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+
+offset=np.array([0,-2,-4])
+dims = [1,2,4]
+angle =50
+draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+
+
+
+spacing+=scale+40
+# coordniate system
+offset= np.array([0,0,0])
+start = np.array([0,-50,-100])
+xyz_offset = [[0,0,0],[0,10,0],[0,0,0]]
+scale=1
+matrix = [[scale,0,0],[0,scale,0],[0,0,scale]]
+coordinate_axis(ax,start,space="real",lw=3,axis_basis=matrix,fs=20,leng=20,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
+
+
+spacing+=scale+width
+
+view="1"
+
+ele,azi,roll =[-1,180,0]
+#ele,azi = vect_to_azim_elev([4,-5,4])
+print(ele,azi)
+print(spacing)
+ax.view_init(elev=ele, azim=azi)
+ax.set_xlim([-50,spacing])
+ax.set_ylim([-50,60])
+#ax.set_zlim([-1,60])
+ax.set_aspect("equal")
+ax.set_proj_type("ortho")
+ax.axis("off")
+plt.grid(False)
+plt.tight_layout()
+
+show = True
+show = False
+
+if show:
+       plt.show()
+else:
+       #fig.savefig("funda_region")
+       fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+       bbox = fig.bbox_inches.from_bounds(1, 1, 6, 6)
+       fig.savefig(destination+"polycrystal_"+type+"_"+view+".png", bbox_inches=bbox)
+       #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+
+exit(0)
 
 
 ### Top of X
@@ -230,19 +346,6 @@ X1,Y1,Z1= np.array(vects).T
 plot_box(X1,Y1,Z1,ms=30,fcc=True,col="k")
 
 
-ele,azi,roll =[28,91,0]
-#ele,azi = vect_to_azim_elev([4,-5,4])
-print(ele,azi)
-ax.view_init(elev=ele, azim=azi)
-ax.set_xlim([-100,50])
-ax.set_ylim([-1,60])
-ax.set_zlim([-1,60])
-#ax.set_aspect("equal")
-ax.set_proj_type("persp")
-ax.axis("off")
-plt.grid(False)
-plt.show()
-exit(0)
 text = ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
 for i in range(3):
     for j in range(5):

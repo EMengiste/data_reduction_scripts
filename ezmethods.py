@@ -175,6 +175,7 @@ class fepx_sim:
         #
         if self.is_sim:
             print("########---- opening "+path+"/simulation.config")
+            self.post_process()
             config = open(path+"/inputs/simulation.config").readlines()
 
         elif self.has_config and not self.is_sim:
@@ -338,23 +339,38 @@ class fepx_sim:
         #
     #
     #
-    def get_output(self,output,id=0,step= "0", res="",ids=[0]):
+    def get_output(self,output,id=0,step= "0", res="",ids=[0],num_steps=0,debug=False):
         step = str(step)
         value = {}
         if res=="":
             res="mesh"
+        #
+        ##
         if output in ["coo","disp","vel"] and res !="nodes":
             print("invalid output try again")
-            return        
+            return 
+        #
+        # #       
         if step=="malory_archer":
-            num_steps = self.get_num_steps()
+            if num_steps==0:
+                num_steps = self.get_num_steps()
+            print(num_steps)
+            vals = []
+            #
+            # #     
             for step in range(num_steps):
                 print(str(step))
+                value = self.get_output(output,ids=ids,step=step,res=res)
+                vals.append(value)
+            return vals
+        #
+        # #     
         if self.path[-4:] == ".sim":
             step_file = self.path+"/results/"+res+"/"+output+"/"+output+".step"+step
         else:
             step_file = self.path+".sim/results/"+res+"/"+output+"/"+output+".step"+step
-        
+                #
+        # #     
         file = open(step_file)
         values=file.readlines()
         num_components= len(values[0].split())
@@ -501,7 +517,7 @@ def normalize_vector(vect,magnitude=False):
     final = vect
     for i in vect:
         value+=(i**2)
-    mag=math.sqrt(value)
+    mag=(value)**0.5
     for i in range(len(vect)):
         final[i] = final[i]/mag
     if magnitude:
@@ -1646,9 +1662,12 @@ def quat_of_angle_ax(angle, raxis):
        return quat
 #
 ##
-def ret_to_funda(quat, sym_operators=Cubic_sym_quats(),debug=False):
+def ret_to_funda(quat="",rod="", sym_operators=Cubic_sym_quats(),debug=False):
        #    Return quaternion to the fundamental region given symerty 
        #        operatiors
+       #
+       if str(rod)!="":
+              quat = rod_to_quat(rod)
        #
        m = len(sym_operators)
        n = 1
@@ -1669,6 +1688,7 @@ def ret_to_funda(quat, sym_operators=Cubic_sym_quats(),debug=False):
        #pprint(equiv_quats)
        #exit(0)
        return equiv_quats
+#
 #
 ##
 def rod_to_quat(val,debug=False):
@@ -1934,9 +1954,9 @@ def plot_std_mean_data(NAME,ylims="",base=True,debug=False,**non_base):
 #
 #
 def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
-            lw= 4, offset= np.array([0.01,0,-0.0001]),
+            lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
                     xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
-                    sty = "solid",space="rod_real", fs=60):
+                    sty = "solid",space="",coo_labs=["x","y","z"], fs=60):
     #
     #      defult params need to be fixed for each axis
     debug = True
@@ -1947,7 +1967,8 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
         rod_labs = ["x","y","z"]
     elif space== "real_latex":        
         rod_labs = ["$x$","$y$","$z$"]
-    axis_basis = [[1,0,0],[0,1,0],[0,0,1]]
+    else:
+        rod_labs =coo_labs
     start = np.array(ori)+offset
     lab_offset = -0.0002
     ##
@@ -1976,3 +1997,45 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
                         ,length=leng,normalize=True
                         ,color="k", linestyle = sty,linewidth=lw)
                     #
+#
+#
+##
+def slerp(one,two,t=0.5,num_pts=1,debug=False):
+       # https://dl.acm.org/doi/pdf/10.1145/325165.325242
+       #
+       #    interpolate num_pts of steps between two quaternions
+       one=np.array(one)
+       two=np.array(two)
+       if debug:
+              print("array 1 =",one)
+              print("array 1 normalized =",normalize_vector(one,magnitude=True))
+              print("array 2 =",two)
+              print("array 2 normalized =",normalize_vector(one,magnitude=True))
+              print(t)
+       cos_tet = np.dot(one,two)
+       #print(cos_tet)
+       thet = math.acos(cos_tet)
+       sin_thet= math.sin(thet)
+       if num_pts ==1:
+            sin_1_t = math.sin((1-t)*thet)/sin_thet
+            sin_t = math.sin(t*thet)/sin_thet
+            q_out = normalize_vector(sin_1_t*one +sin_t*two)
+            #print(q_out)
+            return q_out
+       else:
+            # get points 0,1 remove 0 and 1
+            #print(num_pts)
+            pts= np.linspace(0,1,num_pts+4)[1:-1]
+            #print(pts)
+            array= []
+            for t in pts[1:-1]:                    
+                sin_1_t = math.sin((1-t)*thet)/sin_thet
+                sin_t = math.sin(t*thet)/sin_thet
+                q_out = np.array(normalize_vector(sin_1_t*one +sin_t*two))
+                #print(q_out)
+                array.append(q_out)
+            #pprint(array,preamble="slerp output")
+            return np.array(array)
+#
+#
+#
