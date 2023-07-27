@@ -97,21 +97,22 @@ def plot_box(matrix,start=[0,0,0],bcc=False,fcc=False,col="b",ms=5):
 
     
     return [dots,boxes]
-
-def plot_crystal(ax,start=[0,0,0],type="",lw=5,matrix="",c="k",c2="r",ec="k",ms=20):
-    X=[1,0,0,0,0,1,1,1,1]
-    Y=[1,1,1,0,0,1,0,0,1]
-    Z=[1,0,1,1,0,1,1,0,0]
+def scalar_multi(arr,s):
+    return [a*s for a in arr]
+def plot_crystal(ax,start=[0,0,0],dim=[1,1,1],type="",lw=5,matrix="",c="k",c2="r",ec="k",ms=20):
+    X=scalar_multi([1,0,0,0,0,1,1,1,1],dim[0])
+    Y=scalar_multi([1,1,1,0,0,1,0,0,1],dim[1])
+    Z=scalar_multi([1,0,1,1,0,1,1,0,0],dim[2])
     if matrix=="":
         matrix = [[1,0,0],[0,1,0],[0,0,1]]
     if type == "bcc":
-        X+=[1/2]
-        Y+=[1/2]
-        Z+=[1/2]
+        X+=scalar_multi([1/2],dim[0])
+        Y+=scalar_multi([1/2],dim[1])
+        Z+=scalar_multi([1/2],dim[2])
     if type == "fcc":
-        X+=[  1,1/2,1/2,1/2,1/2,  0]
-        Y+=[1/2,  1,1/2,1/2,  0,1/2]
-        Z+=[1/2,1/2,  1,  0,1/2,1/2]
+        X+=scalar_multi([  1,1/2,1/2,1/2,1/2,  0],dim[0])
+        Y+=scalar_multi([1/2,  1,1/2,1/2,  0,1/2],dim[1])
+        Z+=scalar_multi([1/2,1/2,  1,  0,1/2,1/2],dim[2])
 
     vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start
                         for x,y,z in zip(X,Y,Z) ]
@@ -128,8 +129,14 @@ def vect_to_azim_elev(vect):
     ele = math.degrees(math.atan(z/mag_xy))
     return [ele,azi]
 
+def quat_to_angle_axis(quat):
+    angle = 2* math.acos(quat[0])
+    axis = scalar_multi(quat[1:],1/math.sin(angle/2))
+    return angle,axis
 
-def draw_lattice(type="bcc",scale=20,dims=[1,1,1],axis = [1,0,0],lw=5,ec="k",ms=50,angle = 0,offset=np.array([0,0,0])):
+def draw_lattice(ax,type="bcc",scale=20,dims=[1,1,1],quat="",angle=0,axis = [1,0,0],lw=5,ec="k",ms=50,offset=np.array([0,0,0])):
+    if quat!="":
+        angle,axis=quat_to_angle_axis(quat)
     for i in range(0,dims[0]):
         for j in range(0,dims[1]):
             for k in range(0,dims[2]):
@@ -137,6 +144,148 @@ def draw_lattice(type="bcc",scale=20,dims=[1,1,1],axis = [1,0,0],lw=5,ec="k",ms=
                 matrix = np.array(angle_axis_to_mat(angle,axis))*scale
                 start = np.dot(np.array([i,j,k])+offset,matrix)
                 plot_crystal(ax,start=start,type=type,lw=lw,ec=ec,matrix=matrix,ms=ms)
+
+def look_at_single_crystals(ax,offset,scale=20,quats=True,show=True,debug=False):
+    if quats!="":
+        quats=[[1,0,0,0],[1,0,0,0],[1,0,0,0]]
+        angle1,axis1 = quats[0][0],quats[0][1:]
+        angle2,axis2 = quats[1][0],quats[1][1:]
+        angle3,axis3 = quats[2][0],quats[2][1:]
+
+    dims = [1,1,1]
+    draw_lattice(ax,type="",scale=scale,dims=dims,axis = axis1,lw=lw,ec=ec,ms=ms,angle =angle1,offset=offset)
+
+    offset=np.array([0,0,0])
+
+    dims = [1,1,1]
+    draw_lattice(ax,type=type,scale=scale,dims=dims,axis = axis2,lw=lw,ec=ec,ms=ms,angle =angle2,offset=offset)
+
+    offset=np.array([-2.3,0,0])
+
+    dims = [1,1,1]
+    draw_lattice(ax,type="fcc",scale=scale,dims=dims,axis = axis3,lw=lw,ec=ec,ms=ms,angle =angle3,offset=offset)
+
+
+    ele,azi,roll =[10,100,0]
+    #ele,azi = vect_to_azim_elev([4,-5,4])
+    print(ele,azi)
+    print(spacing)
+    ax.view_init(elev=ele, azim=azi)
+    ax.set_xlim([-spacing,spacing])
+    ax.set_ylim([-50,60])
+    #ax.set_zlim([-1,60])
+    ax.set_aspect("equal")
+    ax.set_proj_type("ortho")
+    ax.axis("off")
+
+    #exit(0)
+
+def look_at_polycrystal(ax,offsets,dims,scale=20,width=50,quats="",debug=False):
+    if quats!="":
+        #quats=[[1,0,0,0] for _ in range(offsets)]
+        quats=[1,0,0,0]
+
+    for offset in offsets:
+        draw_lattice(ax,type=type,scale=scale,dims=dims[0],quat=quats,lw=lw,ec=ec,ms=ms,offset=offset)
+
+    spacing =scale+40 #fix
+    # coordniate system
+    offset= np.array([0,0,0])
+    start = np.array(offsets[0])
+    xyz_offset = [[0,0,0],[0,10,0],[0,0,0]]
+    scale=1
+    matrix = [[scale,0,0],[0,scale,0],[0,0,scale]]
+    coordinate_axis(ax,start,space="real",lw=3,axis_basis=matrix,fs=20,leng=20,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
+
+
+    spacing+=scale+width
+
+
+    ele,azi,roll =[-1,180,0]
+    #ele,azi = vect_to_azim_elev([4,-5,4])
+    print(ele,azi)
+    print(spacing)
+    ax.view_init(elev=ele, azim=azi)
+    ax.set_xlim([-50,spacing])
+    ax.set_ylim([-50,60])
+    #ax.set_zlim([-1,60])
+    ax.set_aspect("equal")
+    ax.set_proj_type("ortho")
+    ax.axis("off")
+
+    #exit(0)
+def demo(ax,debug=False):
+    ### Top of X
+    X= [1,1,1,1]
+    Y= [1,0,0,1]
+    Z= [1,1,0,0]
+
+    # Bottom of x
+    X+=[0,0,0,0]
+    Y+=[1,1,0,0]
+    Z+=[0,1,1,0]
+
+    #Top of y
+    X+=[1,0,0,1]
+    Y+=[0,0,0,0]
+    Z+=[1,1,0,0]
+
+    #Bottom of y
+    X+=[1,0,0,1]
+    Y+=[1,1,1,1]
+    Z+=[1,1,0,0]
+
+    #Top of z
+    X+=[1,0,0,1]
+    Y+=[1,1,0,0]
+    Z+=[1,1,1,1]
+
+    #Bottom of z
+    X+=[1,0,0,1]
+    Y+=[1,1,0,0]
+    Z+=[0,0,0,0]
+    i,j =[0,0]
+
+
+    axis = [0,0,1]
+    angle = 0
+    shear_component = 0.3
+
+    offset= np.array([0,0,0])
+    start=np.array([0,0,0])
+    xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
+
+    matrix = angle_axis_to_mat(angle,axis)
+    start = np.array([50,50,0])
+
+    coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=20,leng=15,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+
+    start = np.array([-90,0,0])
+    scale = 50
+    #scale up square
+    matrix = [[scale,0,0],[0,scale,0],[0,0,scale]]
+
+    vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start
+                        for x,y,z in zip(X,Y,Z) ]
+    X1,Y1,Z1= np.array(vects).T
+
+    plot_box(matrix,start,ms=30,bcc=False,col="k")
+
+    ax.scatter(0.5*X1[0],0.5*Y1[0],0.5*Z1[0],c="k",s=30)
+
+    start = np.array([0,0,0])
+    #scale up square
+    matrix = [[scale,0,0],[0,scale,0],[0,0,scale]]
+    vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
+    X1,Y1,Z1= np.array(vects).T
+    plot_box(X1,Y1,Z1,ms=30,fcc=True,col="k")
+
+
+    text = ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
+    for i in range(3):
+        for j in range(5):
+            dots,boxes = plot_box(X1+i,Y1,Z1+j,col="r")
+    plt.show()
 
 def update(frame):
     # for each frame, update the data stored on each artist.
@@ -152,6 +301,7 @@ def update(frame):
     line2.set_zdata(Z1[:frame])
     return (scat, line2)
 
+
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': 15})
 plt.rcParams['text.usetex'] = True
@@ -161,196 +311,63 @@ plt.rcParams["figure.dpi"] = 100
 plt.rcParams['figure.figsize'] = 8,8
 
 destination = "/home/etmengiste/documents/proposal_slides/slides_proposal/figures/"
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
 
+from matplotlib.widgets import Slider, Button
+
+fig = plt.figure()
 scale=60
 ms=200
-width=50
 lw=3
 axis = [1,0,0]
 angle = 0
 ec="k"
-type="bcc"
+type="fcc"
 plot_crystals=False
+width=50
 spacing=scale+width
+
 offset=np.array([2.3,0,0])
 
-dims = [1,1,1]
-draw_lattice(type="",scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+show=True
 
-offset=np.array([0,0,0])
+#https://matplotlib.org/stable/gallery/widgets/slider_demo.html
+fig.subplots_adjust(left=0.20)
+ints = [ i*10 for i in range(2,30)]
+scale_axis=  fig.add_axes([0.25, 0.1, 0.65, 0.03])
+scale_slider =Slider(ax=scale_axis,label="scale",valmin=20,valmax=300,valinit=ints[0])
+scale=20
 
-dims = [1,1,1]
-draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+#ax1 = fig.add_subplot(1,2,1,projection='3d')
+#look_at_single_crystals(ax1,offset,scale=scale)
 
-offset=np.array([-2.3,0,0])
+dims =[[2,2,2]]
+offsets=[np.array([0,2,0]),np.array([0,5,0])]
+ax2 = fig.add_subplot(1,1,1,projection='3d')
+look_at_polycrystal(ax2,offsets,dims,scale=scale)
 
-dims = [1,1,1]
-draw_lattice(type="fcc",scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+def update(val):
+    ax1.clear()
+    ax2.clear()
+    look_at_single_crystals(ax1,offset,scale=scale_slider.val)
+    look_at_polycrystal(ax2,[offset],scale=scale_slider.val)
+    fig.canvas.draw_idle()
+    
+scale_slider.on_changed(update)
 
-
-ele,azi,roll =[10,100,0]
-#ele,azi = vect_to_azim_elev([4,-5,4])
-print(ele,azi)
-print(spacing)
-ax.view_init(elev=ele, azim=azi)
-ax.set_xlim([-spacing,spacing])
-ax.set_ylim([-50,60])
-#ax.set_zlim([-1,60])
-ax.set_aspect("equal")
-ax.set_proj_type("ortho")
-ax.axis("off")
 plt.grid(False)
 plt.tight_layout()
 
-show = True
-show = False
 
 if show:
-       plt.show()
+    plt.show()
 else:
-       #fig.savefig("funda_region")
-       fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-       bbox = fig.bbox_inches.from_bounds(1.7,2,5, 4)
-       fig.savefig(destination+"crystal_types.png", bbox_inches=bbox)
-       #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
-
-exit(0)
-
-dims = [1,3,3]
-draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
+    #fig.savefig("funda_region")
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+    bbox = fig.bbox_inches.from_bounds(1, 1, 6, 6)
+    fig.savefig(destination+"polycrystal_"+type+"_"+view+".png", bbox_inches=bbox)
+    #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 
 
-offset=np.array([0,2,0])
-angle = 45
-draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
-offset=np.array([0,-3,-4])
-dims = [1,2,4]
-angle = 70
-draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
-
-offset=np.array([0,-2,-4])
-dims = [1,2,4]
-angle =50
-draw_lattice(type=type,scale=20,dims=dims,axis = axis,lw=lw,ec=ec,ms=ms,angle =angle,offset=offset)
-
-
-
-spacing+=scale+40
-# coordniate system
-offset= np.array([0,0,0])
-start = np.array([0,-50,-100])
-xyz_offset = [[0,0,0],[0,10,0],[0,0,0]]
-scale=1
-matrix = [[scale,0,0],[0,scale,0],[0,0,scale]]
-coordinate_axis(ax,start,space="real",lw=3,axis_basis=matrix,fs=20,leng=20,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
-
-
-spacing+=scale+width
-
-view="1"
-
-ele,azi,roll =[-1,180,0]
-#ele,azi = vect_to_azim_elev([4,-5,4])
-print(ele,azi)
-print(spacing)
-ax.view_init(elev=ele, azim=azi)
-ax.set_xlim([-50,spacing])
-ax.set_ylim([-50,60])
-#ax.set_zlim([-1,60])
-ax.set_aspect("equal")
-ax.set_proj_type("ortho")
-ax.axis("off")
-plt.grid(False)
-plt.tight_layout()
-
-show = True
-show = False
-
-if show:
-       plt.show()
-else:
-       #fig.savefig("funda_region")
-       fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-       bbox = fig.bbox_inches.from_bounds(1, 1, 6, 6)
-       fig.savefig(destination+"polycrystal_"+type+"_"+view+".png", bbox_inches=bbox)
-       #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
-
-exit(0)
-
-
-### Top of X
-X= [1,1,1,1]
-Y= [1,0,0,1]
-Z= [1,1,0,0]
-
-# Bottom of x
-X+=[0,0,0,0]
-Y+=[1,1,0,0]
-Z+=[0,1,1,0]
-
-#Top of y
-X+=[1,0,0,1]
-Y+=[0,0,0,0]
-Z+=[1,1,0,0]
-
-#Bottom of y
-X+=[1,0,0,1]
-Y+=[1,1,1,1]
-Z+=[1,1,0,0]
-
-#Top of z
-X+=[1,0,0,1]
-Y+=[1,1,0,0]
-Z+=[1,1,1,1]
-
-#Bottom of z
-X+=[1,0,0,1]
-Y+=[1,1,0,0]
-Z+=[0,0,0,0]
-i,j =[0,0]
-
-
-axis = [0,0,1]
-angle = 0
-shear_component = 0.3
-
-offset= np.array([0,0,0])
-start=np.array([0,0,0])
-xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
-
-matrix = angle_axis_to_mat(angle,axis)
-start = np.array([50,50,0])
-
-coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=20,leng=15,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
-
-start = np.array([-90,0,0])
-scale = 50
-#scale up square
-matrix = [[scale,0,0],[0,scale,0],[0,0,scale]]
-
-vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start
-                    for x,y,z in zip(X,Y,Z) ]
-X1,Y1,Z1= np.array(vects).T
-
-plot_box(matrix,start,ms=30,bcc=False,col="k")
-
-ax.scatter(0.5*X1[0],0.5*Y1[0],0.5*Z1[0],c="k",s=30)
-
-start = np.array([0,0,0])
-#scale up square
-matrix = [[scale,0,0],[0,scale,0],[0,0,scale]]
-vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
-X1,Y1,Z1= np.array(vects).T
-plot_box(X1,Y1,Z1,ms=30,fcc=True,col="k")
-
-
-text = ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
-for i in range(3):
-    for j in range(5):
-        dots,boxes = plot_box(X1+i,Y1,Z1+j,col="r")
-plt.show()
 exit(0)
 
 fig = plt.figure()
