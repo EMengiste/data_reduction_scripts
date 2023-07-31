@@ -206,8 +206,8 @@ def look_at_polycrystal(ax,offsets,dims,scale=20,width=50,quats="",debug=False):
     print(ele,azi)
     print(spacing)
     ax.view_init(elev=ele, azim=azi)
-    ax.set_xlim([-50,spacing])
-    ax.set_ylim([-50,60])
+    #ax.set_xlim([-50,spacing])
+    #ax.set_ylim([-50,spacing])
     #ax.set_zlim([-1,60])
     ax.set_aspect("equal")
     ax.set_proj_type("ortho")
@@ -337,19 +337,19 @@ scale_axis=  fig.add_axes([0.25, 0.1, 0.65, 0.03])
 scale_slider =Slider(ax=scale_axis,label="scale",valmin=20,valmax=300,valinit=ints[0])
 scale=20
 
-#ax1 = fig.add_subplot(1,2,1,projection='3d')
-#look_at_single_crystals(ax1,offset,scale=scale)
+ax1 = fig.add_subplot(1,1,1,projection='3d')
+look_at_single_crystals(ax1,offset,scale=scale)
 
 dims =[[2,2,2]]
 offsets=[np.array([0,2,0]),np.array([0,5,0])]
-ax2 = fig.add_subplot(1,1,1,projection='3d')
-look_at_polycrystal(ax2,offsets,dims,scale=scale)
+#ax2 = fig.add_subplot(1,1,1,projection='3d')
+#look_at_polycrystal(ax2,offsets,dims,scale=scale)
 
 def update(val):
     ax1.clear()
-    ax2.clear()
+    #ax2.clear()
     look_at_single_crystals(ax1,offset,scale=scale_slider.val)
-    look_at_polycrystal(ax2,[offset],scale=scale_slider.val)
+    #look_at_polycrystal(ax2,[offset],scale=scale_slider.val)
     fig.canvas.draw_idle()
     
 scale_slider.on_changed(update)
