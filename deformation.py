@@ -92,11 +92,12 @@ Z=[1,1,0,0,0,1,1,0]
 
 target_dir = "/home/etmengiste/code/deformation_tests/"
 type_disp = "rigid_motion/"
+type_disp = "pure_shear/"
 axis = [0,0,1]
 angle = 0
 shear_component = 0.3
 time_inc = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-inc_size=10
+inc_size=100
 show = True
 show = False
 
@@ -104,12 +105,13 @@ offset= np.array([0,0,0])
 start=np.array([0,0,0])
 xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
 
-for inc in time_inc[:1]:
+for inc in time_inc[:]:
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     step= 0+(inc/inc_size)
     matrix = angle_axis_to_mat(angle,axis)
-    
+    shear_component=step
+    matrix = [[1,0,shear_component],[0,1,0],[shear_component, 0,1]]
     start = np.array([0,0,0])
     coordinate_axis(ax,start,space="real_latex",fs=15,leng=.5,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
     start = np.array([0+step,0,0])
