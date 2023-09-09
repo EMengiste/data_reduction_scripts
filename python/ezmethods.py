@@ -661,6 +661,7 @@ def normalize(array,scale=1,maximum=1,absolute=False,debug=False):
  #
 #
 def find_nearest(a, a0):
+    # https://stackoverflow.com/a/2566508
     "Element in nd array `a` closest to the scalar value `a0`"
     a=np.array(a)
     idx = np.abs(a - a0).argmin()

@@ -32,6 +32,7 @@ for i in tasks_time:
 #xticks=["Fall 2021","Spring 2022","Fall 2022","Spring 2023","Fall 2023","Spring 2024","Fall 2024","Spring 2025","Fall 2025","Spring 2026"]
 ax.set_xlim([0,4])
 #ax.set_xticklabels(xticks)
-fig.subplots_adjust(left=0.18, right=0.97,top=0.9, bottom=0.13, wspace=0.07, hspace=0.1)
+fig.subplots_adjust(left=0.22, right=0.97,top=0.98, bottom=0.2, wspace=0.07, hspace=0.1)
 ax.grid(axis="x",zorder=9)
+ax.set_xlabel("Years")
 plt.savefig("gant_chart.png")
