@@ -28,7 +28,7 @@ def generate_tess(n,destination_name,source_dir,options={"mode" :"run"}):
 
     #print(tess_destination+".tess")
     return tesselation+".tess"
-
+#
 def generate_msh(source_dir,num_partition,options={"mode" :"run"}):
     print("\n===")
     commands = ["-part "+str(num_partition)]
@@ -54,8 +54,7 @@ def generate_msh(source_dir,num_partition,options={"mode" :"run"}):
     elif options["mode"]=="remesh":
         os.system(neper_comand)
 #
-#
-def post_process(sim_path,options={"source code":"fepx"}):
+def post_process(sim_path,options={"source code":"neper"}):
     print("\n===")
     print(sim_path)
     neper_comand= options["source code"]+" -S ."

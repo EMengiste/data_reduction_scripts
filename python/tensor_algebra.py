@@ -20,9 +20,9 @@ def cross_product_o1(tensor1,tensor2):
     compat = len(tensor1)==len(tensor2)
     if compat:
         value = []
-        for k in range(3):
-            for i in range(3):
-                for j in range(3):
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
                     sum+=tensor1[i]*tensor2[i]
         return sum
 arr1= [0,0,1]
