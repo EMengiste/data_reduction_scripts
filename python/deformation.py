@@ -13,6 +13,10 @@ plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 100
 plt.rcParams['figure.figsize'] =10,10
 
+def pprint(arr):
+    for val in arr:
+        print(val)
+
 def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
             lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
                     xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
@@ -64,6 +68,18 @@ def angle_axis_to_mat(angle,axis):
                 [r31,r32,r33]]
     return Rot_Mat
 
+matrix = [[4,3,3],[3,7,2],[3,2,1]]
+axis = [1,0,0]
+angle = math.pi/6
+R = angle_axis_to_mat(angle,axis)
+
+pprint(matrix)
+pprint(R)
+rotated_matrix = np.dot(matrix,R)
+pprint(rotated_matrix)
+
+exit(0)
+
 def plot_box(X,Y,Z,scale=1,col="b"):
     X = X*scale
     Y = Y*scale
@@ -105,43 +121,9 @@ offset= np.array([0,0,0])
 start=np.array([0,0,0])
 xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0]]
 
-for inc in time_inc[:]:
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    step= 0+(inc/inc_size)
-    matrix = angle_axis_to_mat(angle,axis)
-    shear_component=step
-    matrix = [[1,0,shear_component],[0,1,0],[shear_component, 0,1]]
-    start = np.array([0,0,0])
-    coordinate_axis(ax,start,space="real_latex",fs=15,leng=.5,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
-    start = np.array([0+step,0,0])
-    vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
-    X1,Y1,Z1= np.array(vects).T
-    #ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
-    plot_box(X1,Y1,Z1,scale=2,col="r")
-
-
-    ele,azi,roll =[30,-70,0]
-    print(ele,azi)
-    ax.view_init(elev=ele, azim=azi)
-    ax.set_xlim([-1,10])
-    ax.set_ylim([-1,5])
-    ax.set_zlim([-1,3])
-    ax.set_aspect("equal")
-    ax.set_proj_type("persp")
-    ax.axis("off")
-    plt.grid(False)
-
-    if show:
-        plt.show()
-    else:
-        #fig.savefig("funda_region")
-        fig.savefig(target_dir+type_disp+"deformations"+str(inc))
-        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
-
-
-#####
-exit(0)
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+'''
 #####
 coordinate_axis(ax,start,space="real_latex",fs=5,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 #coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
@@ -190,8 +172,20 @@ ax.text(X3[0],Y3[0],Z3[0]," elastic stretch in x pure shear in xz zx")
 plot_box(X3,Y3,Z3,col="b")
 coordinate_axis(ax,start,space="real",axis_basis=matrix,fs=5,leng=.4,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 
+'''
+axis = [0,0,1]
+angle = 20
+shear_component = 0.3
 
 
+matrix = angle_axis_to_mat(angle,axis)
+start = np.array([4,0,0])
+
+vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
+X1,Y1,Z1= np.array(vects).T
+
+ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
+plot_box(X1,Y1,Z1,col="r")
 ax.set_title("types of deformation")
 #ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
@@ -202,7 +196,7 @@ ax.view_init(elev=ele, azim=azi)
 ax.set_xlim([-1,10])
 ax.set_ylim([-1,5])
 ax.set_zlim([-1,4])
-ax.set_aspect("equal")
+#ax.set_aspect("equal")
 ax.set_proj_type("persp")
 ax.axis("off")
 plt.grid(False)
@@ -217,6 +211,45 @@ else:
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 
 exit(0)
+
+for inc in time_inc[:]:
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    step= 0+(inc/inc_size)
+    matrix = angle_axis_to_mat(angle,axis)
+    shear_component=step
+    matrix = [[1,0,shear_component],[0,1,0],[shear_component, 0,1]]
+    start = np.array([0,0,0])
+    coordinate_axis(ax,start,space="real_latex",fs=15,leng=.5,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+    start = np.array([0+step,0,0])
+    vects = [np.dot(np.array([x,y,z]),np.array(matrix))+start for x,y,z in zip(X,Y,Z) ]
+    X1,Y1,Z1= np.array(vects).T
+    #ax.text(X1[0],Y1[0],Z1[0]," rotation of angle"+str(angle)+" about axis "+str(axis))
+    plot_box(X1,Y1,Z1,scale=2,col="r")
+
+
+    ele,azi,roll =[30,-70,0]
+    print(ele,azi)
+    ax.view_init(elev=ele, azim=azi)
+    ax.set_xlim([-1,10])
+    ax.set_ylim([-1,5])
+    ax.set_zlim([-1,3])
+    ax.set_aspect("equal")
+    ax.set_proj_type("persp")
+    ax.axis("off")
+    plt.grid(False)
+
+    if show:
+        plt.show()
+    else:
+        #fig.savefig("funda_region")
+        fig.savefig(target_dir+type_disp+"deformations"+str(inc))
+        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+
+
+#####
+exit(0)
+
 os.system('convert -gravity south +append coo_ax.png /media/schmid_2tb_1/etmengiste/files/slip_system_study/common_files/Cube_msh.png Cube_msh.png')
 os.system("convert -chop 195x0+265+0 Cube_msh.png Cube_msh.png")
 exit(0)

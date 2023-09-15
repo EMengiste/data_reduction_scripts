@@ -1,9 +1,43 @@
 #------------------------------------------------------------------------
 from sklearn.linear_model import LinearRegression
 import numpy as np
+import math
 import pandas as pd
 import os
 
+def angle_axis_to_mat(angle,axis,scale=1):
+    cos_thet = math.cos(angle)
+    sin_thet = math.sin(angle)
+    u_x,u_y,u_z = axis
+    r11 = cos_thet + (u_x ** 2 * (1-cos_thet))
+    r12 = (u_x * u_y * (1-cos_thet)) - (u_z * sin_thet)
+    r13 = (u_x * u_z * (1-cos_thet)) + (u_y * sin_thet)
+
+    r21 = (u_y * u_x * (1-cos_thet)) + (u_z * sin_thet)
+    r22 = cos_thet + (u_y ** 2 * (1-cos_thet))
+    r23 = (u_y * u_z * (1-cos_thet)) - (u_x * sin_thet)
+
+    r31 = (u_z * u_x * (1-cos_thet)) - (u_y * sin_thet)
+    r32 = (u_z * u_y * (1-cos_thet)) + (u_x * sin_thet)
+    r33 = cos_thet + (u_z ** 2 * (1-cos_thet))
+    Rot_Mat = [ [r11,r12,r13],
+                [r21,r22,r23],
+                [r31,r32,r33]]
+    return Rot_Mat
+
+
+def vect_to_azim_elev(vect):
+    x,y,z = vect
+    mag_tot = (x**2 +y**2 +z**2)**0.5
+    mag_xy = (x**2 +y**2)**0.5
+    azi = math.degrees(math.asin(y/mag_xy))
+    ele = math.degrees(math.atan(z/mag_xy))
+    return [ele,azi]
+
+def quat_to_angle_axis(quat):
+    angle = 2* math.acos(quat[0])
+    axis = scalar_multi(quat[1:],1/math.sin(angle/2))
+    return angle,axis
 
 def find_nearest(a, a0):
     # https://stackoverflow.com/a/2566508
