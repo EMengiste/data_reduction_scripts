@@ -9,6 +9,8 @@ from sklearn.linear_model import LinearRegression
 from mpl_toolkits.mplot3d import axes3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
+import numpy as np
 
 import multiprocessing
 import time
@@ -24,20 +26,20 @@ plt.rcParams["figure.subplot.right"] = 0.995
 plt.rcParams["figure.subplot.top"] = 0.891
 plt.rcParams["figure.subplot.wspace"] = 0.21
 plt.rcParams["figure.subplot.hspace"] = 0.44
-plt.rcParams['figure.figsize'] = 8,8#
-plt.rc('font', size=SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=SIZE)     # fontsize of the axes title
-plt.rc('axes', labelsize=SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=SIZE)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=SIZE)    # legend fontsize
-plt.rc('figure', titlesize=SIZE)  #
-
+plt.rcParams['figure.figsize'] = 8,8 #
+plt.rc('font', size=SIZE)            # controls default text sizes
+plt.rc('axes', titlesize=SIZE)       # fontsize of the axes title
+plt.rc('axes', labelsize=SIZE)       # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SIZE)      # fontsize of the tick labels
+plt.rc('ytick', labelsize=SIZE)      # fontsize of the tick labels
+plt.rc('legend', fontsize=SIZE)      # legend fontsize
+plt.rc('figure', titlesize=SIZE)     #
+#
 home ="/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/"
 home ="/media/schmid_1tb_2/etmengiste/aps_add_slip/"
 ist= "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic"
 isotropic_home ="/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic/"
-
+#
 values = { "1=crss": [],
            "2=stress": [],
            "3=slip": [],
@@ -968,7 +970,6 @@ def slip_vs_aniso(sim_start,domain,slip_systems,show=False,target_dir="/home/etm
     #
   #
 #
-#
 ## Plot effective plastic strain
 def plot_eff_strain(start,all=False,marker_size=40,aps_home="/home/etmengiste/jobs/aps/eff_pl_str/"):
     
@@ -1690,7 +1691,6 @@ def ret_to_funda(quat="",rod="", sym_operators=Cubic_sym_quats(),debug=False):
        #exit(0)
        return equiv_quats
 #
-#
 ##
 def rod_to_quat(val,debug=False):
        # Rodrigues vector to Quaternion
@@ -1748,9 +1748,13 @@ def rot_mat(arr1,arr2):
 #
 ##
 def dif_degs(start,fin,debug=False):
+    # Get basis mats
     q_ij,q_ji = rot_mat(start,fin)
+    # Get misorination mat
     v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    # Get fuda
     r1 = ret_to_funda(v1)
+    # Get degs
     thet_ij =math.degrees(math.acos(min([r1[0],1])))
     if debug:
         print(np.dot(q_ij.T,start[0]))
@@ -1953,7 +1957,6 @@ def plot_std_mean_data(NAME,ylims="",base=True,debug=False,**non_base):
         fig.savefig(NAME+str(DOM[DOMAIN.index(dom)])+"_mean_std.png",dpi=400)
 #
 #
-#
 def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
             lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
                     xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
@@ -1998,7 +2001,6 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
                         ,length=leng,normalize=True
                         ,color="k", linestyle = sty,linewidth=lw)
                     #
-#
 #
 ##
 def slerp(one,two,t=0.5,num_pts=1,debug=False):

@@ -66,9 +66,9 @@ find_grain=False
 show_circles=False
 #show_circles=True
 #
-grain_of_interest_1 = 592
-
-grain_of_interest_1 = 574
+##grain_of_interest_1 = 592
+# -1 to not show circled grains
+grain_of_interest_1 = -1#574
 fig_g1 = plt.figure(figsize=(13.5,23))
 ax_g1 = fig_g1.add_subplot(projection='3d')
 ax_g1.set_title("Grain 1",fontsize=fs)
@@ -76,7 +76,7 @@ ax_g1.set_title("Grain 1",fontsize=fs)
 
 
 
-grain_of_interest_2 = 545
+grain_of_interest_2 = -1#545
 fig_g2 = plt.figure(figsize=(13.5,23))
 ax_g2 = fig_g2.add_subplot(projection='3d')
 ax_g2.set_title("Grain 2",fontsize=fs)
@@ -88,8 +88,13 @@ of_lab_2=[-0.15,-0.01 ,-0.112] #label offset grain 2
 fig_large = plt.figure(figsize=(27,23))
 ax_large = fig_large.add_subplot(projection='3d')
 plot_rod_outline(ax_large)
-grain_ids=[i for i in range(500,600)]
-grain_ids=[grain_of_interest_2,grain_of_interest_1]
+grain_ids=[i for i in range(500,600,2)]
+grain_ids=[539,570,508,565,567,552,515,570,542,531
+           ,555,598,526,541,529,595, 533,597,516,520
+           ,596,579,525,566,589,585,592, 594,549,544
+           ,554,568,536,500,593,586,540,559,548,501,530,574,545]
+print(len(grain_ids))
+#grain_ids=[grain_of_interest_2,grain_of_interest_1]
 for grain_id in grain_ids:#[-60:-40]:
        sty="solid"
        for val,alp,col in zip(sims,aniso,colors):
@@ -192,11 +197,11 @@ for grain_id in grain_ids:#[-60:-40]:
               xyz_offset = [[0.002,-0.0001,0],[0,0,0],[0,0,0.0008]]# 
               coordinate_axis(ax_g2,first,coo_labs=["$r_1,z$","$r_2,x$","$r_3,y$"],fs=fs,leng=0.004,offset_text=1.5,offset=offset,xyz_offset=xyz_offset)
               #
-              xyz_offset = [[0.05,-0.03,0],[0.04,-0.02,0],[0.08,-0.003,-0.0001]]
-              xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]# for 574
-              bottom = np.array([0.6,0,-0.6])
-              coordinate_axis(ax_large,bottom,coo_labs=["$r_1,z$","$r_2,x$","$r_3,y$"],fs=fs,leng=0.15,offset_text=1.5,xyz_offset =xyz_offset )
-              #
+       xyz_offset = [[0.05,-0.03,0],[0.04,-0.02,0],[0.08,-0.003,-0.0001]]
+       xyz_offset = [[0,0,0],[0,0,0],[0,0,0]]# for 574
+       bottom = np.array([0.6,0,-0.6])
+       coordinate_axis(ax_large,bottom,coo_labs=["$r_1,z$","$r_2,x$","$r_3,y$"],fs=fs,leng=0.15,offset_text=1.5,xyz_offset =xyz_offset )
+       #
        if grain_id ==grain_of_interest_1:
 
               offset= np.array([-0.002,-0.003,-0.005])
@@ -248,6 +253,8 @@ ax_large.view_init(elev=35,azim=45)
 plt.tight_layout()
 show = True
 show = False
+
+destination = "/home/etmengiste/jobs/aps/step27/rod_space_plots"
 if show:
        plt.show()
 else:  
