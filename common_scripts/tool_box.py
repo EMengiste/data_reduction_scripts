@@ -1,43 +1,10 @@
 #------------------------------------------------------------------------
 from sklearn.linear_model import LinearRegression
 import numpy as np
-import math
 import pandas as pd
 import os
+import time
 
-def angle_axis_to_mat(angle,axis,scale=1):
-    cos_thet = math.cos(angle)
-    sin_thet = math.sin(angle)
-    u_x,u_y,u_z = axis
-    r11 = cos_thet + (u_x ** 2 * (1-cos_thet))
-    r12 = (u_x * u_y * (1-cos_thet)) - (u_z * sin_thet)
-    r13 = (u_x * u_z * (1-cos_thet)) + (u_y * sin_thet)
-
-    r21 = (u_y * u_x * (1-cos_thet)) + (u_z * sin_thet)
-    r22 = cos_thet + (u_y ** 2 * (1-cos_thet))
-    r23 = (u_y * u_z * (1-cos_thet)) - (u_x * sin_thet)
-
-    r31 = (u_z * u_x * (1-cos_thet)) - (u_y * sin_thet)
-    r32 = (u_z * u_y * (1-cos_thet)) + (u_x * sin_thet)
-    r33 = cos_thet + (u_z ** 2 * (1-cos_thet))
-    Rot_Mat = [ [r11,r12,r13],
-                [r21,r22,r23],
-                [r31,r32,r33]]
-    return Rot_Mat
-
-
-def vect_to_azim_elev(vect):
-    x,y,z = vect
-    mag_tot = (x**2 +y**2 +z**2)**0.5
-    mag_xy = (x**2 +y**2)**0.5
-    azi = math.degrees(math.asin(y/mag_xy))
-    ele = math.degrees(math.atan(z/mag_xy))
-    return [ele,azi]
-
-def quat_to_angle_axis(quat):
-    angle = 2* math.acos(quat[0])
-    axis = scalar_multi(quat[1:],1/math.sin(angle/2))
-    return angle,axis
 
 def find_nearest(a, a0):
     # https://stackoverflow.com/a/2566508
@@ -161,10 +128,10 @@ def generate_tess(n,name,main_dir=".",source_code="neper",options={"mode" :"run"
 def generate_msh(source_dir,num_partition,source_code="neper",options={"mode" :"run"}):
     print("\n===")
     curr_dir = os.getcwd()
-    name = source_dir.split("/")[:]
-    mesh_dir = "/".join(name[:-1])
+    input_name= source_dir.split("/")[:]
+    mesh_dir = "/".join(input_name[:-1])
     os.chdir(mesh_dir)
-    tess_name =name[-1]
+    tess_name =input_name[-1]
     commands = ["-part "+str(num_partition)]
     neper_command=source_code+" -M "+tess_name+" "+commands[0]
     mesh_name=tess_name
@@ -204,33 +171,36 @@ def generate_msh(source_dir,num_partition,source_code="neper",options={"mode" :"
 
     elif options["mode"]=="remesh":
         print("-----remeshing--------")
+        neper_command=source_code+" -M -loadmesh "+mesh_name+".msh "+commands[0]
         print("Meshing command:\n",neper_command)
         os.system(neper_command+" > "+mesh_name+"_output")
     os.chdir(curr_dir)
     return mesh_dir+"/"+mesh_name+".msh"
 #
-def visualize(source_dir,source_code="neper",options={"mode" :"run"}):
+def visualize(input_source,source_code="neper",options={"mode" :"run"}):
     commands = []
-    neper_command=source_code+" -V "+source_dir+" "+commands[0]
+    input_name= input_source.split("/")[-1]
+    neper_command=source_code+" -V "+input_source+" "
     # populate the commands using the optional input dictionary
     for i in options:
         if i[0]== "-":
             neper_command+=" "+i+' '+options[i]
             commands.append(i+' '+options[i])
-
+    neper_command+=" -print "+input_name[:-4]
     if options["mode"]=="debug":
-        #print(source_dir)
+        #print(input_source)
         print(os.getcwd())
         pprint(commands)
         print("Visualization command:\n",neper_command)
     elif options["mode"]=="run":
         print("Visualization command:\n",neper_command)
-        if os.path.exists(source_dir[0:-5]+".msh"):
-            print("Image already exists",source_dir[0:-5]+".png")
+        if os.path.exists(input_source[0:-4]+".png"):
+            print("Image already exists",input_source[0:-4]+".png")
         else:
             print("Image doesn't exist generating new")
-            os.system(neper_command+" > vis_output")
-    elif options["mode"]=="remesh":
+            print(os.getcwd())
+            os.system(neper_command+" > vis_output"+input_name)
+    elif options["mode"]=="rerun":
         os.system(neper_command+" > vis_output")
 #
 def post_process(sim_path,main_dir=".",options={"source code":"neper"}):
@@ -323,9 +293,82 @@ def write_crss_file(values,target_dir="",name="simulation",res="Elset"):
     for i in range(num_vals):
         precip_dist_file.write(str(i+1)+" "+str(values[i])+"\n")
     precip_dist_file.write("$End"+res+"Crss")
-
+#
+def sort_by_vals(arr,mat):
+       arr = np.ndarray.tolist(arr)
+       mat = np.ndarray.tolist(mat)
+       arr_sorted = sorted(arr)
+       arr_sorted.sort()
+       mat_sorted = []
+       for i in range(len(arr)):
+              curr_ind =arr.index(arr_sorted[i])
+              #print(curr_ind)
+              mat_sorted.append(mat[curr_ind])
+       return [arr_sorted,mat_sorted]
 #
 def pprint(arr):
     for i in arr:
         print("+=>",i)
 #
+def sampled_trajectories(cur_path,offset=0,sampled_elts="",sample_dense=1,debug=True,sim=1,end_path=""):
+    #
+    #
+    aniso = ["125", "150", "175", "200", "300", "400"]
+    slips = ["2", "4", "6"]
+    step = 27
+    #
+    if sim!="isotropic":
+        sim_num = int(sim)-1
+        slip = slips[int((sim_num)/30)]
+        set_num = str(int((sim_num%30)/6)+1)
+        ani = aniso[int(sim_num%6)]
+        name = "Cube_"+ani+"_"+slip+"ss_set_"+set_num
+        print(name,sim_num)
+        #exit(0)
+    else:
+        name = "Cube_control"
+    #
+    print(name) 
+    print("--opened path ", cur_path)
+    if debug:
+        return "done"
+    sample_num = 100
+    start = 500
+    if sampled_elts=="":
+        sampled_elts= [i for i in range(offset+start,start+sample_num)]
+        sampled_elts = sampled_elts[::sample_dense]
+    else:
+        sampled_elts=sampled_elts
+    #
+    #reports = open(path+'/post.report','r')
+    num_steps = 27#int(reports.readlines()[8][15:])
+    print("--opened path ", cur_path)
+    print(num_steps,"======")
+    #
+    cur_path +="/results/elsets/ori/ori.step"
+    init= open(end_path+'/ini','w')
+    step_0 = open(cur_path+'0','r').readlines()
+    for i in sampled_elts:
+        init.write(step_0[i])
+
+    print("\n---wrote to ",end_path+'/ini')
+    final= open(end_path+'/fin', 'w')
+    step_n = open(cur_path+str(num_steps),'r').readlines()
+    for i in sampled_elts:
+        final.write(step_n[i])
+
+    print(os.getcwd())
+    print("write to file ",end_path+'/'+name)
+    all= open(end_path+'/'+name,"w")
+    all.close()
+    all= open(end_path+'/'+name,'a+')
+    for j in range(num_steps+1):
+        print(cur_path+str(j))
+        curr= open(cur_path+str(j),'r').readlines()
+        for i in sampled_elts:
+            all.write(curr[i])
+            #print(curr[i])
+    
+    print(sampled_elts)
+    #exit(0)
+    all.close()

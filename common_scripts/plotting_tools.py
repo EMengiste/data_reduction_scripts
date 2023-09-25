@@ -97,6 +97,52 @@ def plot_crystal(ax,start=[0,0,0],dim=[1,1,1],type="",lw=5,matrix="",c="k",c2="r
     ax.scatter(X[:9],Y[:9],Z[:9],c=c,s=ms,ec=ec,lw=lw)
     ax.scatter(X[9:],Y[9:],Z[9:],c=c2,s=ms,ec=ec,lw=lw)
 
+def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
+            lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
+                    xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
+                    sty = "solid",space="",coo_labs=["x","y","z"], fs=60):
+    #
+    #      defult params need to be fixed for each axis
+    debug = True
+    debug = False
+    if space == "rod_real":
+        rod_labs = ["$r_1,x$","$r_2,y$","$r_3,z$"]
+    elif space== "real":        
+        rod_labs = ["x","y","z"]
+    elif space== "real_latex":        
+        rod_labs = ["$x$","$y$","$z$"]
+    else:
+        rod_labs =coo_labs
+    start = np.array(ori)+offset
+    lab_offset = -0.0002
+    ##
+    ##     make into function
+    ##
+    for ind,eig in enumerate(axis_basis):
+            print(axis_basis)
+            ax.quiver(start[0],start[1],start[2],
+                    eig[0],eig[1],eig[2]
+                    ,length=leng,normalize=True
+                    ,color="k", linestyle = sty,linewidth=lw)
+            #
+            leng_text=offset_text*leng
+            val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
+            ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
+            
+            if debug:
+                    start = np.array([0,0,0])
+                    leng = 0.6
+                    lab_offset = np.array([0.0005,0.00,0.0007])
+                    lw= 5.6
+                    val_txt = start(leng+lab_offset)
+                    ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, color='k')
+                    ax.quiver(start[0],start[1],start[2],
+                        eig[0],eig[1],eig[2]
+                        ,length=leng,normalize=True
+                        ,color="k", linestyle = sty,linewidth=lw)
+                    #
+#
+##
 def svs_real_svs_sim():
     import fepx_sim
     sim = "sample-feedstock"

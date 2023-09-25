@@ -1,0 +1,105 @@
+%\documentclass[13pt,aspectratio=169]{beamer}% Used to establish the beamer environment
+%
+\documentclass[20pt]{beamer} % scale up the font largest available is 20
+\geometry{papersize={16in,9in}} % make much larger. needs testing
+%
+%
+\usepackage{tikz} % Used for vectorized drawings
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{math}
+%
+\usepackage{amsmath} % Math typesetting package
+\usepackage{amssymb} % Math symbols
+\usepackage{float}  % Defines floating objects (Tables, Figures, etc...)
+\usepackage{pgfplots} % Package for plotting
+\usepackage{multirow}
+\usepackage{color,soul} % 
+\usepackage{mathtools}
+\usepackage{appendix}
+\usepackage{siunitx}
+\usepackage[normalem]{ulem}
+\usepackage{upgreek}
+\usepackage[numbers]{natbib}
+\usepackage{subfigure}
+% Theme choice (black and white, essentially)
+
+\usecolortheme{dove}
+
+% Frame titles
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+% Block title settings
+\setbeamerfont{block title}{size=\large,series=\bfseries}
+% Footer with acme lab, logo and frame number 
+\addtobeamertemplate{footline}{%
+  \begin{tikzpicture}
+    % Crimson PMS 201
+    \definecolor{mycolor}{RGB}{158,27,50}
+    %
+    \filldraw[color=mycolor, fill=mycolor, very thick] (-2,-1) rectangle (\textwidth,.27);
+    
+    \node[right, anchor= south west, text =white] (logo) at  (-2,-1) {\includegraphics[width= 1cm]{figures/A-Square-Logo-4c_Official.jpg}};
+    
+    \node[right, anchor=west, text =white] at (logo.east) {\normalsize ACME Lab};
+    
+   \node [left,anchor=south east, text =white] at (.93\textwidth,-.67) {\normalsize \insertframenumber{}};
+\end{tikzpicture}}
+
+% Removes navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+% Title and author
+\title{Grain and element precipitate distribution}
+\author{Ezra Mengiste, Matthew Kasemer}
+\setbeamerfont{title}{size=\Huge}
+
+
+\graphicspath{{/home/etmengiste/jobs/SERDP/dense_mesh/layer_1/imgs/}} % Path to graphics
+
+%%%%% Begin document
+\begin{document}
+
+\newcommand{\chilCol}{grey}
+% Make title page
+% Include body slides here
+\maketitle
+
+\newcommand{\makeDataslide}[2]{
+\begin{frame}{SERDP: RCL = #1.#2}
+
+    \begin{columns}
+        \begin{column}{0.1\textwidth}
+        \begin{block}{\textbf{$\tau_{crss}$}}
+        \includegraphics[width=\textwidth,centering]{mesh_rcl0_49_step0-scale3d.png}            
+        \end{block}
+            
+        \end{column}
+        \begin{column}{0.3\textwidth}
+        \begin{block}{Step 0}
+            \includegraphics[width=\textwidth,trim={0 0 0 0},clip]{mesh_rcl#1_#2_step0.png}                  
+        \end{block}
+        \end{column}
+        %
+        \begin{column}{0.3\textwidth}
+        \begin{block}{Step 16 $\varepsilon=0.26$}
+            \includegraphics[width=\textwidth,trim={0 0 0 0},clip]{mesh_rcl#1_#2_step16.png}                       
+        \end{block}
+        \end{column}
+        \begin{column}{0.3\textwidth}
+            \includegraphics[width=\textwidth,trim={0 0 0 0},clip]{mesh_rcl#1_#2_svs.png}                   
+        \end{column}
+    \end{columns}
+\end{frame}
+}
+\makeDataslide{1}{0}
+\makeDataslide{0}{915}
+\makeDataslide{0}{83}
+\makeDataslide{0}{745}
+\makeDataslide{0}{66}
+\makeDataslide{0}{575}
+\makeDataslide{0}{49}
+\makeDataslide{0}{405}
+\makeDataslide{0}{32}
+\makeDataslide{0}{235}
+%\input{templates/slide_3}
+%%%%% End document
+\end{document}
