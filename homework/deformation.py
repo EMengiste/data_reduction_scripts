@@ -52,6 +52,43 @@ def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,
                         ,color="k", linestyle = sty,linewidth=lw)
                     #
 #
+def shape_quad_8(input,ini_coords):
+    #isbn 978-93-90385-27-0
+    # eqn 13.5.2
+    # input (1,2,3)
+    # ini_coords (1,2,3)
+    xi,eta,zeta = np.array(input)+ np.array(ini_coords)
+    #phi_i = c[0] + c[1]*eta + c[2]*eta + c[3]*zeta + c[4]*xi*eta + c[5]*xi*zeta + c[6]*eta*zeta+c[7]*xi*eta*zeta
+    Phi_Node = [(1-xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1+eta)*(1+zeta)/8,
+                (1-xi)*(1+eta)*(1+zeta)/8]
+    return Phi_Node
+
+def shape_quad_8(input,ini_coords):
+    #isbn 978-93-90385-27-0
+    # eqn 13.5.2
+    # input (1,2,3)
+    # ini_coords (1,2,3)
+    xi,eta,zeta = np.array(input)+ np.array(ini_coords)
+    #phi_i = c[0] + c[1]*eta + c[2]*eta + c[3]*zeta + c[4]*xi*eta + c[5]*xi*zeta + c[6]*eta*zeta+c[7]*xi*eta*zeta
+    Phi_Node = [(1-xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1+eta)*(1+zeta)/8,
+                (1-xi)*(1+eta)*(1+zeta)/8]
+    return Phi_Node
+
+
+def transfromation(phi_xez, coo):
+    x = np.array(coo[0]),np.array(phi_xez)
 ##
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': 15})
@@ -65,11 +102,20 @@ X=[1,1,1,1,0,0,0,0]
 Y=[1,0,0,1,1,1,0,0]
 Z=[1,1,0,0,0,1,1,0]
 
+order_coos=[0,1,2,4]
+
 pt1 = [0.25,0.25,0.25]
 pt2 = [0.75,0.75,0.75]
+vals = np.zeros(8)
+for i in range(8):
+    node=[X[i],Y[i],Z[i]]
+    phi = shape_quad_8(node,pt1)
+    print("shape at node N(",node,") =",phi)
+    print(sum(phi))
+print(vals)
 
 dirs =[ i for i in os.listdir(".") if i.endswith(".txt")]
-
+dirs.sort()
 print(dirs)
 for i in range(0,1,1):
     print(dirs[i])
@@ -80,18 +126,35 @@ for i in range(0,1,1):
     ax = fig.add_subplot(1,1,1,projection='3d')
 
     # plot cube
-    ax.plot(X,Y,Z,"ko")
+    ax.plot(X,Y,Z,"ko-")
     # plot point of interest 1
     ax.plot(pt1[0],pt1[1],pt1[2],"ro")
     # plot point of interest 2
-    ax.plot(pt2[0],pt2[1],pt2[2],"ro")
+    ax.plot(pt2[0],pt2[1],pt2[2],"bo")
 
     # plot given final coordinates
-    x_fin,y_fin,z_fin = np.loadtxt(i)
-    ax.plot(x_fin,y_fin,z_fin,"kb")
+    x_fin,y_fin,z_fin = np.loadtxt(dirs[i])
+
+    basis = x_fin[order_coos],y_fin[order_coos],z_fin[order_coos]
+    ax.plot(basis[0],basis[1],basis[2],"b-o")
+    #print(np.array(basis).T)
+    #coordinate_axis(ax,[0,0,0])
+    
+    basis=np.array(basis).T
+    print(basis[1:])
+    #coordinate_axis(ax,[0,0,0],axis_basis=basis[1:])
+    
+    for i in range(8):
+        node=[x_fin[i],y_fin[i],z_fin[i]]
+        phi = shape_quad_8(node,[1,1,1])
+        print(f"shape at node N({i}) =",phi)
+        print(sum(phi))
+
+    exit(0)
+    ax.plot(x_fin,y_fin,z_fin,"ro-")
     
     coordinate_axis(ax,[0,0,0])
-    ax.set_aspect("equal")
+    #ax.set_aspect("equal")
     ax.set_proj_type("persp")
     #ax.axis("off")
     plt.grid(False)
