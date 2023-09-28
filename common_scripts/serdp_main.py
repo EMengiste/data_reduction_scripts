@@ -357,17 +357,38 @@ def job_submission():
 
 if __name__ == "__main__":
     #show_svs_precip_test(jobs_path)
-    layer= 2
+    layer = "layer_1_inv"
     mesh_loc = "/home/etmengiste/jobs/SERDP/dense_mesh/"
     at_work = "work_stuff" not in os.getcwd().split("/")
     submit = False
     processing = True
     print(os.getcwd())
-    os.chdir(mesh_loc+"layer_1")        
+    os.chdir(mesh_loc+layer)        
     dir_contents = [i for i in os.listdir(os.getcwd())
                     if not i.endswith(".sim") and i != "imgs"]
     os.chdir(mesh_loc)  
-    other_stuff = False
+    other_stuff = False    
+    if processing:
+        preamble = "\makeDataslide{"
+        files_processed = ""
+        os.chdir(mesh_loc+layer) 
+        for i in dir_contents[1:]:
+            rcl_val = str(get_val_name(i)).split(".")
+            files_processed+=preamble+rcl_val[0]+"}{"+rcl_val[1]+"}\n"
+            print(files_processed)
+            sim = fepx_sim(i,path=os.getcwd()+"/"+i)
+            print(sim)
+            if sim.completed:
+                #sim.post_process(options="-reselt crss")   
+                sim.post_process()           
+                 
+            individual_svs(mesh_loc+layer,i)
+            os.chdir(mesh_loc+layer)  
+
+            os.system("neper -V "+i+".sim -step 0 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step0")
+            os.system("neper -V "+i+".sim -step 16 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step16")
+        print(files_processed)
+        exit(0)
     if other_stuff:
         sims_loc = "/home/etmengiste/jobs/SERDP/inhomo_precip/same_macro_different_micro/"
         os.chdir(sims_loc)
@@ -379,6 +400,7 @@ if __name__ == "__main__":
         exit(0)   
     if at_work:
         #mesh_density_study(10,mode="debug")
+        exit(0)
         pprint(dir_contents[0:])
         #svs_real_svs_sim()
         #generate_crss_from_mask(column=1,msh_name="mesh_rcl0_235",for_col_mask=True,layer=3,mesh_loc=mesh_loc)
@@ -413,27 +435,7 @@ if __name__ == "__main__":
         #====::: Post_process
         #  neper -S
         #
-    else:
-        preamble = "\makeDataslide{"
-        files_processed = ""
-        os.chdir(mesh_loc+"layer_1") 
-        for i in dir_contents[0:1]:
-            rcl_val = str(get_val_name(i)).split(".")
-            files_processed+=preamble+rcl_val[0]+"}{"+rcl_val[1]+"}\n"
-            print(files_processed)
-            sim = fepx_sim(i,path=os.getcwd()+"/"+i)
-            print(sim)
-            if sim.completed:
-                #sim.post_process(options="-reselt crss")   
-                sim.post_process()           
-                 
-            individual_svs(mesh_loc+"layer_1",i)
-            os.chdir(mesh_loc+"layer_1")  
 
-            os.system("neper -V "+i+".sim -step 0 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step0")
-            os.system("neper -V "+i+".sim -step 16 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step16")
-        print(files_processed)
-        exit(0)
 '''    else:
         mesh_analogue()
         print(os.getcwd())'''
