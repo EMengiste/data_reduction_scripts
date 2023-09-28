@@ -73,6 +73,43 @@ def sort_by_vals(arr,mat):
        return [arr_sorted,mat_sorted]
 #
 #
+def shape_quad_8(input,ini_coords):
+    #isbn 978-93-90385-27-0
+    # eqn 13.5.2
+    # input (1,2,3)
+    # ini_coords (1,2,3)
+    xi,eta,zeta = np.array(input)+ np.array(ini_coords)
+    #phi_i = c[0] + c[1]*eta + c[2]*eta + c[3]*zeta + c[4]*xi*eta + c[5]*xi*zeta + c[6]*eta*zeta+c[7]*xi*eta*zeta
+    Phi_Node = [(1-xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1+eta)*(1+zeta)/8,
+                (1-xi)*(1+eta)*(1+zeta)/8]
+    return Phi_Node
+
+def shape_quad_8(input,ini_coords):
+    #isbn 978-93-90385-27-0
+    # eqn 13.5.2
+    # input (1,2,3)
+    # ini_coords (1,2,3)
+    xi,eta,zeta = np.array(input)+ np.array(ini_coords)
+    #phi_i = c[0] + c[1]*eta + c[2]*eta + c[3]*zeta + c[4]*xi*eta + c[5]*xi*zeta + c[6]*eta*zeta+c[7]*xi*eta*zeta
+    Phi_Node = [(1-xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1-eta)*(1-zeta)/8,
+                (1+xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1+eta)*(1-zeta)/8,
+                (1-xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1-eta)*(1+zeta)/8,
+                (1+xi)*(1+eta)*(1+zeta)/8,
+                (1-xi)*(1+eta)*(1+zeta)/8]
+    return Phi_Node
+
+
+def transfromation(phi_xez, coo):
+    x = np.array(coo[0]),np.array(phi_xez)
 ##
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': 15})
@@ -90,11 +127,25 @@ X= [0,1,0,1,0,1,0,1]
 Y= [0,0,1,1,0,0,1,1]
 Z= [0,0,0,0,1,1,1,1]
 
+<<<<<<< HEAD:homework/deformation_ws.py
 pt1 = [0.25,0.5,0.25]
+=======
+order_coos=[0,1,2,4]
+
+pt1 = [0.25,0.25,0.25]
+>>>>>>> 2d4a81397bab271199fca84aac9fa58e9bf24e15:homework/deformation.py
 pt2 = [0.75,0.75,0.75]
+vals = np.zeros(8)
+for i in range(8):
+    node=[X[i],Y[i],Z[i]]
+    phi = shape_quad_8(node,pt1)
+    print("shape at node N(",node,") =",phi)
+    print(sum(phi))
+print(vals)
 
 dirs =[ i for i in os.listdir(".") if i.endswith(".txt")]
 dirs.sort()
+<<<<<<< HEAD:homework/deformation_ws.py
 
 def mapping_function(X,Y,Z,matrix):
     x = matrix[0][0]*X +matrix[0][1]*Y +matrix[0][2]*Z
@@ -149,6 +200,8 @@ print(np.dot([x_fin[7],y_fin[7],z_fin[7]],function))
 #order_coos=[0,1,4,2]
 ##order_coos=[0,1,2,4]
 order_coos=[0,2,4,1]
+=======
+>>>>>>> 2d4a81397bab271199fca84aac9fa58e9bf24e15:homework/deformation.py
 print(dirs)
 
 
@@ -168,7 +221,11 @@ for i in range(0,1,1):
     axf = fig.add_subplot(2,2,4,projection='3d')
 
     # plot cube
+<<<<<<< HEAD:homework/deformation_ws.py
     ax.plot(X,Y,Z,"k-o")
+=======
+    ax.plot(X,Y,Z,"ko-")
+>>>>>>> 2d4a81397bab271199fca84aac9fa58e9bf24e15:homework/deformation.py
     # plot point of interest 1
     ax.plot(pt1[0],pt1[1],pt1[2],"ro")
     # plot point of interest 2
@@ -176,6 +233,7 @@ for i in range(0,1,1):
 
     # plot given final coordinates
     x_fin,y_fin,z_fin = np.loadtxt(dirs[i])
+<<<<<<< HEAD:homework/deformation_ws.py
     axf.plot(x_fin,y_fin,z_fin,"b-o")
 
     axf.quiver(0,0,0,x_fin[7],y_fin[7],z_fin[7])
@@ -230,6 +288,30 @@ for i in range(0,1,1):
     #coordinate_axis(ax1,[0,0,0])
     coordinate_axis(axf,[0,0,0])
     ax.set_aspect("equal")
+=======
+
+    basis = x_fin[order_coos],y_fin[order_coos],z_fin[order_coos]
+    ax.plot(basis[0],basis[1],basis[2],"b-o")
+    #print(np.array(basis).T)
+    #coordinate_axis(ax,[0,0,0])
+    
+    basis=np.array(basis).T
+    print(basis[1:])
+    #coordinate_axis(ax,[0,0,0],axis_basis=basis[1:])
+    
+    for i in range(8):
+        node=[x_fin[i],y_fin[i],z_fin[i]]
+        phi = shape_quad_8(node,[1,1,1])
+        print(f"shape at node N({i}) =",phi)
+        print(sum(phi))
+
+    exit(0)
+    ax.plot(x_fin,y_fin,z_fin,"ro-")
+    
+    coordinate_axis(ax,[0,0,0])
+    #ax.set_aspect("equal")
+    ax.set_proj_type("persp")
+>>>>>>> 2d4a81397bab271199fca84aac9fa58e9bf24e15:homework/deformation.py
     #ax.axis("off")
     plt.grid(False)
     ax.set_aspect("equal")

@@ -8,7 +8,7 @@ plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'DejaVu Serif'
 plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 400
-plt.rcParams['figure.figsize'] = 16,4
+plt.rcParams['figure.figsize'] = 16,6
 plt.rcParams['axes.axisbelow'] = True
 #
 plt.rc('font', size=SIZE)          # controls default text sizes
@@ -24,7 +24,8 @@ fig, ax = plt.subplots(1, 1,sharey="row")
 tasks_time = {"Simulations, verification \nand validation":[1,3],
               "Model testing \nand iteration":[1,2],
               "Model formulation\n and implementation":[2,0.25],
-              "Experimental \ncharacterization":[1.25,0]}
+              "Experimental \ncharacterization":[1.25,0],
+              "Course Work":[3,0]}
 for i in tasks_time:
     task=tasks_time[i]
     ax.barh(y=i,width=task[0],left=task[1],color="grey",edgecolor="k")
