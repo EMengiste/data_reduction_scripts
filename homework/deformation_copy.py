@@ -7,18 +7,10 @@ import matplotlib.animation as animation
 import numpy as np
 import math
 
-def vect_to_azim_elev(vect):
-    x,y,z = vect
-    #mag_tot = (x**2 +y**2 +z**2)**0.5
-    mag_xy = (x**2 +y**2)**0.5
-    azi = math.degrees(math.asin(y/mag_xy))
-    ele = math.degrees(math.atan(z/mag_xy))
-    return [ele,azi]
-
 def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,
             lw= 4, offset= np.array([0.01,0,-0.0001]), axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
                     xyz_offset = [[-0.0005,-0.0007,0],[0,-0.001,0],[0,-0.001,-0.0004]],
-                    sty = "solid",space="",coo_labs=["x","y","z"], fs=5):
+                    sty = "solid",space="",coo_labs=["x","y","z"], fs=60):
     #
     #      defult params need to be fixed for each axis
     debug = True
@@ -44,8 +36,8 @@ def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,
                     ,color="k", linestyle = sty,linewidth=lw)
             #
             leng_text=offset_text*leng
-            #val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
-            #ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
+            val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
+            ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
             
             if debug:
                     start = np.array([0,0,0])
@@ -59,7 +51,7 @@ def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,
                         ,length=leng,normalize=True
                         ,color="k", linestyle = sty,linewidth=lw)
                     #
-                    #
+#
 def sort_by_vals(arr,mat):
        arr = np.ndarray.tolist(arr)
        mat = np.ndarray.tolist(mat)
@@ -72,58 +64,10 @@ def sort_by_vals(arr,mat):
               mat_sorted.append(mat[curr_ind])
        return [arr_sorted,mat_sorted]
 #
+def pprint(arr,pre="-"):
+      for i in arr:
+            print(pre,i)
 #
-def shape_quad_8(input,ini_coords):
-    #isbn 978-93-90385-27-0
-    # eqn 13.5.2
-    # input (1,2,3)
-    # ini_coords (1,2,3)
-    xi,eta,zeta = np.array(input)+ np.array(ini_coords)
-    #phi_i = c[0] + c[1]*eta + c[2]*eta + c[3]*zeta + c[4]*xi*eta + c[5]*xi*zeta + c[6]*eta*zeta+c[7]*xi*eta*zeta
-    Phi_Node = [(1-xi)*(1-eta)*(1-zeta)/8,
-                (1+xi)*(1-eta)*(1-zeta)/8,
-                (1+xi)*(1+eta)*(1-zeta)/8,
-                (1-xi)*(1+eta)*(1-zeta)/8,
-                (1-xi)*(1-eta)*(1+zeta)/8,
-                (1+xi)*(1-eta)*(1+zeta)/8,
-                (1+xi)*(1+eta)*(1+zeta)/8,
-                (1-xi)*(1+eta)*(1+zeta)/8]
-    return Phi_Node
-
-def shape_quad_8(input):
-    #isbn 978-93-90385-27-0
-    # eqn 13.5.2
-    # input (1,2,3)
-    # ini_coords (1,2,3)
-    xi,eta,zeta = np.array(input)
-    #phi_i = c[0] + c[1]*eta + c[2]*eta + c[3]*zeta + c[4]*xi*eta + c[5]*xi*zeta + c[6]*eta*zeta+c[7]*xi*eta*zeta
-    Phi_Node = [(1-xi)*(1-eta)*(1-zeta)/8,
-                (1+xi)*(1-eta)*(1-zeta)/8,
-                (1+xi)*(1+eta)*(1-zeta)/8,
-                (1-xi)*(1+eta)*(1-zeta)/8,
-                (1-xi)*(1-eta)*(1+zeta)/8,
-                (1+xi)*(1-eta)*(1+zeta)/8,
-                (1+xi)*(1+eta)*(1+zeta)/8,
-                (1-xi)*(1+eta)*(1+zeta)/8]
-    return Phi_Node
-     
-
-X= [0,1,0,1,0,1,0,1]
-Y= [0,0,1,1,0,0,1,1]
-Z= [0,0,0,0,1,1,1,1]
-shape = shape_quad_8([0.5,0.5,0.5])
-print(shape)
-
-# plot given final coordinates
-x_fin,y_fin,z_fin = np.loadtxt("ca1_a.txt")
-print(x_fin[6],y_fin[6],z_fin[6])
-print("x=",np.dot(np.array(x_fin),shape))
-print("y=",np.dot(np.array(y_fin),shape))
-print("z=",np.dot(np.array(z_fin),shape))
-exit(0)
-
-def transfromation(phi_xez, coo):
-    x = np.array(coo[0]),np.array(phi_xez)
 ##
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': 15})
@@ -133,50 +77,28 @@ plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 100
 plt.rcParams['figure.figsize'] = 8,8
 
-X= [0,1,1,0,0,1,1,0]
-Y= [0,0,1,1,0,0,1,1]
-Z= [0,0,0,0,1,1,1,1]
-
-X= [0,1,0,1,0,1,0,1]
-Y= [0,0,1,1,0,0,1,1]
-Z= [0,0,0,0,1,1,1,1]
-print()
-
-order_coos=[0,1,2,4]
+X=[1,1,1,1,0,0,0,0]
+Y=[1,0,0,1,1,1,0,0]
+Z=[1,1,0,0,0,1,1,0]
 
 pt1 = [0.25,0.25,0.25]
 pt2 = [0.75,0.75,0.75]
-vals = np.zeros(8)
-for i in range(8):
-    node=[X[i],Y[i],Z[i]]
-    phi = shape_quad_8(node,pt1)
-    print("shape at node N(",node,") =",phi)
-    print(sum(phi))
-print(vals)
 
 dirs =[ i for i in os.listdir(".") if i.endswith(".txt")]
-dirs.sort()
-print(dirs)
 
-def plot_box(ax,X,Y,Z,scale=1,col="b"):
-    X = X*scale
-    Y = Y*scale
-    Z = Z*scale
-    ax.plot(X,Y,Z,col+"o")
-    j=4
-    #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
-    for i in range(1,len(X),j):
-            verts = [list(zip(X[i:i+j],Y[i:i+j],Z[i:i+j]))]
-            ax.add_collection3d(Poly3DCollection(verts,color=col,alpha=0.1))
+order_coos=[0,2,1,4]
+order_coos=[0,4,2,1]
+order_coos=[0,1,4,2]
+order_coos=[0,1,2,4]
+order_coos=[0,2,4,1]
 
-
-#basis = u_x[order_coos],u_y[order_coos],u_z[order_coos]
-#print("----jacobian?",np.linalg.det(np.array(basis).T[1:]))
-#exit(0)
+#order_coos=[0,1,2,3,4,5,6,7]
+print("Available coordinate files are,",dirs)
 for i in range(0,1,1):
-    print(dirs[i])
-    destination = "."
+    destination = ""
     show = True
+    #show = False
+    file_name = dirs[i]
     fig = plt.figure()
 
     ax = fig.add_subplot(2,2,1,projection='3d')
@@ -185,75 +107,64 @@ for i in range(0,1,1):
     axf = fig.add_subplot(2,2,4,projection='3d')
 
     # plot cube
-    ax.plot(X,Y,Z,"ko-")
-    plot_box(ax,X,Y,Z)
+    ax.plot(X,Y,Z,"k-o")
     # plot point of interest 1
     ax.plot(pt1[0],pt1[1],pt1[2],"ro")
     # plot point of interest 2
-    ax.plot(pt2[0],pt2[1],pt2[2],"bo")
+    ax.plot(pt2[0],pt2[1],pt2[2],"go")
 
     # plot given final coordinates
-    x_fin,y_fin,z_fin = np.loadtxt(dirs[i])
+    coos = np.loadtxt(file_name)
+    x_fin,y_fin,z_fin = coos
     basis = x_fin[order_coos],y_fin[order_coos],z_fin[order_coos]
+    print("Base cube basis are,\n",np.array([X,Y,Z]).T[::2])
+    print("variables to make the basis are,\n",np.array(basis).T)
+
     ax1.plot(basis[0],basis[1],basis[2],"b-o")
-    #print(np.array(basis).T)
-    coordinate_axis(ax2,[0,0,0],axis_basis=np.array(basis).T)
-    
+    ax1.plot(coos[0],coos[1],coos[2],"r-o")
     basis=np.array(basis).T
-    print(basis[1:])
-    #coordinate_axis(ax,[0,0,0],axis_basis=basis[1:])
-    
-    for i in range(8):
-        node=[x_fin[i],y_fin[i],z_fin[i]]
-        phi = shape_quad_8(node,[1,1,1])
-        print(f"shape at node N({i}) =",phi)
-        print(sum(phi))
 
-    #exit(0)
-    axf.plot(x_fin,y_fin,z_fin,"ro-")
-    
-    coordinate_axis(ax,[0,0,0])
-    #ax.set_aspect("equal")
-    ax.set_proj_type("persp")
-    #ax.axis("off")
-    plt.grid(False)
+    exit(0)
+    eig_vals,eig_vects = np.linalg.eig(basis[1:])
+    eig_vals,eig_vects = sort_by_vals(eig_vals,eig_vects)
+    #
+    coordinate_axis(ax1,[0,0,0],axis_basis=basis[1:])
+    coordinate_axis(ax2,[0,0,0],axis_basis=eig_vects)
+    ax2.plot(coos[0],coos[1],coos[2],"r-o")
+    #coordinate_axis(ax1,[0,0,0],axis_basis=eig_vects)
+
+    transformed = [np.dot(np.array([x,y,z]),basis[1:]) for x,y,z in zip(X,Y,Z)]
+    transformed = np.array(transformed)
+    print("transfromed",transformed[:,0])
+    coordinate_axis(axf,[0,0,0],axis_basis=basis[1:])
+    axf.plot(transformed[:,0],transformed[:,1],transformed[:,2],"r-o")
+    #
+    # plot deformed points
+    p1_def = np.dot(pt1,basis[1:])
+    p2_def = np.dot(pt2,basis[1:])
+    # plot point of interest 1
+    axf.plot(p1_def[0],p1_def[1],p1_def[2],"r>")
+    # plot point of interest 2
+    axf.plot(p2_def[0],p2_def[1],p2_def[2],"g>")
+
+
     ax.set_aspect("equal")
+    ax.set_proj_type("persp")
     ax1.set_aspect("equal")
+    ax1.set_proj_type("persp")
     ax2.set_aspect("equal")
+    ax2.set_proj_type("persp")
     axf.set_aspect("equal")
+    axf.set_proj_type("persp")
 
 
-    ax.set_box_aspect(aspect = (1,1,1))
-    ax1.set_box_aspect(aspect = (1,1,1))
-    ax2.set_box_aspect(aspect = (1,1,1))
-    axf.set_box_aspect(aspect = (1,1,1))
-
-    ele,azi,roll =[30,15,0]
-    ele,azi = vect_to_azim_elev([3,1,1])
-    print("vals are",ele,azi)
+    ele,azi,roll =[45,76,0]
     ax.view_init(elev=ele, azim=azi,roll=roll)
     ax1.view_init(elev=ele, azim=azi,roll=roll)
     ax2.view_init(elev=ele, azim=azi,roll=roll)
     axf.view_init(elev=ele, azim=azi,roll=roll)
-
-    start = -0.5
-    end= 1.5
-    ax.set_xlim([start,end])
-    ax.set_ylim([start,end])
-    ax.set_zlim([start,end])
-
-    ax1.set_xlim([start,end])
-    ax1.set_ylim([start,end])
-    ax1.set_zlim([start,end])
-
-    ax2.set_xlim([start,end])
-    ax2.set_ylim([start,end])
-    ax2.set_zlim([start,end])
-
-    axf.set_xlim([start,end])
-    axf.set_ylim([start,end])
-    axf.set_zlim([start,end])
-
+    #ax.axis("off")
+    plt.grid(False)
     if show:
         plt.show()
     else:
@@ -266,14 +177,6 @@ for i in range(0,1,1):
 
 exit(0)
 
-print("oroginal")
-print(x_fin)
-print(y_fin)
-print(z_fin)
-print("oroginal")
-print(vars[0][::-1])
-print(vars[1][::-1])    
-print(vars[2][::-1])
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 

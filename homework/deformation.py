@@ -44,8 +44,8 @@ def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,
                     ,color="k", linestyle = sty,linewidth=lw)
             #
             leng_text=offset_text*leng
-            #val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
-            #ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
+            val_txt=(np.array(eig)*(leng_text))+np.array(start)+np.array(xyz_offset[ind])
+            ax.text(val_txt[0],val_txt[1],val_txt[2], rod_labs[ind],fontsize=fs, ha='center',va='center',color='k')
             
             if debug:
                     start = np.array([0,0,0])
@@ -90,12 +90,12 @@ def shape_quad_8(input,ini_coords):
                 (1-xi)*(1+eta)*(1+zeta)/8]
     return Phi_Node
 
-def shape_quad_8(input):
+def shape_quad_8(input,ini_coords):
     #isbn 978-93-90385-27-0
     # eqn 13.5.2
     # input (1,2,3)
     # ini_coords (1,2,3)
-    xi,eta,zeta = np.array(input)
+    xi,eta,zeta = np.array(input)+ np.array(ini_coords)
     #phi_i = c[0] + c[1]*eta + c[2]*eta + c[3]*zeta + c[4]*xi*eta + c[5]*xi*zeta + c[6]*eta*zeta+c[7]*xi*eta*zeta
     Phi_Node = [(1-xi)*(1-eta)*(1-zeta)/8,
                 (1+xi)*(1-eta)*(1-zeta)/8,
@@ -106,21 +106,7 @@ def shape_quad_8(input):
                 (1+xi)*(1+eta)*(1+zeta)/8,
                 (1-xi)*(1+eta)*(1+zeta)/8]
     return Phi_Node
-     
 
-X= [0,1,0,1,0,1,0,1]
-Y= [0,0,1,1,0,0,1,1]
-Z= [0,0,0,0,1,1,1,1]
-shape = shape_quad_8([0.5,0.5,0.5])
-print(shape)
-
-# plot given final coordinates
-x_fin,y_fin,z_fin = np.loadtxt("ca1_a.txt")
-print(x_fin[6],y_fin[6],z_fin[6])
-print("x=",np.dot(np.array(x_fin),shape))
-print("y=",np.dot(np.array(y_fin),shape))
-print("z=",np.dot(np.array(z_fin),shape))
-exit(0)
 
 def transfromation(phi_xez, coo):
     x = np.array(coo[0]),np.array(phi_xez)
@@ -140,11 +126,8 @@ Z= [0,0,0,0,1,1,1,1]
 X= [0,1,0,1,0,1,0,1]
 Y= [0,0,1,1,0,0,1,1]
 Z= [0,0,0,0,1,1,1,1]
-print()
 
-order_coos=[0,1,2,4]
-
-pt1 = [0.25,0.25,0.25]
+pt1 = [0.25,0.5,0.25]
 pt2 = [0.75,0.75,0.75]
 vals = np.zeros(8)
 for i in range(8):
@@ -156,23 +139,67 @@ print(vals)
 
 dirs =[ i for i in os.listdir(".") if i.endswith(".txt")]
 dirs.sort()
+
+def mapping_function(X,Y,Z,matrix):
+    x = matrix[0][0]*X +matrix[0][1]*Y +matrix[0][2]*Z
+    y = matrix[1][0]*X +matrix[1][1]*Y +matrix[1][2]*Z
+    z = matrix[2][0]*X +matrix[2][1]*Y +matrix[2][2]*Z
+    return [x,y,z]
+
+
+def mapping_function(X,Y,Z,matrix):
+    x = matrix[0][0]*X +matrix[0][1]*Y +matrix[0][2]*Z
+    y = matrix[1][0]*X +matrix[1][1]*Y +matrix[1][2]*Z
+    z = matrix[2][0]*X +matrix[2][1]*Y +matrix[2][2]*Z
+    return [x,y,z]
+
+
+def linear_shape_function(x1,x2,x3,L1,L2,L3):
+    coef_1 = [0,1,1,0,0,1,1,0]
+    coef_2 = [0,0,1,1,0,0,1,1]
+    coef_3 = [0,0,0,0,1,1,1,1]
+    N_i = [(L1+L1*coef_1[i])*(L2+L2*coef_2[i])*(L3+L3*coef_3[i])*(1/8) for i in range(8)]
+    N_i = np.array(N_i)
+    shape_mat = [[np.dot(N_i,x1), 0,   0],
+                 [0, np.dot(N_i,x2),   0],
+                 [0,   0, np.dot(N_i,x3)]]
+    return shape_mat
+
+
+def linear_shape_function(x,y,z,L1,L2,L3):
+    N_i = 0
+    for i in range(8):
+        N_i+= (1+L1[i]*x)*(1+L2[i]*y)*(1+L3[i]*z)/8
+    return N_i
+
+x_fin,y_fin,z_fin = np.loadtxt(dirs[0])
+function = linear_shape_function(0,0,0,X,Y,Z)
+print(function)
+exit(0)
+
+X,Y,Z = np.array(X),np.array(Y),np.array(Z)
+u_x =-X+x_fin
+u_y =-Y+y_fin
+u_z =-Z+z_fin
+
+print(function)
+
+print(np.dot([x_fin[7],y_fin[7],z_fin[7]],function))
+#exit(0)
+# basis nodes order
+#order_coos=[0,2,1,4]
+#order_coos=[0,4,2,1]
+#order_coos=[0,4,1,2]
+#order_coos=[0,1,4,2]
+##order_coos=[0,1,2,4]
+order_coos=[0,2,4,1]
 print(dirs)
 
-def plot_box(ax,X,Y,Z,scale=1,col="b"):
-    X = X*scale
-    Y = Y*scale
-    Z = Z*scale
-    ax.plot(X,Y,Z,col+"o")
-    j=4
-    #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
-    for i in range(1,len(X),j):
-            verts = [list(zip(X[i:i+j],Y[i:i+j],Z[i:i+j]))]
-            ax.add_collection3d(Poly3DCollection(verts,color=col,alpha=0.1))
 
-
-#basis = u_x[order_coos],u_y[order_coos],u_z[order_coos]
-#print("----jacobian?",np.linalg.det(np.array(basis).T[1:]))
+basis = u_x[order_coos],u_y[order_coos],u_z[order_coos]
+print("----jacobian?",np.linalg.det(np.array(basis).T[1:]))
 #exit(0)
+order_vals=[0,1,3,2,6,7,5,4]
 for i in range(0,1,1):
     print(dirs[i])
     destination = "."
@@ -185,8 +212,7 @@ for i in range(0,1,1):
     axf = fig.add_subplot(2,2,4,projection='3d')
 
     # plot cube
-    ax.plot(X,Y,Z,"ko-")
-    plot_box(ax,X,Y,Z)
+    ax.plot(X,Y,Z,"k-o")
     # plot point of interest 1
     ax.plot(pt1[0],pt1[1],pt1[2],"ro")
     # plot point of interest 2
@@ -194,27 +220,60 @@ for i in range(0,1,1):
 
     # plot given final coordinates
     x_fin,y_fin,z_fin = np.loadtxt(dirs[i])
-    basis = x_fin[order_coos],y_fin[order_coos],z_fin[order_coos]
-    ax1.plot(basis[0],basis[1],basis[2],"b-o")
-    #print(np.array(basis).T)
-    coordinate_axis(ax2,[0,0,0],axis_basis=np.array(basis).T)
-    
-    basis=np.array(basis).T
-    print(basis[1:])
-    #coordinate_axis(ax,[0,0,0],axis_basis=basis[1:])
-    
-    for i in range(8):
-        node=[x_fin[i],y_fin[i],z_fin[i]]
-        phi = shape_quad_8(node,[1,1,1])
-        print(f"shape at node N({i}) =",phi)
-        print(sum(phi))
+    axf.plot(x_fin,y_fin,z_fin,"b-o")
 
-    #exit(0)
-    axf.plot(x_fin,y_fin,z_fin,"ro-")
-    
+    axf.quiver(0,0,0,x_fin[7],y_fin[7],z_fin[7])
+
+
+    values = [[x_fin[7],0,0],[0,y_fin[7],0],[0,0,z_fin[7]]]
+    eig_vals,eig_vects = np.linalg.eig(np.array(values))
+    eig_vals,eig_vects = sort_by_vals(eig_vals,eig_vects)
+
+
+    basis = x_fin[order_coos],y_fin[order_coos],z_fin[order_coos]
+    print("----jacobian?basis",np.linalg.det(np.array(basis).T[1:]))
+    vars = []
+    for x,y,z in zip(X,Y,Z):
+        vars.append(np.dot([x,y,z],np.array(basis).T[1:]))    
+    vars = np.array(vars).T
+
+    ax2.plot(vars[0],vars[1],vars[2],"bo-")
+    #
+    vars2 = []
+    #
+    basis_inv = np.linalg.inv(np.array(basis).T[1:])
+    print("----jacobian?basisInv",np.linalg.det(np.array(basis_inv)))
+    for var in vars.T:
+        vars2.append(np.dot(var,basis_inv))    
+    vars2 = np.array(vars2).T
+    ax2.plot(vars2[0],vars2[1],vars2[2],"ro-")
+
+    #
+    pt1 = np.dot(pt1,np.array(basis).T[1:])
+    pt2 = np.dot(pt2,np.array(basis).T[1:])
+    # plot point of interest 1
+    axf.plot(pt1[0],pt1[1],pt1[2],"ro")
+    # plot point of interest 2
+    axf.plot(pt2[0],pt2[1],pt2[2],"bo")
+
+    shifted_list = [[0,0,1],[0,1,0],[1,0,0],[1,1,1]]
+    markers = ["b","r","g","y"]
+    shifted = [0,0,1]
+    for i in range(4):
+        shifted = shifted_list[i]
+        mk=markers[i]
+        ax1.quiver(0,0,0,shifted[0],shifted[1],shifted[2],color=mk, linestyle="--")
+        ax2.quiver(0,0,0,shifted[0],shifted[1],shifted[2],color=mk, linestyle="--")
+        #ax2.quiver(0,0,0,eig_vects[i][0],eig_vects[i][1],eig_vects[i][2],color=mk)
+        shifted = np.dot(shifted,np.array(basis).T[1:])
+        print("transformed",shifted)
+        ax1.quiver(0,0,0,shifted[0],shifted[1],shifted[2],color=mk)
+        ax1.quiver(0,0,0,shifted[0],shifted[1],shifted[2],color=mk, linestyle="--")
+
     coordinate_axis(ax,[0,0,0])
-    #ax.set_aspect("equal")
-    ax.set_proj_type("persp")
+    #coordinate_axis(ax1,[0,0,0])
+    coordinate_axis(axf,[0,0,0])
+    ax.set_aspect("equal")
     #ax.axis("off")
     plt.grid(False)
     ax.set_aspect("equal")
@@ -230,7 +289,6 @@ for i in range(0,1,1):
 
     ele,azi,roll =[30,15,0]
     ele,azi = vect_to_azim_elev([3,1,1])
-    print("vals are",ele,azi)
     ax.view_init(elev=ele, azim=azi,roll=roll)
     ax1.view_init(elev=ele, azim=azi,roll=roll)
     ax2.view_init(elev=ele, azim=azi,roll=roll)
