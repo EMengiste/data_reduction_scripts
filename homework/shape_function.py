@@ -6,8 +6,30 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.animation as animation
 import numpy as np
 from scipy.linalg import polar
+from scipy.spatial.transform import Rotation as Rot
 import math
 
+SIZE=10
+# Latex interpretation for plots
+plt.rcParams.update({'font.size': SIZE})
+#plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'DejaVu Serif'
+plt.rcParams["mathtext.fontset"] = "cm"
+plt.rcParams["figure.subplot.left"] = 0.045
+plt.rcParams["figure.subplot.bottom"] = 0.08
+plt.rcParams["figure.subplot.right"] = 0.995
+plt.rcParams["figure.subplot.top"] = 0.891
+plt.rcParams["figure.subplot.wspace"] = 0.21
+plt.rcParams["figure.subplot.hspace"] = 0.44
+plt.rcParams['figure.figsize'] = 8,8 #
+plt.rc('font', size=SIZE)            # controls default text sizes
+plt.rc('axes', titlesize=SIZE)       # fontsize of the axes title
+plt.rc('axes', labelsize=SIZE)       # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SIZE)      # fontsize of the tick labels
+plt.rc('ytick', labelsize=SIZE)      # fontsize of the tick labels
+plt.rc('legend', fontsize=SIZE)      # legend fontsize
+plt.rc('figure', titlesize=SIZE)     #
+#
 def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,col="k",
             lw= 1, offset= np.array([0.01,0,-0.0001]), 
             axis_basis = [[1,0,0],[0,1,0],[0,0,1]],
@@ -57,7 +79,7 @@ def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,col="k",
 
 def jacks(ax,start,leng=[1,1,1],sc=0.2,basis=[[1,0,0],[0,1,0],[0,0,1]],col="k"):
     for ind,eig in enumerate(basis):
-        print(sc*leng[ind])
+        #print(sc*leng[ind])
         ax.quiver(start[0],start[1],start[2],
                 eig[0],eig[1],eig[2]
                 ,length=sc*leng[ind]
@@ -129,9 +151,6 @@ def shape_diff(input,xyz,lengths=[1,1,1]):
                         (1-xi/l1)*(  eta/l2)*( 1/l3), #7
                         (  xi/l1)*(  eta/l2)*( 1/l3)])#8
     #
-    print(dN_xi)
-    print(dN_eta)
-    print(dN_zeta)
     #print(len(dN_zeta.T),len(xyz[0]),l1)
     F11= np.matmul(dN_xi,xyz[0])
     F12= np.matmul(dN_xi,xyz[1])
@@ -153,9 +172,9 @@ def shape_diff(input,xyz,lengths=[1,1,1]):
 def mapping(fin_shape,poi):
     x_fin,y_fin,z_fin=fin_shape
     shape = shape_quad_8(poi)
-    print("x=",np.dot(np.array(x_fin),shape))
-    print("y=",np.dot(np.array(y_fin),shape))
-    print("z=",np.dot(np.array(z_fin),shape))
+    #print("x=",np.dot(np.array(x_fin),shape))
+    #print("y=",np.dot(np.array(y_fin),shape))
+    #print("z=",np.dot(np.array(z_fin),shape))
     v1 = np.dot(np.array(x_fin),shape)
     v2 = np.dot(np.array(y_fin),shape)
     v3 = np.dot(np.array(z_fin),shape)
@@ -168,7 +187,19 @@ def print_latex(matrix,val):
     for val in matrix:
         print("  &".join(str(val)[1:-1].split()),"\\\\")
     print("\end{bmatrix}\\\\")
-   
+   ##
+def normalize_vector(vect,magnitude=False):
+    value= 0
+    final = vect
+    for i in vect:
+        value+=(i**2)
+    mag=(value)**0.5
+    for i in range(len(vect)):
+        final[i] = final[i]/mag
+    if magnitude:
+        return [final,mag]
+    else:
+        return final
 
 def draw_cube(ax,X,Y,Z,col="r",alp=0.1):
     # assume kasmer numbering
@@ -199,27 +230,32 @@ order_coos=[0,2,4,1]
 
 destination = "."
 show = True
-show = False
+#show = False
 #
+ini_col = "r"
+fin_col = "b"
+ele,azi = vect_to_azim_elev([3,1,1])
+start = -1
+end= 1.5
 
 #
 # import text file names for later use
 dirs =[ i for i in os.listdir(".") if i.endswith(".txt")]
 dirs.sort()
-print(dirs)
-
+#print(dirs)
 for i in range(0,3,1):
+    figure_ext = plt.figure()
+    ax_side  = figure_ext.add_subplot(111,projection='3d')
+    ax_side.view_init(elev=ele, azim=azi)
+    ax_side.set_xlim([start,end])
+    ax_side.set_ylim([start,end])
+    ax_side.set_zlim([start,end])
     print(dirs[i])
-    fig,axs = plt.subplots(2,2,figsize=(10,10),subplot_kw=dict(projection='3d'))
+    fig,axs = plt.subplots(2,2,subplot_kw=dict(projection='3d'))
     axs = axs.flatten()
-    print(axs)
+    #print(axs)
     #exit(0)
     #
-    ini_col = "r"
-    fin_col = "b"
-    ele,azi = vect_to_azim_elev([3,1,1])
-    start = -0.5
-    end= 1.5
     #
     #
     x_fin,y_fin,z_fin = np.loadtxt(dirs[i])
@@ -234,6 +270,7 @@ for i in range(0,3,1):
         # plot cube
         #draw_cube(ax,X,Y,Z,col=ini_col)
         draw_cube(ax0,X,Y,Z,col=ini_col)
+        draw_cube(ax_side,X,Y,Z,col=ini_col)
         #draw_cube(ax1,X,Y,Z,col=ini_col)
         # plot given final coordinates
         #draw_cube(ax,x_fin,y_fin,z_fin,col=fin_col)
@@ -242,7 +279,7 @@ for i in range(0,3,1):
 
         F = shape_diff(poi,[x_fin,y_fin,z_fin]).T
 
-        print(np.matmul(F.T,F))
+        #print(np.matmul(F.T,F))
         print_latex(F,"F")
         print("J&=",np.linalg.det(F),"\\\\")
         #
@@ -253,6 +290,11 @@ for i in range(0,3,1):
         R,U = polar(F,side="right")
         #
         #exit(0)
+        rotations= Rot.from_matrix(R).as_rotvec()
+        print("************\n")
+        print(normalize_vector(rotations,magnitude=True))
+        print("************\n")
+        print("************\n")
         #print(np.matmul(R,R.T))
         # R.R.T ==I
         v_calc = np.matmul(np.matmul(R,U),R.T)
@@ -266,36 +308,77 @@ for i in range(0,3,1):
         #ax.plot(poi[0],poi[1],poi[2],ini_col+"o")
         ax0.plot(poi[0],poi[1],poi[2],ini_col+"o")
 
+        ###
+        
+        ax_side.plot(poi[0],poi[1],poi[2],ms=200)
+        x_f,y_f,z_f= np.matmul(U, np.array([X,Y,Z]))
+        draw_cube(ax_side,x_f,y_f,z_f,col="y")
+        x_f,y_f,z_f= np.matmul(R, np.array([x_f,y_f,z_f]))
+        draw_cube(ax_side,x_f,y_f,z_f,col="b")
+        
+        ax_side.plot(poi[0],poi[1],poi[2],ms=200)
+        x_f,y_f,z_f= np.matmul(U, np.array([X,Y,Z]))
+        draw_cube(ax_side,x_f,y_f,z_f,col="y")
+        x_f,y_f,z_f= np.matmul(R, np.array([x_f,y_f,z_f]))
+        draw_cube(ax_side,x_f,y_f,z_f,col="b")
 
+        val1 = [poi]
+
+        x_f,y_f,z_f= np.matmul(U, np.array(poi).T)
+        print(x_f,y_f,z_f)
+        val1.append([x_f,y_f,z_f])
+        x_f,y_f,z_f= np.matmul(R, np.array([x_f,y_f,z_f]))
+        val1.append([x_f,y_f,z_f])
+
+        val1 = np.array(val1).T
+        print(x_f,y_f,z_f,"ko-")
+        ax_side.plot(val1[0],val1[1],val1[2],"ro-")
+
+        #######
+        val1 = [poi]
+        #######
+        x_f,y_f,z_f= np.matmul(R, np.array(poi).T)
+        print(x_f,y_f,z_f)
+        val1.append([x_f,y_f,z_f])
+        x_f,y_f,z_f= np.matmul(V, np.array([x_f,y_f,z_f]))
+        val1.append([x_f,y_f,z_f])
+        #
+        val1 = np.array(val1).T
+        print(x_f,y_f,z_f)
+        ax_side.plot(val1[0],val1[1],val1[2],"bo-")
+        ###
         v1,v2,v3 = mapping([x_fin,y_fin,z_fin],poi)
         #ax.plot(v1,v2,v3,fin_col+"o")
 
         eig_vals,eig_vect = np.linalg.eig(V)
+        print_latex(eig_vect,"V_E")
+        print("V",eig_vals)
         jacks(ax1,[v1,v2,v3],eig_vals,basis=eig_vect,col=fin_col)
-        jacks(ax1,poi,col=ini_col)        
+        #jacks(ax1,poi,col=ini_col)        
 
+        F = shape_diff(poi,[x_fin,y_fin,z_fin]).T
         eig_vals,eig_vect = np.linalg.eig(U)
+        print("U",eig_vals)
+        print_latex(eig_vect,"U_E")
         jacks(ax0,poi,eig_vals,basis=eig_vect,col=fin_col)
-        jacks(ax0,poi,col=ini_col)        
+        #jacks(ax0,poi,col=ini_col)        
         #
         #exit(0)
-    #
+    print("\n\n")
     for ax in axs:
         #
-        ax.set_proj_type("persp")
+        #ax.set_proj_type("persp")
         ax.set_aspect("equal")
         ax.set_box_aspect(aspect = (2,2,2))
-        print("vals are",ele,azi)
         ax.view_init(elev=ele, azim=azi)
         ax.set_xlim([start,end])
         ax.set_ylim([start,end])
         ax.set_zlim([start,end])
     plt.grid(False)
-
     if show:
         plt.show()
     else:
-        #fig.savefig("funda_region")
+        #figure_ext.savefig("box"+str(i)+".png")
         fig.savefig(str(i)+"box.png",dpi=100)
         #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 
