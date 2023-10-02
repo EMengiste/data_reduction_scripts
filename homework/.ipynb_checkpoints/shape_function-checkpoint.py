@@ -30,107 +30,9 @@ plt.rc('ytick', labelsize=SIZE)      # fontsize of the tick labels
 plt.rc('legend', fontsize=SIZE)      # legend fontsize
 plt.rc('figure', titlesize=SIZE)     #
 #
-def demo():
-    show = True
-    #show = False
-    #
-    ini_col = "r"
-    fin_col = "b"
-    fin_col1 = "crimson"
-    fin_col2= "teal"
-    U_col = "g"
-    V_col = "y"
-    ele,azi = vect_to_azim_elev([3,1,1])
-    start = -1
-    end= 1.5
 
-    #
-    # import text file names for later use
-    dirs =[ i for i in os.listdir(".") if i.endswith(".txt")]
-    dirs.sort()
-    #print(dirs)
-    for i in [1]:
-        fig,axs = plt.subplots(2,2,subplot_kw=dict(projection='3d'))
-        ax_side = axs[0][0]
-        axs_right_u = axs[0][1]
-        axs_rot_r = axs[1][0]
-        axs_left_v = axs[1][1]
-
-        axs = axs.flatten()
-        ax_side.set_title("Initial")
-        axs_right_u.set_title("$U$")
-        axs_rot_r.set_title("$R$")
-        axs_left_v.set_title("Final")
-        ax_side.view_init(elev=ele, azim=azi)
-        ax_side.set_xlim([start,end])
-        ax_side.set_ylim([start,end])
-        ax_side.set_zlim([start,end])
-        print(dirs[i])
-        # Initial node coordinates in order
-        X= [0,1,0,1,0,1,0,1]
-        Y= [0,0,1,1,0,0,1,1]
-        Z= [0,0,0,0,1,1,1,1]
-        #
-        poi = [1,1,1]
-        #
-        x_fin,y_fin,z_fin = np.loadtxt(dirs[i])
-        #
-        draw_cube(ax_side,X,Y,Z,col=ini_col)
-        draw_cube(axs_left_v,x_fin,y_fin,z_fin,col=fin_col)
-
-        for poi in [[0,0,0],[0.5,0.5,0.5],[1,1,1]]:#np.array([X,Y,Z]).T:
-            #
-            F = shape_diff(poi,[x_fin,y_fin,z_fin])
-            print_latex(np.matmul(F.T,F),"C")
-            print_latex(F,"F")
-            print("J&=",np.linalg.det(F),"\\\\")
-            #
-            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.polar.html
-            #
-            R,U = polar(F,side="right")
-            rotations= Rot.from_matrix(R).as_rotvec()
-            print("************\n")
-            print(normalize_vector(rotations,magnitude=True))
-            print("************\n")
-            V = np.matmul(np.matmul(R,U),R.T)
-            #
-            #
-            print_latex(V,val="V")
-            print_latex(R,"R")
-            print_latex(U,"U")
-            ###### plot point of interest in figure
-            ax_side.plot(poi[0],poi[1],poi[2],ms=200)
-            ###### project point of interest by right cauchy stretch
-            x_f,y_f,z_f= np.matmul(U, np.array([X,Y,Z]))
-            draw_cube(axs_right_u,x_f,y_f,z_f,col=U_col)
-            ###### project point of interest by rotation matrix
-            x_f,y_f,z_f= np.matmul(R, np.array([x_f,y_f,z_f]))
-            draw_cube(axs_left_v,x_f,y_f,z_f,col=fin_col2)
-            
-            ax_side.plot(poi[0],poi[1],poi[2],ms=200)
-            x_f,y_f,z_f= np.matmul(R, np.array([X,Y,Z]))
-            draw_cube(axs_rot_r,x_f,y_f,z_f,col=V_col)
-            x_f,y_f,z_f= np.matmul(V, np.array([x_f,y_f,z_f]))
-            draw_cube(axs_left_v,x_f,y_f,z_f,col=fin_col1)
-        for ax in axs:
-            #
-            #ax.set_proj_type("persp")
-            ax.set_aspect("auto")
-            #ax.set_box_aspect(aspect = (2,2,2))
-            ax.view_init(elev=ele, azim=azi)
-            ax.set_xlim([start,end])
-            ax.set_ylim([start,end])
-            ax.set_zlim([start,end])
-        plt.grid(False)
-        if show:
-            plt.show()
-        else:
-            #figure_ext.savefig("box"+str(i)+".png")
-            fig.savefig(str(i)+"box.png",dpi=100)
-            #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
-
-
-def instantiate_hw():    
+def instantiate_hw():
+    
     pt1 = np.array( [0.25,0.25,0.25])
     pt2 = np.array([0.75,0.75,0.75])
     #
@@ -152,31 +54,20 @@ def instantiate_hw():
     dirs =[ i for i in os.listdir(".") if i.endswith(".txt")]
     dirs.sort()
     #print(dirs)
-    for i in range(0,1,1):
+    for i in range(0,3,1):
         figure_ext = plt.figure()
         ax_side  = figure_ext.add_subplot(111,projection='3d')
         ax_side.view_init(elev=ele, azim=azi)
         ax_side.set_xlim([start,end])
         ax_side.set_ylim([start,end])
         ax_side.set_zlim([start,end])
-        #
-        #
-        #
         print(dirs[i])
-        # Initial node coordinates in order
-        X= [0,1,0,1,0,1,0,1]
-        Y= [0,0,1,1,0,0,1,1]
-        Z= [0,0,0,0,1,1,1,1]
-        #
-        #
         fig,axs = plt.subplots(2,2,subplot_kw=dict(projection='3d'))
         axs = axs.flatten()
-        ind=0
-        ax2 = axs[ind]
-        ax1 = axs[ind-2]
-        ax0 = axs[ind-4]
-        #draw_cube(ax,X,Y,Z,col=ini_col)
-        draw_cube(ax0,X,Y,Z,col="k")
+        #print(axs)
+        #exit(0)
+        #
+        #
         #
         x_fin,y_fin,z_fin = np.loadtxt(dirs[i])
         #
@@ -226,18 +117,16 @@ def instantiate_hw():
             ax0.plot(poi[0],poi[1],poi[2],ini_col+"o")
 
             ###
-            ###### plot point of interest in figure
+            
             ax_side.plot(poi[0],poi[1],poi[2],ms=200)
-            ###### project point of interest by right cauchy stretch
             x_f,y_f,z_f= np.matmul(U, np.array([X,Y,Z]))
             draw_cube(ax_side,x_f,y_f,z_f,col="y")
-            ###### project point of interest by rotation matrix
             x_f,y_f,z_f= np.matmul(R, np.array([x_f,y_f,z_f]))
             draw_cube(ax_side,x_f,y_f,z_f,col="b")
             
             ax_side.plot(poi[0],poi[1],poi[2],ms=200)
-            x_f,y_f,z_f= np.matmul(V, np.array([X,Y,Z]))
-            draw_cube(ax_side,x_f,y_f,z_f,col="g")
+            x_f,y_f,z_f= np.matmul(U, np.array([X,Y,Z]))
+            draw_cube(ax_side,x_f,y_f,z_f,col="y")
             x_f,y_f,z_f= np.matmul(R, np.array([x_f,y_f,z_f]))
             draw_cube(ax_side,x_f,y_f,z_f,col="b")
 
@@ -265,16 +154,14 @@ def instantiate_hw():
             val1 = np.array(val1).T
             print(x_f,y_f,z_f)
             ax_side.plot(val1[0],val1[1],val1[2],"bo-")
-            #
-            # #
-            # #
+            ###
             v1,v2,v3 = mapping([x_fin,y_fin,z_fin],poi)
-            # #
-            # #
-            # 
+            #ax.plot(v1,v2,v3,fin_col+"o")
 
             eig_vals,eig_vect = np.linalg.eig(V)
-            jacks(ax1,[v1,v2,v3],eig_vals,name="V",basis=eig_vect,col=fin_col)
+            print_latex(eig_vect,"V_E")
+            print("V",eig_vals)
+            jacks(ax1,[v1,v2,v3],eig_vals,basis=eig_vect,col=fin_col)
             #jacks(ax1,poi,col=ini_col)        
 
             F = shape_diff(poi,[x_fin,y_fin,z_fin]).T
@@ -289,7 +176,7 @@ def instantiate_hw():
         for ax in axs:
             #
             #ax.set_proj_type("persp")
-            #ax.set_aspect("equal")
+            ax.set_aspect("equal")
             ax.set_box_aspect(aspect = (2,2,2))
             ax.view_init(elev=ele, azim=azi)
             ax.set_xlim([start,end])
@@ -372,9 +259,7 @@ def coordinate_axis(ax,ori,leng = 0.2,offset_text=1.6,col="k",
                     #
                     #
 
-def jacks(ax,start,leng=[1,1,1],name="blank",sc=0.2,basis=[[1,0,0],[0,1,0],[0,0,1]],col="k"):
-    print_latex(basis,name)
-    print(name,leng)
+def jacks(ax,start,leng=[1,1,1],sc=0.2,basis=[[1,0,0],[0,1,0],[0,0,1]],col="k"):
     for ind,eig in enumerate(basis):
         #print(sc*leng[ind])
         ax.quiver(start[0],start[1],start[2],
@@ -450,15 +335,15 @@ def shape_diff(input,xyz,lengths=[1,1,1]):
     #
     #print(len(dN_zeta.T),len(xyz[0]),l1)
     F11= np.matmul(dN_xi,xyz[0])
-    F21= np.matmul(dN_xi,xyz[1])
-    F31= np.matmul(dN_xi,xyz[2])
+    F12= np.matmul(dN_xi,xyz[1])
+    F13= np.matmul(dN_xi,xyz[2])
 
-    F12= np.matmul(dN_eta,xyz[0])
+    F21= np.matmul(dN_eta,xyz[0])
     F22= np.matmul(dN_eta,xyz[1])
-    F32= np.matmul(dN_eta,xyz[2])
+    F23= np.matmul(dN_eta,xyz[2])
 
-    F13= np.matmul(dN_zeta,xyz[0])
-    F23= np.matmul(dN_zeta,xyz[1])
+    F31= np.matmul(dN_zeta,xyz[0])
+    F32= np.matmul(dN_zeta,xyz[1])
     F33= np.matmul(dN_zeta,xyz[2])
 
     F = np.array([[F11,F12,F13],
@@ -513,4 +398,3 @@ def draw_cube(ax,X,Y,Z,col="r",alp=0.1):
         verts = [list(zip(X_vals,Y_vals,Z_vals))]
         ax.add_collection3d(Poly3DCollection(verts,color=col,alpha=alp))
 #
-demo()
