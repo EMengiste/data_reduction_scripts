@@ -103,6 +103,7 @@ def demo():
             ###### project point of interest by right cauchy stretch
             x_f,y_f,z_f= np.matmul(U, np.array([X,Y,Z]))
             draw_cube(axs_right_u,x_f,y_f,z_f,col=U_col)
+            #
             ###### project point of interest by rotation matrix
             x_f,y_f,z_f= np.matmul(R, np.array([x_f,y_f,z_f]))
             draw_cube(axs_left_v,x_f,y_f,z_f,col=fin_col2)

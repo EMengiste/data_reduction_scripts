@@ -1729,29 +1729,63 @@ def rot_mat(arr1,arr2):
     #   Find the roation matrix from a basis matrix 
     #       Q_ij = arr1 => arr2
     #       Q_ji = arr1 => arr2
-    Q_ij = []
-    Q_ji = []
+    R_ij = []
+    R_ji = []
     if len(arr1) ==len(arr2):
         for a in arr1:
             temp = []
             for b in arr2:
                     temp.append(np.dot(a,b))
-            Q_ij.append(temp)
+            R_ij.append(temp)
         for b in arr1:
             temp = []
             for a in arr2:
                     temp.append(np.dot(a,b))
-            Q_ji.append(temp)                     
-        return [np.array(Q_ij),np.array(Q_ji)] 
+            R_ji.append(temp)                     
+        return [np.array(R_ij),np.array(R_ji)] 
     else:  
             print("not same size")
 #
+def rot_to_quat_function(rotMat,option=""):
+    # Not working dont use
+    if option == "":
+        # https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
+        t = rotMat[0][0]+rotMat[1][1]+rotMat[2][2]
+        r = (1+t)**0.5
+        s = 1/(2*r)
+        w = r/2
+        x = np.sign(rotMat[2][1]-rotMat[1][2])*abs(.5*(1+rotMat[0][0]-rotMat[1][1]-rotMat[2][2])**0.5)
+        y = np.sign(rotMat[0][2]-rotMat[2][0])*abs(.5*(1-rotMat[0][0]+rotMat[1][1]-rotMat[2][2])**0.5)
+        z = np.sign(rotMat[1][0]-rotMat[0][1])*abs(.5*(1-rotMat[0][0]-rotMat[1][1]+rotMat[2][2])**0.5)
+        return [w,x,y,z]    
+    elif option == "2":
+        # https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
+        t = rotMat[0][0]-rotMat[1][1]-rotMat[2][2]
+        r = (1+t)**0.5
+        s = 1/(2*r)
+        w = (rotMat[2][1]-rotMat[1][2])*s
+        x = r/2
+        y = (rotMat[0][2]-rotMat[2][0])*s
+        z = (rotMat[2][1]-rotMat[1][2])*s
+        return [w,x,y,z]
+    elif option =="3":
+        # https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
+        t = rotMat[0][0]+rotMat[1][1]+rotMat[2][2]
+        r = (1+t)**0.5
+        s = 1/(2*r)
+        w = r/2
+        x = (rotMat[2][1]-rotMat[1][2])*s
+        y = (rotMat[0][2]-rotMat[2][0])*s
+        z = (rotMat[2][1]-rotMat[1][2])*s
+        return [w,x,y,z]
+
 ##
 def dif_degs(start,fin,debug=False):
     # Get basis mats
     q_ij,q_ji = rot_mat(start,fin)
     # Get misorination mat
-    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    #v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
     # Get fuda
     r1 = ret_to_funda(v1)
     # Get degs

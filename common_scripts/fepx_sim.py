@@ -70,7 +70,7 @@ class fepx_sim:
         #
         if self.is_sim:
             print("########---- opening "+path+"/simulation.config")
-            self.post_process()
+            #self.post_process()
             config = open(path+"/inputs/simulation.config").readlines()
 
         elif self.has_config and not self.is_sim:

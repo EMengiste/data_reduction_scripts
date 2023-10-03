@@ -203,12 +203,14 @@ def calc_grain_stress_misori(params):
     print(params)
     print(simulations)
     #exit(0)
+    aniso = ["125", "150", "175", "200", "300", "400"]
+    sets= ["1", "2", "3", "4", "5"]
     sim_name = simulations[sim_ind]
     sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-
-    set = str(sets[int(sim_ind/base)%num_sets])
+    num_sets = len(sets)
+    set_name = str(sets[int(sim_ind/base)%num_sets])
     slip = str(slips[int(sim_ind/(base*num_sets))])
-    
+    dom = "CUB"
     grain_start =1
     grain_end = 2000
     temp = []
@@ -234,43 +236,13 @@ def calc_grain_stress_misori(params):
     if basic=="True":
        name = "DOM_"+dom+"_"+sim_name
     else:
-        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
+        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set_name+"_ANISO_"+aniso[sim_ind%6]
     print(name)
     vals = [name ,np.mean(temp),np.std(temp)]
     del sim
     return vals
 
-
-iso_home="/home/etmengiste/jobs/aps/slip_study/"
-home="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
-
-simulations = os.listdir(home)
-simulations.sort()
-simulations.remove("common_files")
-sim_iso = fepx_sim("Cube.sim",path=home+"isotropic/Cube.sim")
-step= "27"
-num_steps = sim_iso.get_num_steps()
-destination = "/home/etmengiste/jobs/aps/stress_misori/"
-steps = [str(i) for i in range(num_steps)]
-pool = multiprocessing.Pool(processes=90)
-
-for step in steps:
-    means = []
-    stds = []
-    set_start = 0
-    set_end = 5
-    headers = ["case","mean","std"]
-    data = [headers]
-    ###
-    aniso = ["125", "150", "175", "200", "300", "400"]
-    slips = ["2","4","6"]
-    sets = ["1","2","3","4","5"]
-    num_sets = len(sets)
-    base = 6
-    dom = "CUB"
-    basic = False
-    #basic = True
-
+def generate_data():
     print("starting code")
     tic = time.perf_counter()
     #
@@ -308,6 +280,39 @@ for step in steps:
     print("===")
     print("===")
     print(f"Generated data in {toc - tic:0.4f} seconds")
+
+
+iso_home="/home/etmengiste/jobs/aps/slip_study/"
+home="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
+
+simulations = os.listdir(home)
+simulations.sort()
+simulations.remove("common_files")
+sim_iso = fepx_sim("Cube.sim",path=home+"isotropic/Cube.sim")
+step= "27"
+num_steps = sim_iso.get_num_steps()
+destination = "/home/etmengiste/jobs/aps/misori_test/"
+steps = [str(i) for i in range(num_steps)]
+pool = multiprocessing.Pool(processes=90)
+
+set_start = 0
+set_end = 5
+headers = ["case","mean","std"]
+data = [headers]
+###
+aniso = ["125", "150", "175", "200", "300", "400"]
+slips = ["2","4","6"]
+sets = ["1","2","3","4","5"]
+num_sets = len(sets)
+base = 6
+dom = "CUB"
+basic = False
+#basic = True
+
+for step in steps:
+    means = []
+    stds = []
+
     #exit(0)
     print("===")
     print("===")
@@ -324,9 +329,9 @@ for step in steps:
     df1 = pd.DataFrame(data)
     df1.columns=df1.iloc[0]
     df1[1:].to_csv(destination+name+".csv")
-
+    print("opened",destination+name+".csv")
     #ax = plt.figure().add_subplot(projection='3d')
-    plot_mean_data(destination+name,y_label=y_lab,debug=False)
+    plot_mean_data(destination+name,ylims=[0,100],y_label=y_lab,debug=False)
 
 
     toc = time.perf_counter()

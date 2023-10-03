@@ -248,6 +248,7 @@ def run_test_mesh(msh_name="mesh_rcl0_66",script_fdr = os.getcwd(),sim_loc="test
     os.chdir(sim_loc)
     msh_name = msh_name.split("rcl")[1]
     # check if  sim is done20
+    
     os.system(f"sbatch --job-name={msh_name} --hint=nomultithread "+script_fdr+"/serdp_2021_slurm.sh")
     #print(os.listdir("."))
 

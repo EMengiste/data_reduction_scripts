@@ -1,7 +1,7 @@
 
 import matplotlib.pyplot as plt
 from tool_box import *
-SIZE=20
+SIZE=35
 
 plt.rcParams.update({'font.size': SIZE})
 plt.rcParams['text.usetex'] = True
@@ -181,4 +181,106 @@ def svs_real_svs_sim():
     fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
     ax.legend()    
     plt.show()
+    
+def plot_mean_data(NAME,ylims="",y_label="",name="case",
+                       unit="",y_ticks ="",y_tick_lables="",debug=False):
+    norm =False
+    result ={}
+    results = pd.read_csv(NAME+".csv").transpose()
+    for i in results:
+        result[results[i][name]]= [float(results[i]["ystress"])]
+        #print(results[i]["case"],result[results[i]["case"]])
+    DOMAIN = [ "CUB"]
+    DOM = [ "cubic"]
+    NSLIP  = ["2","4", "6"]
+    #NSLIP =["2"]
+    #ANISO  = [,"125", "150", "175", "200", "400"]
+    SETS    = ["1", "2", "3", "4", "5"]
+    an = ["Iso.", "1.25", "1.50", "1.75", "2.00", "3.00", "4.00"]
+    #SETS = ["1"]
+    sets    =  ["solid","dotted","dashdot",(0, (3, 5, 1, 5, 1, 5)),(0, (3, 1, 1, 1, 1, 1))]
+    ###
+    aniso = [100,125, 150, 175, 200, 300, 400]
+    differences= {}
+    difs2={}
+
+    if debug:
+        NSLIP =["2"]
+        DOMAIN = ["CUB"]
+        DOM = ["cubic"]
+
+    for dom in DOMAIN:
+        fig, axs = plt.subplots(1, 3,sharex="col",sharey="row",figsize=( 23,8))
+        for slip in NSLIP:
+            #
+            ax0= axs[NSLIP.index(slip)]
+            #ax1= axs[1][NSLIP.index(slip)]
+            #
+            ax0.set_title(slip+" slip systems strengthened")
+            #
+            ax0.set_xlim([115,410])
+            #ax1.set_xlim([90,410])
+            if ylims!="":
+                ax0.set_ylim(ylims)
+                #ax1.set_ylim([0.95,2.0])
+            else:
+                ax0.set_ylim([4.6,15.1])
+                #ax1.set_ylim([-0.4,10.4])
+            #fig, ax = plt.subplots(1, 1,figsize=(10,12))
+            for set,line in zip(SETS,sets):
+                #
+                index1 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_125"]
+                index2 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_150"]
+                index3 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_175"]
+                index4 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_200"]
+                index5 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_300"]
+                index6 = result["DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_400"]
+
+                list1 = [result["DOM_"+dom+"_ISO"][0],index1[0], index2[0],
+                    index3[0], index4[0], index5[0],index6[0]]
+                
+                differences[dom+"_"+slip+"_"+set] = list1
+                #print(list)
+                #
+                if norm == True:
+                    list1 = [i/result["DOM_"+dom+"_ISO"][0] for i in list1]
+                #### Start of plotting code
+                #
+                ax0.plot(aniso,list1,"k",lw=2,linestyle=line,
+                    label="Set "+str(set))
+                #ax1.plot(aniso,list2,"k",lw=2,linestyle=line,
+                #    label="Set "+str(set))
+                #
+                marker_size =130
+                #
+                for a, l in zip(aniso, list1):
+                    ax0.scatter(a, l, marker="o", s=marker_size,edgecolor="k",color= "k")
+                    #ax1.scatter(a, l2, marker="o", s=marker_size,edgecolor="k",color= "k")
+                #
+                ax0.set_xticks(aniso)
+                ax0.set_xticklabels(an,rotation=90)
+
+                #ax1.set_xticks(aniso)
+                #ax1.set_xticklabels(an,rotation=90)
+        if norm and unit!="":
+            unit = "(-)"
+        axs[0].set_ylabel(y_label,labelpad=25)
+
+        if y_tick_lables !="":
+            axs[0].set_yticks(y_ticks)
+            axs[0].set_yticklabels(y_tick_lables)
+            axs[0].set_ylabel(y_label+unit,labelpad=25)
+        ###
+        #axs[0].legend()
+        #
+        # Put title here
+        #title = "Deviation from Taylor Hypothesis: \n"+str(DOM[DOMAIN.index(dom)])+" domain, "+str(slip)+" slip systems\n"
+        #
+        deg = "$^{\circ}$"
+        #
+        x_label = f'$p$ (-)'
+        #y_label = f'Normalized Misorienation ({deg})'
+        fig.supxlabel(x_label,fontsize=SIZE)
+        fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
+        fig.savefig(NAME+"_"+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
     
