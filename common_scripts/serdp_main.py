@@ -1,6 +1,8 @@
+import os
 from fepx_sim import *
 from plotting_tools import *
 from tool_box import *
+
 
 jobs_path = "/home/etmengiste/jobs/SERDP/inhomo_precip/034_precip_09_11_2023"
 
@@ -224,7 +226,6 @@ def generate_crss_from_mask(base=25,scale=2,layer=1,column=0,for_col_mask=False,
     write_crss_file(values,target_dir=mesh_loc,name=msh_name,res="Element")
     print("max depth = ",max(file[:,column]))
 
-
 def configure_run_script(nodes=1,processors=48):
     print(nodes,processors)
 
@@ -355,10 +356,80 @@ def job_submission():
         #
     exit(0)
 
+def processing():
+    preamble = "\makeDataslide{"
+    files_processed = ""
+    os.chdir(mesh_loc+layer) 
+    for i in dir_contents[1:]:
+        rcl_val = str(get_val_name(i)).split(".")
+        files_processed+=preamble+rcl_val[0]+"}{"+rcl_val[1]+"}\n"
+        print(files_processed)
+        sim = fepx_sim(i,path=os.getcwd()+"/"+i)
+        print(sim)
+        if sim.completed:
+            #sim.post_process(options="-reselt crss")   
+            sim.post_process()           
+                
+        individual_svs(mesh_loc+layer,i)
+        os.chdir(mesh_loc+layer)  
+
+        os.system("neper -V "+i+".sim -step 0 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step0")
+        os.system("neper -V "+i+".sim -step 16 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step16")
+    print(files_processed)
+    exit(0)
+#
+def otherstuff():
+    sims_loc = "/home/etmengiste/jobs/SERDP/inhomo_precip/same_macro_different_micro/"
+    os.chdir(sims_loc)
+    print(os.listdir("."))
+    sims = [i for i in os.listdir(".") if i.endswith(".sim")]
+    print(sims)
+    exit(0)
+    multi_svs(sims_loc,sims[::-1],destination=sims_loc)
+    exit(0) 
+#
+def other_other_stuff():
+    #mesh_density_study(10,mode="debug")
+    exit(0)
+    pprint(dir_contents[0:])
+    #svs_real_svs_sim()
+    #generate_crss_from_mask(column=1,msh_name="mesh_rcl0_235",for_col_mask=True,layer=3,mesh_loc=mesh_loc)
+    #post_process_mesh_density(mesh_loc=mesh_loc,debug=True)
+    #
+    for mesh in dir_contents[::-1]:
+        mesh_name = mesh
+        if submit:
+            run_test_mesh( mesh_name,sim_loc="layer_1_inv/"+mesh_name,mesh_loc=mesh_loc,debug=False)
+        #   
+            continue
+        generate_msh(mesh_loc+mesh_name,48,source_code="neper"
+                        ,options={"mode" :"stat"
+                                ,"-statelt":"id,elsetbody,vol,x,y,z"})
+
+        #====::: Generate crss distribution
+        generate_crss_from_mask(scale=2,base=25,column=1,msh_name=mesh_name,
+                                for_col_mask=True,layer=1,mesh_loc=mesh_loc)
+        #(input_source,source_code="neper",options={"mode" :"run"})
+        visualize(mesh_loc+mesh_name+".msh",source_code="neper",options={"mode" :"run"
+                                                                            ,"-dataeltcol":"'real:file("+mesh_name+"crss)'"
+                                                                            ,"-dataeltscale":"25:100"
+                                                                            ,"-showelt":"'y>=0.5'"
+                                                                            ,"-showelt1d":"elt3d_shown"
+                                                                            ,"-outdir":"images"})
+        #====::: Submit simulation
+
+        #exit(0)
+        #run_test_mesh( mesh_name,sim_loc="layer_1/"+mesh_name,mesh_loc=mesh_loc,debug=False)
+    #
+    exit(0)
+    #====::: Post_process
+    #  neper -S
+    #
 
 if __name__ == "__main__":
     #show_svs_precip_test(jobs_path)
     layer = "layer_1_inv"
+    layer = "equivalent_homogenous"
     mesh_loc = "/home/etmengiste/jobs/SERDP/dense_mesh/"
     at_work = "work_stuff" not in os.getcwd().split("/")
     submit = False
@@ -367,75 +438,13 @@ if __name__ == "__main__":
     os.chdir(mesh_loc+layer)        
     dir_contents = [i for i in os.listdir(os.getcwd())
                     if not i.endswith(".sim") and i != "imgs"]
-    os.chdir(mesh_loc)  
-    other_stuff = False    
-    if processing:
-        preamble = "\makeDataslide{"
-        files_processed = ""
-        os.chdir(mesh_loc+layer) 
-        for i in dir_contents[1:]:
-            rcl_val = str(get_val_name(i)).split(".")
-            files_processed+=preamble+rcl_val[0]+"}{"+rcl_val[1]+"}\n"
-            print(files_processed)
-            sim = fepx_sim(i,path=os.getcwd()+"/"+i)
-            print(sim)
-            if sim.completed:
-                #sim.post_process(options="-reselt crss")   
-                sim.post_process()           
-                 
-            individual_svs(mesh_loc+layer,i)
-            os.chdir(mesh_loc+layer)  
+    #os.chdir(mesh_loc)  
+    other_stuff = False   
+    i = os.listdir(os.getcwd())[0]
+    individual_svs(mesh_loc+layer,i) 
+    os.system("neper -V "+i+".sim -step 0 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step0")
+    os.system("neper -V "+i+".sim -step 16 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step16")
 
-            os.system("neper -V "+i+".sim -step 0 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step0")
-            os.system("neper -V "+i+".sim -step 16 -showelt 'y>=0.5' -showelt1d elt3d_shown -dataeltcol crss -dataeltscale 25:100 -print imgs/"+i+"_step16")
-        print(files_processed)
-        exit(0)
-    if other_stuff:
-        sims_loc = "/home/etmengiste/jobs/SERDP/inhomo_precip/same_macro_different_micro/"
-        os.chdir(sims_loc)
-        print(os.listdir("."))
-        sims = [i for i in os.listdir(".") if i.endswith(".sim")]
-        print(sims)
-        exit(0)
-        multi_svs(sims_loc,sims[::-1],destination=sims_loc)
-        exit(0)   
-    if at_work:
-        #mesh_density_study(10,mode="debug")
-        exit(0)
-        pprint(dir_contents[0:])
-        #svs_real_svs_sim()
-        #generate_crss_from_mask(column=1,msh_name="mesh_rcl0_235",for_col_mask=True,layer=3,mesh_loc=mesh_loc)
-        #post_process_mesh_density(mesh_loc=mesh_loc,debug=True)
-        #
-        for mesh in dir_contents[::-1]:
-            mesh_name = mesh
-            if submit:
-                run_test_mesh( mesh_name,sim_loc="layer_1_inv/"+mesh_name,mesh_loc=mesh_loc,debug=False)
-            #   
-                continue
-            generate_msh(mesh_loc+mesh_name,48,source_code="neper"
-                         ,options={"mode" :"stat"
-                                    ,"-statelt":"id,elsetbody,vol,x,y,z"})
-
-            #====::: Generate crss distribution
-            generate_crss_from_mask(scale=2,base=25,column=1,msh_name=mesh_name,
-                                    for_col_mask=True,layer=1,mesh_loc=mesh_loc)
-            #(input_source,source_code="neper",options={"mode" :"run"})
-            visualize(mesh_loc+mesh_name+".msh",source_code="neper",options={"mode" :"run"
-                                                                             ,"-dataeltcol":"'real:file("+mesh_name+"crss)'"
-                                                                             ,"-dataeltscale":"25:100"
-                                                                             ,"-showelt":"'y>=0.5'"
-                                                                             ,"-showelt1d":"elt3d_shown"
-                                                                             ,"-outdir":"images"})
-            #====::: Submit simulation
-
-            #exit(0)
-            #run_test_mesh( mesh_name,sim_loc="layer_1/"+mesh_name,mesh_loc=mesh_loc,debug=False)
-        #
-        exit(0)
-        #====::: Post_process
-        #  neper -S
-        #
 
 '''    else:
         mesh_analogue()

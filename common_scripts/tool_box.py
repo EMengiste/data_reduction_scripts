@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 import time
-
+import math
 
 def find_nearest(a, a0):
     # https://stackoverflow.com/a/2566508
@@ -13,6 +13,18 @@ def find_nearest(a, a0):
     idx = np.abs(a - a0).argmin()
     return idx
 #
+def quaternion_misorientation(q1,q2):
+       # https://gitlab.tudelft.nl/-/snippets/190
+       # Input:
+       #       q1 = [w1,x1,y1,z1]
+       #       q2 = [w2,x2,y2,z2]
+       # Output: 
+       #        Theta
+       print(len(q1))
+       w1,x1,y1,z1 = q1
+       w2,x2,y2,z2 = q2
+       theta = 2*math.acos(w1*w2 +x1*x2 + y1*y2 + z1*z2)
+       return theta
 ## yield calculation for simulation data
 def find_yield(stress, strain, offset="",number=""):
     load_steps= len(strain)
@@ -310,6 +322,20 @@ def pprint(arr):
     for i in arr:
         print("+=>",i)
 #
+def job_submission_script(path,num_nodes,num_processors,fepx_path="fepx",name="job_name"):
+    os.chdir(path)
+    file = open("run.sh","w")
+    file.writelines("#!/bin/bash \n")
+    file.writelines("#SBATCH -J "+str(name)+"\n")
+    file.writelines("#SBATCH -e error.%A \n")
+    file.writelines("#SBATCH -o output.%A \n")
+    file.writelines("#SBATCH --nodes="+str(num_nodes)+"\n")
+    file.writelines("#SBATCH --ntasks-per-node="+str(num_processors)+"\n")
+    file.writelines("mpirun -np "+str(num_processors)+" "+fepx_path+"\n")
+    file.writelines("exit 0")
+    file.close()
+    #os.system(f"sbatch --job-name={name} --hint=nomultithread run.sh")
+
 ##
 def quat_prod(q1, q2,debug=False):
        # Quaternion Product

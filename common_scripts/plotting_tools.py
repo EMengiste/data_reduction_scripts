@@ -1,7 +1,7 @@
 
 import matplotlib.pyplot as plt
 from tool_box import *
-SIZE=35
+SIZE=20
 
 plt.rcParams.update({'font.size': SIZE})
 plt.rcParams['text.usetex'] = True
