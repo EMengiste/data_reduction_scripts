@@ -1544,6 +1544,26 @@ def get_stress_strain(path,dir="z1",strain_rate = 1e-3):
         strain.append(arr[2]*strain_rate)
     return [stress,strain]
 #
+def angle_axis_to_mat(angle,axis):
+    cos_thet = math.cos(angle)
+    sin_thet = math.sin(angle)
+    u_x,u_y,u_z = axis
+    r11 = cos_thet + (u_x ** 2 * (1-cos_thet))
+    r12 = (u_x * u_y * (1-cos_thet)) - (u_z * sin_thet)
+    r13 = (u_x * u_z * (1-cos_thet)) + (u_y * sin_thet)
+
+    r21 = (u_y * u_x * (1-cos_thet)) + (u_z * sin_thet)
+    r22 = cos_thet + (u_y ** 2 * (1-cos_thet))
+    r23 = (u_y * u_z * (1-cos_thet)) - (u_x * sin_thet)
+
+    r31 = (u_z * u_x * (1-cos_thet)) - (u_y * sin_thet)
+    r32 = (u_z * u_y * (1-cos_thet)) + (u_x * sin_thet)
+    r33 = cos_thet + (u_z ** 2 * (1-cos_thet))
+    Rot_Mat = [ [r11,r12,r13],
+                [r21,r22,r23],
+                [r31,r32,r33]]
+    return Rot_Mat
+
 ##
 def Cubic_sym_quats():
     # Generate Cubic symetry angle axis pairs for the cubic fundamental region
@@ -1778,18 +1798,17 @@ def rot_to_quat_function(rotMat,option=""):
         y = (rotMat[0][2]-rotMat[2][0])*s
         z = (rotMat[2][1]-rotMat[1][2])*s
         return [w,x,y,z]
-
 ##
 def dif_degs(start,fin,debug=False):
     # Get basis mats
     q_ij,q_ji = rot_mat(start,fin)
     # Get misorination mat
-    #v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
-    v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
+    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    #v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
     # Get fuda
     r1 = ret_to_funda(v1)
     # Get degs
-    thet_ij =math.degrees(math.acos(min([r1[0],1])))
+    thet_ij =math.degrees(math.acos(min([r1[-1],1])))
     if debug:
         print(np.dot(q_ij.T,start[0]))
         print("---")

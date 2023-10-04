@@ -16,7 +16,7 @@ plt.rcParams['figure.figsize'] = 20,20
 #home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
 
 
-def plot_mean_data(NAME,ylims="",y_label="",
+def plot_mean_data(NAME,ylims=[4.9,15.1],y_label="",
                        unit="",y_ticks ="",y_tick_lables="",debug=False):
     norm =False
     result ={}
@@ -143,6 +143,27 @@ def von_mises_stress(stress):
             ans /=2
             ans_list.append(ans**0.5)
         return np.array(ans_list)
+##
+def dif_degs_local(start,fin,debug=False):
+    # Get basis mats
+    q_ij,q_ji = rot_mat(start,fin)
+    # Get misorination mat
+    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    v1= [v1[3],v1[0],v1[1],v1[2]]
+    #v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
+    # Get fuda
+    r1 = ret_to_funda(v1)
+    # Get degs
+    thet_ij =math.degrees(math.acos(min([r1[0],1])))
+    if debug:
+        print(np.dot(q_ij.T,start[0]))
+        print("---")
+        print(np.dot(q_ij.T,fin[0]))
+        r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
+        thet_ji =math.degrees(math.acos(r2[0]))
+        return [thet_ij,thet_ji]
+    
+    return thet_ij
 
 def calc_grain_stress_delta(params):
        #print(params)
@@ -228,7 +249,8 @@ def calc_grain_stress_misori(params):
             sorting = np.argsort(eig_val)
             eig_val = eig_val[sorting]
             eig_vect = eig_vect[sorting]
-            temp.append(dif_degs(eig_vect_iso,eig_vect))
+            #
+            temp.append(dif_degs_local(eig_vect_iso,eig_vect))
             #pprint(eig_vect_iso,preamble="iso")
             #pprint(eig_vect,preamble="ani")
             #print(temp)
@@ -245,7 +267,7 @@ def calc_grain_stress_misori(params):
 def generate_data():
     print("starting code")
     tic = time.perf_counter()
-    #
+        #
     print(tic)
     #   main_code
     num__base=6
@@ -276,10 +298,16 @@ def generate_data():
         value = pool.map(calc_grain_stress_misori,sims)
         data +=value   
     toc = time.perf_counter()
+
+    name = "calculation_stress_misori_step_"+step
+    df1 = pd.DataFrame(data)
+    df1.columns=df1.iloc[0]
+    df1[1:].to_csv(destination+name+".csv")
     print("===")
     print("===")
     print("===")
     print(f"Generated data in {toc - tic:0.4f} seconds")
+    #exit(0)
 
 
 iso_home="/home/etmengiste/jobs/aps/slip_study/"
@@ -309,29 +337,24 @@ dom = "CUB"
 basic = False
 #basic = True
 
-for step in steps:
+for step in steps[-1:]:
     means = []
     stds = []
-
-    #exit(0)
     print("===")
     print("===")
     print("===")
     print("starting plotting")
     tic = time.perf_counter()
+
     ### misori plot code
-    name = "calculation_stress_misori_step_"+step
+    name = "calculation_stress_misori_step_"+step+"_no_funda"
     y_lab= "$\\phi_m$"
     ylims= [0.95,2.0]
     y_ticks = [5.00,7.50,10.00,12.50,15.00]
     y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
-    df1 = pd.DataFrame(data)
-    df1.columns=df1.iloc[0]
-    df1[1:].to_csv(destination+name+".csv")
     print("opened",destination+name+".csv")
     #ax = plt.figure().add_subplot(projection='3d')
-    plot_mean_data(destination+name,ylims=[0,100],y_label=y_lab,debug=False)
+    plot_mean_data(destination+name,ylims=[30,70],y_label=y_lab,debug=False)
 
 
     toc = time.perf_counter()

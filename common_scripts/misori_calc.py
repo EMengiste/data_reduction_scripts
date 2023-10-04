@@ -20,7 +20,6 @@ def quat_of_angle_ax(angle, raxis):
        #
        #
        return quat
-##
 def Cubic_sym_quats():
     # Generate Cubic symetry angle axis pairs for the cubic fundamental region
     pi = math.pi
@@ -114,26 +113,6 @@ def normalize_vector(vect,magnitude=False):
  #
 #
 ##
-def dif_degs(start,fin,debug=False):
-    # Get basis mats
-    q_ij,q_ji = rot_mat(start,fin)
-    # Get misorination mat
-    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
-    #v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
-    # Get fuda
-    #r1 = ret_to_funda(v1)
-    r1 = v1
-    # Get degs
-    thet_ij =math.degrees(math.acos(min([r1[0],1])))
-    if debug:
-        print(np.dot(q_ij.T,start[0]))
-        print("---")
-        print(np.dot(q_ij.T,fin[0]))
-        r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
-        thet_ji =math.degrees(math.acos(r2[0]))
-        return [thet_ij,thet_ji]
-    
-    return thet_ij
 ###
 def rot_mat(arr1,arr2):
     #   Find the roation matrix from a basis matrix 
@@ -147,6 +126,7 @@ def rot_mat(arr1,arr2):
             for b in arr2:
                     temp.append(np.dot(a,b))
             R_ij.append(temp)
+        #
         for b in arr1:
             temp = []
             for a in arr2:
@@ -186,6 +166,94 @@ def ret_to_funda(quat="",rod="", sym_operators=Cubic_sym_quats(),debug=False):
        equiv_quats = quat_prod_multi(reshaped_quat,np.tile(sym_operators,(1,n)))
        return equiv_quats
 #
+def dif_degs_local(start,fin,debug=False):
+	# Get basis mats
+	q_ij,q_ji = rot_mat(start,fin)
+	print("misorientation matrix",q_ij)
+	# Get misorination mat
+	v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+	v1=[v1[3],v1[0],v1[1],v1[2]]
+	#v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
+	print("quaternion of misori",v1)
+	# Get fuda
+	r1 = ret_to_funda(v1)
+	print("funda quaternion of misori",r1)
+	# Get degs
+	thet_ij =math.degrees(math.acos(min([v1[0],1])))
+	if debug:
+		print(np.dot(q_ij.T,start[0]))
+		print("---")
+		print(np.dot(q_ij.T,fin[0]))
+		r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
+		thet_ji =math.degrees(math.acos(r2[0]))
+		return [thet_ij,thet_ji]
+
+	return thet_ij
+
+def angle_axis_to_mat(angle,axis):
+    cos_thet = math.cos(angle)
+    sin_thet = math.sin(angle)
+    
+    u_x,u_y,u_z = axis
+    r11 = cos_thet + (u_x ** 2 * (1-cos_thet))
+    r12 = (u_x * u_y * (1-cos_thet)) - (u_z * sin_thet)
+    r13 = (u_x * u_z * (1-cos_thet)) + (u_y * sin_thet)
+
+    r21 = (u_y * u_x * (1-cos_thet)) + (u_z * sin_thet)
+    r22 = cos_thet + (u_y ** 2 * (1-cos_thet))
+    r23 = (u_y * u_z * (1-cos_thet)) - (u_x * sin_thet)
+
+    r31 = (u_z * u_x * (1-cos_thet)) - (u_y * sin_thet)
+    r32 = (u_z * u_y * (1-cos_thet)) + (u_x * sin_thet)
+    r33 = cos_thet + (u_z ** 2 * (1-cos_thet))
+    Rot_Mat = [ [r11,r12,r13],
+                [r21,r22,r23],
+                [r31,r32,r33]]
+    return Rot_Mat
+
+
+def dif_degs(start,fin,debug=False):
+	# Get basis mats
+	q_ij,q_ji = rot_mat(start,fin)
+	# Get misorination mat
+	v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+	#v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
+	print(v1)
+	# Get fuda
+	r1 = ret_to_funda(v1)
+	print(r1)
+	# Get degs
+	thet_ij =math.degrees(math.acos(min([v1[0],1])))
+	if debug:
+		print(np.dot(q_ij.T,start[0]))
+		print("---")
+		print(np.dot(q_ij.T,fin[0]))
+		r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
+		thet_ji =math.degrees(math.acos(r2[0]))
+		return [thet_ij,thet_ji]
+
+	return thet_ij
+	#
+axis = [0,1,0]
+angle = math.pi
+Rot1 = angle_axis_to_mat(angle,axis)
+print(Rot1)
+
+axis = [0,1,0]
+angle = math.pi/2
+Rot2 = angle_axis_to_mat(angle,axis)
+print(Rot2)
+
+rot1 = [[ 0.077857 ,-0.279421 , 0.957007],
+		[ 0.961287 , 0.27554   ,0.002245],
+		[-0.264321  ,0.919784 , 0.290056]]
+rot2=[[ 0.689521 ,-0.27824 , -0.668688],
+		[-0.268794 , 0.759017, -0.592995],
+		[ 0.67254,   0.588622 , 0.448569]]
+
+print(dif_degs_local(rot1,rot1))
+exit(0)
+
 #pool = multiprocessing.Pool(processes=90)
 #
 q1 = [.1, 0.2,0.3,0.4]
