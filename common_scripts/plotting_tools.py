@@ -1,6 +1,7 @@
 
 import matplotlib.pyplot as plt
 from tool_box import *
+from fepx_sim import *
 SIZE=20
 
 plt.rcParams.update({'font.size': SIZE})
@@ -30,6 +31,34 @@ def plot_stress_strain(ax,stress,strain,labels=True,lw=5,ls="-",col="k",ylim=[0,
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label,labelpad=10)
 
+def individual_svs(path,sim,show=False):
+    simulation = fepx_sim(sim,path=path+"/"+sim)
+    # Check if simulation value is available 
+    # if not post process and get
+    try:
+        stress=simulation.get_output("stress",step="malory_archer",comp=2)
+        strain=simulation.get_output("strain",step="malory_archer",comp=2)
+    except:
+        simulation.post_process(options="-resmesh stress,strain")
+        stress=simulation.get_output("stress",step="malory_archer",comp=2)
+        strain=simulation.get_output("strain",step="malory_archer",comp=2)
+    #
+    # calculate the yield values
+    yield_values = find_yield(stress,strain)
+    ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
+    stress_off = yield_values["stress_offset"]
+    #
+    fig, ax = plt.subplots(1, 1)
+    plot_stress_strain(ax,stress,strain,lw=1,ylim=[0,500],xlim=[1.0e-7,max(strain)+0.001])
+    ax.plot(ystrain,ystress,"k*",ms=20,label="$\sigma_y$="+str(yield_values["y_stress"]))
+    ax.plot(strain,stress_off,"ko--",ms=5)
+    fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
+    ax.legend()  
+    if show:
+        plt.show()
+    else:
+        fig.savefig(path+"/imgs/"+sim+"_svs")
+#
 def draw_lattice(ax,type="bcc",scale=20,dims=[1,1,1],quat="",angle=0,axis = [1,0,0],lw=5,ec="k",ms=50,offset=np.array([0,0,0])):
     if quat!="":
         angle,axis=quat_to_angle_axis(quat)

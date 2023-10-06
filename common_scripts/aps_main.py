@@ -73,7 +73,7 @@ def get_yields():
     print("===")
     print("starting plotting")
 
-if __name__ == "__main__":
+def yield_streses():
     iso_home="/home/etmengiste/jobs/aps/slip_study/"
     remote = "/run/user/1001/gvfs/sftp:host=schmid.eng.ua.edu"
     remote = ""
@@ -101,4 +101,8 @@ if __name__ == "__main__":
                        unit="(MPa)",y_ticks ="",y_tick_lables="",debug=False,ylims=[120,185])
     toc = time.perf_counter()
     print(f"Generated plot in {toc - tic:0.4f} seconds")
+
+if __name__ == "__main__":
+    path = "/home/etmengiste/jobs/aps/aps_add_slip/"
+    individual_svs(path,"072_halved",show=False)
     exit(0)

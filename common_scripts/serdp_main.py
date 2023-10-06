@@ -6,6 +6,24 @@ from tool_box import *
 
 jobs_path = "/home/etmengiste/jobs/SERDP/inhomo_precip/034_precip_09_11_2023"
 
+if __name__ == "__main__":
+    layer = "layer_1_inv"
+    layer = "equivalent_homogenous"
+    mesh_loc = "/home/etmengiste/jobs/SERDP/dense_mesh/"
+    at_work = "work_stuff" not in os.getcwd().split("/")
+    submit = False
+    processing = True
+    print(os.getcwd())
+    os.chdir(mesh_loc)        
+    dir_contents = [i for i in os.listdir(os.getcwd())
+                    if not i.endswith(".sim") and i != "imgs"]
+    #print(dir_contents)
+    mesh_density_study()
+    mesh_content = np.loadtxt("mesh_rcl0_235.stelt")
+    # "id,elsetbody,vol,x,y,z"^^
+    elt_x = mesh_content[-3]
+    elt_y = mesh_content[-2]
+    elt_z = mesh_content[-1]
 
 # precip test with 100 grain
 def show_svs_precip_test(path):
@@ -60,34 +78,7 @@ def show_crss_precip_test(path):
     for i in list_of_dirs:
         print(i)
 #
-def individual_svs(path,sim,show=False):
-    simulation = fepx_sim(sim,path=path+"/"+sim)
-    # Check if simulation value is available 
-    # if not post process and get
-    try:
-        stress=simulation.get_output("stress",step="malory_archer",comp=2)
-        strain=simulation.get_output("strain",step="malory_archer",comp=2)
-    except:
-        simulation.post_process(options="-resmesh stress,strain")
-        stress=simulation.get_output("stress",step="malory_archer",comp=2)
-        strain=simulation.get_output("strain",step="malory_archer",comp=2)
-    #
-    # calculate the yield values
-    yield_values = find_yield(stress,strain)
-    ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
-    stress_off = yield_values["stress_offset"]
-    #
-    fig, ax = plt.subplots(1, 1)
-    plot_stress_strain(ax,stress,strain,lw=1,ylim=[0,500],xlim=[1.0e-7,max(strain)+0.001])
-    ax.plot(ystrain,ystress,"k*",ms=20,label="$\sigma_y$="+str(yield_values["y_stress"]))
-    ax.plot(strain,stress_off,"ko--",ms=5)
-    fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
-    ax.legend()  
-    if show:
-        plt.show()
-    else:
-        fig.savefig(path+"/imgs/"+sim+"_svs")
-#
+
 def multi_svs(path,sims,destination=".",normalize=False,show=False):
     #
     fig, ax = plt.subplots(1, 1)
@@ -148,7 +139,7 @@ def mesh_density_study(num_mesh,tesselation_name="sample",mode="run"):
         print(rcl)
         mesh = generate_msh(tess,40,options={"mode" :mode
                                       ,"-rcl": rcl
-                                      ,"-statelt":"id,elsetbody,vol,x,y,z"
+                                      ,"-statelt":"id,elsetbody,vol,elsetnb,x,y,z"
                                       ,"-o":"mesh_rcl"+rcl.replace(".","_")})
         file = np.loadtxt(mesh[:-4]+".stelt")
         print(np.shape(file)[0])
@@ -425,8 +416,7 @@ def other_other_stuff():
     #====::: Post_process
     #  neper -S
     #
-
-if __name__ == "__main__":
+def post_process_one():
     #show_svs_precip_test(jobs_path)
     layer = "layer_1_inv"
     layer = "equivalent_homogenous"

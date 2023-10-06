@@ -4,7 +4,7 @@ import time
 from scipy.spatial.transform import Rotation as R
 import math
 
-##
+
 def quat_of_angle_ax(angle, raxis):
        # angle axis to quaternion
        #
@@ -169,24 +169,17 @@ def ret_to_funda(quat="",rod="", sym_operators=Cubic_sym_quats(),debug=False):
 def dif_degs_local(start,fin,debug=False):
 	# Get basis mats
 	q_ij,q_ji = rot_mat(start,fin)
-	print("misorientation matrix",q_ij)
+	#print("misorientation matrix",q_ij)
 	# Get misorination mat
 	v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
 	v1=[v1[3],v1[0],v1[1],v1[2]]
 	#v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
-	print("quaternion of misori",v1)
+	#print("quaternion of misori",v1)
 	# Get fuda
 	r1 = ret_to_funda(v1)
-	print("funda quaternion of misori",r1)
+	#print("funda quaternion of misori",r1)
 	# Get degs
 	thet_ij =math.degrees(math.acos(min([v1[0],1])))
-	if debug:
-		print(np.dot(q_ij.T,start[0]))
-		print("---")
-		print(np.dot(q_ij.T,fin[0]))
-		r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
-		thet_ji =math.degrees(math.acos(r2[0]))
-		return [thet_ij,thet_ji]
 
 	return thet_ij
 
@@ -234,24 +227,70 @@ def dif_degs(start,fin,debug=False):
 
 	return thet_ij
 	#
-axis = [0,1,0]
-angle = math.pi
-Rot1 = angle_axis_to_mat(angle,axis)
-print(Rot1)
 
-axis = [0,1,0]
-angle = math.pi/2
-Rot2 = angle_axis_to_mat(angle,axis)
-print(Rot2)
+def test():
+    print("out")
+    axis = [0,1,0]
+    angle = math.pi
+    Rot1 = angle_axis_to_mat(angle,axis)
+    print(Rot1)
 
-rot1 = [[ 0.077857 ,-0.279421 , 0.957007],
-		[ 0.961287 , 0.27554   ,0.002245],
-		[-0.264321  ,0.919784 , 0.290056]]
-rot2=[[ 0.689521 ,-0.27824 , -0.668688],
-		[-0.268794 , 0.759017, -0.592995],
-		[ 0.67254,   0.588622 , 0.448569]]
+    axis = [0,1,0]
+    angle = math.pi/2
+    Rot2 = angle_axis_to_mat(angle,axis)
+    print(Rot2)
 
-print(dif_degs_local(rot1,rot1))
+    rot1 = [[ 0.077857 ,-0.279421 , 0.957007],
+            [ 0.961287 , 0.27554   ,0.002245],
+            [-0.264321  ,0.919784 , 0.290056]]
+
+    rot2=[[ 0.689521 ,-0.27824 , -0.668688],
+            [-0.268794 , 0.759017, -0.592995],
+            [ 0.67254,   0.588622 , 0.448569]]
+
+    print(dif_degs_local(rot1,rot2))
+    #print(quat_prod(rot1,rot1))
+
+def invert_quat(q):
+    q_cong = np.array([q[0],-q[1],-q[2],-q[3]])
+    vec,norm = normalize_vector(q,magnitude=True)
+    q_inv = q_cong/(norm**2)
+    return q_inv
+
+def quaternion_misorientation(q1,q2):
+       # https://gitlab.tudelft.nl/-/snippets/190
+       # Input:
+       #       q1 = [w1,x1,y1,z1]
+       #       q2 = [w2,x2,y2,z2]
+       # Output: 
+       #        Theta
+       #print(len(q1))
+       w1,x1,y1,z1 = q1
+       w2,x2,y2,z2 = q2
+       theta = 2*math.acos(w1*w2 +x1*x2 + y1*y2 + z1*z2)
+       return theta
+##
+if __name__ == "__main__":
+    print("out")
+    axis = [0,1,0]
+    angle = math.pi
+    Rot1 = quat_of_angle_ax(angle,axis)
+    Rot1_mat = angle_axis_to_mat(angle,axis)
+    print(Rot1)
+
+    axis = [0,1,0]
+    angle = math.pi/2
+    Rot2 = quat_of_angle_ax(angle,axis)
+    Rot2_mat = angle_axis_to_mat(angle,axis)
+    print(Rot2)
+    print("-",quat_prod(invert_quat(Rot2),Rot1))
+    print("-",quaternion_misorientation(Rot1,Rot2))
+    print("-",dif_degs_local(Rot1_mat,Rot2_mat))
+
+    
+
+
+##
 exit(0)
 
 #pool = multiprocessing.Pool(processes=90)
