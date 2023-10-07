@@ -1808,7 +1808,7 @@ def dif_degs(start,fin,debug=False):
     # Get fuda
     r1 = ret_to_funda(v1)
     # Get degs
-    thet_ij =math.degrees(math.acos(min([r1[-1],1])))
+    thet_ij =2*math.degrees(math.acos(min([r1[-1],1])))
     if debug:
         print(np.dot(q_ij.T,start[0]))
         print("---")
