@@ -2,7 +2,7 @@ import os
 from ezmethods import *
 from itertools import chain, combinations
 # Latex interpretation for plots
-plt.rcParams.update({'font.size': 55})
+plt.rcParams.update({'font.size': 35})
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'Dejvu Sans'
 plt.rcParams["mathtext.fontset"] = "cm"#
@@ -91,27 +91,29 @@ def vect_to_azim_elev(vect):
     return [ele,azi]
 
 for_domain =True
+for_domain =False
 
 
 offset= np.array([0,0,0])
 start=np.array([0,0,0])
-xyz_offset = [[0,0,0],[0,0,0],[0,0,0.2]]
-ele,azi,roll =[35,45,0]
-ax.set_xlim([-.2,0.8])
-ax.set_ylim([-.2,0.8])
-ax.set_zlim([-.2,0.8])
+xyz_offset = [[0,0,-0.4],[0,0.2,0],[0,0,0.2]]
+ax.set_xlim([-.2,1.2])
+ax.set_ylim([-.2,1.2])
+ax.set_zlim([-.2,1.2])
 if for_domain:
     ele,azi = vect_to_azim_elev([4,-5,4])
     xyz_offset = [[0,0,0],[0,0.32,0],[0,0,0.2]]
     ax.set_xlim([-.2,0.7])
     ax.set_ylim([-.2,0.7])
     ax.set_zlim([-.2,0.7])
-coordinate_axis(ax,start,coo_labs=["$z$","$x$","$y$"],fs=55,leng=.9,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+    
+coordinate_axis(ax,start,coo_labs=["ED","LD","RD"],fs=35,leng=.9,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
 #coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
 
 #ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
 # 28,-58
+ele,azi,roll =[0,0,0]
 print(ele,azi)
 ax.view_init(elev=ele, azim=azi)
 #ax.set_aspect("equal")
@@ -127,6 +129,8 @@ else:
        #fig.savefig("funda_region")
        fig.savefig("coo_ax")
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
+
+exit(0)
 if for_domain:
     #exit(0)
     os.system('convert -gravity south +append coo_ax.png /media/schmid_2tb_1/etmengiste/files/slip_system_study/common_files/Cube_msh.png Cube_msh.png')
