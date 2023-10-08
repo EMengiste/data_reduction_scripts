@@ -36,28 +36,15 @@ plt.rc('ytick', labelsize=SIZE)      # fontsize of the tick labels
 plt.rc('legend', fontsize=SIZE)      # legend fontsize
 plt.rc('figure', titlesize=SIZE)     #
 #
-from shape_function import draw_cube
 #
 #
 # Initial node coordinates in order
-X= [0,1,0,1,0,1,0,1]
-Y= [0,0,1,1,0,0,1,1]
-Z= [0,0,0,0,1,1,1,1]
 #
+def nodes_15(): 
+   fig,axs = plt.subplots(1,1,subplot_kw=dict(projection='3d'))
+   X= [0  ,1,1.1]
+   Y= [0.1,0,0.5]  
+   axs.plot(X,Y)
+   plt.show()
 
-fig,axs = plt.subplots(2,2,subplot_kw=dict(projection='3d'))
-axs = axs.flatten()
-ind=0
-ax2 = axs[ind]
-ax1 = axs[ind-2]
-ax0 = axs[ind-4]
-#draw_cube(ax,X,Y,Z,col=ini_col)
-draw_cube(ax0,X,Y,Z,col="k")
-
-#https://stackoverflow.com/a/36376310
-canvas = FigureCanvasAgg(fig)
-image_content = BytesIO()
-canvas.print_png(image_content, dpi=100)
-
-# Now image_content has your image data, which you can write to a file:
-open("box.png").write(image_content)
+nodes_15()

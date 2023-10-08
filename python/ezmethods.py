@@ -9,8 +9,6 @@ from sklearn.linear_model import LinearRegression
 from mpl_toolkits.mplot3d import axes3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.pyplot as plt
-from scipy.spatial.transform import Rotation as R
-import numpy as np
 
 import multiprocessing
 import time
@@ -2094,4 +2092,76 @@ def slerp(one,two,t=0.5,num_pts=1,debug=False):
             return np.array(array)
 #
 #
+def von_mises_stress(stress):
+    if stress.shape == (6,):
+        s11,s22,s33,s23,s13,s12 = stress
+        ans =  (s11-s22)**2
+        ans += (s22-s33)**2
+        ans += (s33-s11)**2
+        ans += 6*(s12**2 +s23**2 + s13**2)
+        ans /=2
+        return ans**0.5
+    else:
+        ans_list=[]
+        for st in stress:
+            s11,s22,s33,s23,s13,s12 = st
+            ans =  (s11-s22)**2
+            ans += (s22-s33)**2
+            ans += (s33-s11)**2
+            ans += 6*(s12**2 +s23**2 + s13**2)
+            ans /=2
+            ans_list.append(ans**0.5)
+        return np.array(ans_list)
+##
 #
+
+def calc_grain_stress_delta(params):
+       #print(params)
+       sim_ind,base =params
+       sim_name = simulations[sim_ind]
+       sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+
+       set = str(sets[int(sim_ind/base)%num_sets])
+       #print(sim_name,sim_ind)
+       slip = str(slips[int(sim_ind/(base*num_sets))])  
+
+       stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids="all")
+       #print(stress_iso)
+       stress_iso = von_mises_stress(np.array(stress_iso))
+       stress = sim.get_output("stress",step=step,res="elsets",ids="all")
+       stress = von_mises_stress(np.array(stress))
+       delta = (abs(stress-stress_iso))
+       name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
+       print(name)
+       vals = [name ,np.mean(delta),np.std(delta)]
+       del sim
+       return vals
+
+def calc_grain_stress_triaxiality(params):
+    #print(params)
+    sim_ind,base =params
+    sim_name = simulations[sim_ind]
+    sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+    if sim_ind != 91:
+        set = str(sets[int(sim_ind/base)%num_sets])
+        #print(sim_name,sim_ind)
+        slip = str(slips[int(sim_ind/(base*num_sets))])  
+        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
+    else:
+        name = "DOM_"+dom+"_ISO"
+    print(name)
+    stress = sim.get_output("stress",step=step,res="elsets",ids="all")
+    stress_mat= to_matrix(np.array(stress))
+
+    vm_stress = von_mises_stress(np.array(stress))
+    eig_val= np.linalg.eigvals(stress_mat)
+    #
+    #print(vm_stress[0])
+
+    #print(eig_val[:3,:3])
+    #print(eig_val[0])
+    psi =(eig_val[:,0]+eig_val[:,1]+eig_val[:,2])/(3*vm_stress)
+    print(name)
+    vals = [name ,np.mean(psi),np.std(psi)]
+    del sim
+    return vals

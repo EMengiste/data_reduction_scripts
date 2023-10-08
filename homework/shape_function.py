@@ -30,6 +30,39 @@ plt.rc('ytick', labelsize=SIZE)      # fontsize of the tick labels
 plt.rc('legend', fontsize=SIZE)      # legend fontsize
 plt.rc('figure', titlesize=SIZE)     #
 #
+
+def demo2():
+    show = True
+    #show = False
+    #
+    ini_col = "r"
+    fin_col = "b"
+    fin_col1 = "crimson"
+    fin_col2= "teal"
+    U_col = "g"
+    V_col = "y"
+    ele,azi = vect_to_azim_elev([3,1,1])
+    start = -1
+    end= 1.5
+
+    # Initial node coordinates in order
+    X= [0,1,0,1,0,1,0,1]
+    Y= [0,0,1,1,0,0,1,1]
+    Z= [0,0,0,0,1,1,1,1]
+    rot_mat = [[ 0.077857 ,-0.279421 , 0.957007],
+		[ 0.961287 , 0.27554   ,0.002245],
+		[-0.264321  ,0.919784 , 0.290056]]
+    fig,axs = plt.subplots(1,3,subplot_kw=dict(projection='3d'))
+    axs_left = axs[0]
+    axs_right = axs[1]
+    draw_cube(axs_left,X,Y,Z)
+    axs_left.set_title("Base cube")
+    x_f,y_f,z_f= np.matmul(rot_mat, np.array([X,Y,Z]))
+    axs_right.set_title("Rotated cube")
+    draw_cube(axs_right,x_f,y_f,z_f)
+
+    plt.show()
+
 def demo():
     show = True
     #show = False
@@ -514,4 +547,5 @@ def draw_cube(ax,X,Y,Z,col="r",alp=0.1):
         verts = [list(zip(X_vals,Y_vals,Z_vals))]
         ax.add_collection3d(Poly3DCollection(verts,color=col,alpha=alp))
 #
-demo()
+#demo()
+demo2()

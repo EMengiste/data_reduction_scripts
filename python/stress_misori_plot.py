@@ -1,6 +1,12 @@
 import os
-from ezmethods import *
-# Latex interpretation for plots
+#from ezmethods import *
+import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
+import numpy as np
+import math
+import time
+import multiprocessing 
+import pandas as pd
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': 55})
 plt.rcParams['text.usetex'] = True
@@ -9,12 +15,327 @@ plt.rcParams["mathtext.fontset"] = "cm"#
 plt.rcParams["figure.dpi"] = 100
 plt.rcParams['figure.figsize'] = 20,20
 
-# left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1
-#remote= "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
-#remote = ""
-#iso_home = remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
-#home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_system_study/"
+##
+def pprint(arr, preamble="\n-+++",max=50):
+    space= "                                                   "
+    for i in arr:
+        i=str(i)
+        if isinstance(arr,dict):
+            val = preamble+i+": "+str(arr[i])+space
+            #                 :boundary_conditions: uniaxial_grip                 '
+            print(val[:max]+"|||||------|")
+        else:
+            val = i+ space
+            print(preamble+val[:max]+"|||||------|")
+        preamble="    "
+    #
+#
+#
+def normalize_vector(vect,magnitude=False):
+    value= 0
+    final = vect
+    for i in vect:
+        value+=(i**2)
+    mag=(value)**0.5
+    for i in range(len(vect)):
+        final[i] = final[i]/mag
+    if magnitude:
+        return [final,mag]
+    else:
+        return final
+  #
+ #
+#
+#
+def to_matrix(arr):
+    if arr.shape ==(6,):
+        row1 = [arr[0],arr[-1],arr[-2]]
+        row2 = [arr[-1],arr[1],arr[-3]]
+        row3 = [arr[-2],arr[-3],arr[2]]
+        matrix = [row1 ,row2, row3]
+        return matrix
+    else:
+        matrix = []
+        for array in arr:
+            row1 = [array[0],array[-1],array[-2]]
+            row2 = [array[-1],array[1],array[-3]]
+            row3 = [array[-2],array[-3],array[2]]
+            matrix.append(np.array([row1 ,row2, row3]))
+        return matrix
+        
+##
+def rot_mat(arr1,arr2):
+    #   Find the roation matrix from a basis matrix 
+    #       Q_ij = arr1 => arr2
+    #       Q_ji = arr1 => arr2
+    R_ij = []
+    R_ji = []
+    if len(arr1) ==len(arr2):
+        for a in arr1:
+            temp = []
+            for b in arr2:
+                    temp.append(np.dot(a,b))
+            R_ij.append(temp)
+        for b in arr1:
+            temp = []
+            for a in arr2:
+                    temp.append(np.dot(a,b))
+            R_ji.append(temp)                     
+        return [np.array(R_ij),np.array(R_ji)] 
+    else:  
+            print("not same size")
+#
+##
+def Cubic_sym_quats():
+    # Generate Cubic symetry angle axis pairs for the cubic fundamental region
+    pi = math.pi
+    AngleAxis =  np.array([[0.0     , 1 ,   1,    1 ],   # % identity
+                    [pi*0.5  , 1 ,   0,    0 ],   # % fourfold about x1
+                    [pi      , 1 ,   0,    0 ],   #
+                    [pi*1.5  , 1 ,   0,    0 ],   #
+                    [pi*0.5  , 0 ,   1,    0 ],   # % fourfold about x2
+                    [pi      , 0 ,   1,    0 ],   #
+                    [pi*1.5  , 0 ,   1,    0 ],   #
+                    [pi*0.5  , 0 ,   0,    1 ],   # % fourfold about x3
+                    [pi      , 0 ,   0,    1 ],   #
+                    [pi*1.5  , 0 ,   0,    1 ],   #
+                    [pi*2/3  , 1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,   1,    1 ],   #
+                    [pi*2/3  ,-1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,   1,    1 ],   #
+                    [pi*2/3  , 1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,  -1,    1 ],   #
+                    [pi*2/3  ,-1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,  -1,    1 ],   #
+                    [pi      , 1 ,   1,    0 ],   # % twofold about 110
+                    [pi      ,-1 ,   1,    0 ],   #
+                    [pi      , 1 ,   0,    1 ],   #
+                    [pi      , 1 ,   0,   -1 ],   #
+                    [pi      , 0 ,   1,    1 ],   #
+                    [pi      , 0 ,   1,   -1 ]])
 
+    cubic_sym = np.array([quat_of_angle_ax(a[0],a[1:]) for a in AngleAxis])
+    return cubic_sym
+#
+def quat_of_angle_ax(angle, raxis):
+       # angle axis to quaternion
+       #
+       half_angle = 0.5*angle
+       #
+       cos_phi_by2 = math.cos(half_angle)
+       sin_phi_by2 = math.sin(half_angle)
+       #
+       rescale = sin_phi_by2 / np.sqrt(np.dot(raxis,raxis))
+       quat = np.append([cos_phi_by2],np.tile(rescale,[3])*raxis)
+       if cos_phi_by2<0:
+              quat = -1*quat
+       #
+       #
+       return quat
+#
+###
+def quat_prod(q1, q2):
+       # Quaternion Product
+       # input a q1,q2 4*1
+       a=q1[0]
+       b=q2[0]
+       avect=np.array(q1[1:])
+       bvect=np.array(q2[1:])
+       #
+       dotted_val=np.dot(avect,bvect)
+       crossed_val=np.cross(avect, bvect)
+       #
+       ind1 =  a* b - dotted_val
+       v    =  a*bvect + b*avect +crossed_val
+       #
+       quat = np.array([ind1,v[0],v[1],v[2]])
+       #
+       if quat[0]<0:
+              quat=-1*quat
+       #print(quat)
+       return quat
+       #
+
+def quat_prod_funda(q1,q2):
+	quat =[]
+	for i in range(len(q1)):
+		quat.append(quat_prod(q1[i],q2[i]))
+	max = 0
+	max_ind=0
+	for ind,q in enumerate(quat):
+		if q[0]<0:
+			quat[ind] = -1*quat[ind]
+		if ind==0:
+			max= quat[ind][0]
+			max_ind=ind
+		elif quat[ind][0]>max:
+			#print("larger")
+			#print(quat[ind])
+			max=quat[ind][0]
+			max_ind=ind
+		#
+	value = normalize_vector(quat[max_ind])
+	#print("--------",value)
+	return value
+##
+def quat_of_angle_ax(angle, raxis):
+       # angle axis to quaternion
+       #
+       half_angle = 0.5*angle
+       #
+       cos_phi_by2 = math.cos(half_angle)
+       sin_phi_by2 = math.sin(half_angle)
+       #
+       rescale = sin_phi_by2 / np.sqrt(np.dot(raxis,raxis))
+       quat = np.append([cos_phi_by2],np.tile(rescale,[3])*raxis)
+       if cos_phi_by2<0:
+              quat = -1*quat
+       #
+       #
+       return quat
+#
+##
+def ret_to_funda(quat="", sym_operators=Cubic_sym_quats(),debug=False):
+       #    Return quaternion to the fundamental region given symerty 
+       #        operatiors
+       #
+       #
+       m = len(sym_operators)
+       n = 1
+       # if passing a set of symetry operators make sure to [quat]
+       tiled_quat = np.tile(quat,(1,m))
+       #
+       reshaped_quat=tiled_quat.reshape(4,m*n,order='F').copy()
+       sym_operators=sym_operators.T
+       if debug:
+              print("\n\n\n+++++ ret to funda ++++")
+              pprint(tiled_quat,preamble="tiled")
+              print(tiled_quat.shape)
+              pprint(reshaped_quat,preamble="reshaped")
+              print("old shape",sym_operators.shape)
+              pprint(sym_operators,max = 200)
+              print(sym_operators.shape)
+       equiv_quats = quat_prod_funda(reshaped_quat,np.tile(sym_operators,(1,n)))
+       #pprint(equiv_quats)
+       #exit(0)
+       return equiv_quats
+#
+###### all above are dependencies with the difference in degrees between two rotation matricies
+###### calculated using the function below to calculate the values
+#
+def dif_degs_local(start,fin,debug=False):
+    # Get basis mats
+    q_ij,q_ji = rot_mat(start,fin)
+    # Get misorination mat
+    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+    v1= [v1[3],v1[0],v1[1],v1[2]]
+    #v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
+    # Get fuda
+    r1 = ret_to_funda(v1)
+    # Get degs
+    thet_ij =math.degrees(math.acos(min([r1[0],1])))
+    if debug:
+        print(np.dot(q_ij.T,start[0]))
+        print("---")
+        print(np.dot(q_ij.T,fin[0]))
+        r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
+        thet_ji =math.degrees(math.acos(r2[0]))
+        return [thet_ij,thet_ji]
+    
+    return thet_ij
+
+def calc_grain_stress_misori(params):
+    #print(params)
+    sim_ind,base,home,basic,step =params
+    sim_ind = int(sim_ind)
+    base= int(base)
+    print(params)
+    print(simulations)
+    #exit(0)
+    aniso = ["125", "150", "175", "200", "300", "400"]
+    sets= ["1", "2", "3", "4", "5"]
+    sim_name = simulations[sim_ind]
+    sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+    num_sets = len(sets)
+    set_name = str(sets[int(sim_ind/base)%num_sets])
+    slip = str(slips[int(sim_ind/(base*num_sets))])
+    dom = "CUB"
+    grain_start =1
+    grain_end = 2000
+    temp = []
+    for id in range(grain_start,grain_end):
+            stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids=[id])
+            stress_mat= to_matrix(np.array(stress_iso))
+            eig_val_iso, eig_vect_iso = np.linalg.eig(stress_mat)
+            sorting = np.argsort(eig_val_iso)
+            eig_val_iso = eig_val_iso[sorting]
+            eig_vect_iso = eig_vect_iso[sorting]
+            #print("eig_vects iso",eig_vect_iso)
+            stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
+            stress_mat= to_matrix(np.array(stress))
+            eig_val, eig_vect = np.linalg.eig(stress_mat)
+            sorting = np.argsort(eig_val)
+            eig_val = eig_val[sorting]
+            eig_vect = eig_vect[sorting]
+            #
+            temp.append(dif_degs_local(eig_vect_iso,eig_vect))
+            #pprint(eig_vect_iso,preamble="iso")
+            #pprint(eig_vect,preamble="ani")
+            #print(temp)
+    #print(aniso[ind])
+    if basic=="True":
+       name = "DOM_"+dom+"_"+sim_name
+    else:
+        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set_name+"_ANISO_"+aniso[sim_ind%6]
+    print(name)
+    vals = [name ,np.mean(temp),np.std(temp)]
+    del sim
+    return vals
+
+def generate_data(step):
+    print("starting code")
+    tic = time.perf_counter()
+        #
+    print(tic)
+    #   main_code
+    num__base=6
+    if basic:        
+        simulations = ["isotropic_2","isotropic_3"]
+        home = iso_home
+        base = len(simulations)
+        set_of_sims = [m for m in range(0,base,1)]
+    else:
+        base = len(simulations[:90])
+        set_of_sims = [m for m in range(0,base,1)]
+    print("----")
+    sims = np.array([set_of_sims,np.tile(num__base,(base))
+                    ,np.tile(home,(base)),np.tile(basic,(base))
+                    ,np.tile(step,(base))]).T
+    #value = pool.map(calc_grain_stress_delta,sims)
+    #value = calc_grain_stress_delta(sims[-1])
+    #value = calc_grain_stress_misori(sims[-1])
+    #print("sims 01",sims[-1],value)
+    #exit(0)
+
+    if basic:
+        value = calc_grain_stress_misori(sims[0])
+        pprint(value)
+        value = calc_grain_stress_misori(sims[1])
+        pprint(value)
+    else:
+        value = pool.map(calc_grain_stress_misori,sims)
+        data +=value   
+    toc = time.perf_counter()
+
+    name = "calculation_stress_misori_step_"+step
+    df1 = pd.DataFrame(data)
+    df1.columns=df1.iloc[0]
+    df1[1:].to_csv(destination+name+".csv")
+    print("===")
+    print("===")
+    print("===")
+    print(f"Generated data in {toc - tic:0.4f} seconds")
+    #exit(0)
 
 def plot_mean_data(NAME,ylims=[4.9,15.1],y_label="",
                        unit="",y_ticks ="",y_tick_lables="",debug=False):
@@ -122,194 +443,361 @@ def plot_mean_data(NAME,ylims=[4.9,15.1],y_label="",
         fig.supxlabel(x_label,fontsize=SIZE)
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
         fig.savefig(NAME+"_"+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
-    
-def von_mises_stress(stress):
-    if stress.shape == (6,):
-        s11,s22,s33,s23,s13,s12 = stress
-        ans =  (s11-s22)**2
-        ans += (s22-s33)**2
-        ans += (s33-s11)**2
-        ans += 6*(s12**2 +s23**2 + s13**2)
-        ans /=2
-        return ans**0.5
-    else:
-        ans_list=[]
-        for st in stress:
-            s11,s22,s33,s23,s13,s12 = st
-            ans =  (s11-s22)**2
-            ans += (s22-s33)**2
-            ans += (s33-s11)**2
-            ans += 6*(s12**2 +s23**2 + s13**2)
-            ans /=2
-            ans_list.append(ans**0.5)
-        return np.array(ans_list)
-##
-def dif_degs_local(start,fin,debug=False):
-    # Get basis mats
-    q_ij,q_ji = rot_mat(start,fin)
-    # Get misorination mat
-    v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
-    v1= [v1[3],v1[0],v1[1],v1[2]]
-    #v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
-    # Get fuda
-    r1 = ret_to_funda(v1)
-    # Get degs
-    thet_ij =math.degrees(math.acos(min([r1[0],1])))
-    if debug:
-        print(np.dot(q_ij.T,start[0]))
-        print("---")
-        print(np.dot(q_ij.T,fin[0]))
-        r2 = ret_to_funda(R.from_matrix(q_ji).as_quat())
-        thet_ji =math.degrees(math.acos(r2[0]))
-        return [thet_ij,thet_ji]
-    
-    return thet_ij
 
-def calc_grain_stress_delta(params):
-       #print(params)
-       sim_ind,base =params
-       sim_name = simulations[sim_ind]
-       sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
+######## below this would require the fepx_sim object and access to schmid
 
-       set = str(sets[int(sim_ind/base)%num_sets])
-       #print(sim_name,sim_ind)
-       slip = str(slips[int(sim_ind/(base*num_sets))])  
-
-       stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids="all")
-       #print(stress_iso)
-       stress_iso = von_mises_stress(np.array(stress_iso))
-       stress = sim.get_output("stress",step=step,res="elsets",ids="all")
-       stress = von_mises_stress(np.array(stress))
-       delta = (abs(stress-stress_iso))
-       name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
-       print(name)
-       vals = [name ,np.mean(delta),np.std(delta)]
-       del sim
-       return vals
-
-def calc_grain_stress_triaxiality(params):
-    #print(params)
-    sim_ind,base =params
-    sim_name = simulations[sim_ind]
-    sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-    if sim_ind != 91:
-        set = str(sets[int(sim_ind/base)%num_sets])
-        #print(sim_name,sim_ind)
-        slip = str(slips[int(sim_ind/(base*num_sets))])  
-        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set+"_ANISO_"+aniso[sim_ind%6]
-    else:
-        name = "DOM_"+dom+"_ISO"
-    print(name)
-    stress = sim.get_output("stress",step=step,res="elsets",ids="all")
-    stress_mat= to_matrix(np.array(stress))
-
-    vm_stress = von_mises_stress(np.array(stress))
-    eig_val= np.linalg.eigvals(stress_mat)
+class fepx_sim:
     #
-    #print(vm_stress[0])
-
-    #print(eig_val[:3,:3])
-    #print(eig_val[0])
-    psi =(eig_val[:,0]+eig_val[:,1]+eig_val[:,2])/(3*vm_stress)
-    print(name)
-    vals = [name ,np.mean(psi),np.std(psi)]
-    del sim
-    return vals
-
-def calc_grain_stress_misori(params):
-    #print(params)
-    sim_ind,base,home,basic,step =params
-    sim_ind = int(sim_ind)
-    base= int(base)
-    print(params)
-    print(simulations)
-    #exit(0)
-    aniso = ["125", "150", "175", "200", "300", "400"]
-    sets= ["1", "2", "3", "4", "5"]
-    sim_name = simulations[sim_ind]
-    sim = fepx_sim("Cube.sim",path=home+sim_name+"/Cube.sim")
-    num_sets = len(sets)
-    set_name = str(sets[int(sim_ind/base)%num_sets])
-    slip = str(slips[int(sim_ind/(base*num_sets))])
-    dom = "CUB"
-    grain_start =1
-    grain_end = 2000
-    temp = []
-    for id in range(grain_start,grain_end):
-            stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(np.array(stress_iso))
-            eig_val_iso, eig_vect_iso = np.linalg.eig(stress_mat)
-            sorting = np.argsort(eig_val_iso)
-            eig_val_iso = eig_val_iso[sorting]
-            eig_vect_iso = eig_vect_iso[sorting]
-            #print("eig_vects iso",eig_vect_iso)
-            stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
-            stress_mat= to_matrix(np.array(stress))
-            eig_val, eig_vect = np.linalg.eig(stress_mat)
-            sorting = np.argsort(eig_val)
-            eig_val = eig_val[sorting]
-            eig_vect = eig_vect[sorting]
-            #
-            temp.append(dif_degs_local(eig_vect_iso,eig_vect))
-            #pprint(eig_vect_iso,preamble="iso")
-            #pprint(eig_vect,preamble="ani")
-            #print(temp)
-    #print(aniso[ind])
-    if basic=="True":
-       name = "DOM_"+dom+"_"+sim_name
-    else:
-        name = "DOM_"+dom+"_NSLIP_"+slip+"_SET_"+set_name+"_ANISO_"+aniso[sim_ind%6]
-    print(name)
-    vals = [name ,np.mean(temp),np.std(temp)]
-    del sim
-    return vals
-
-def generate_data():
-    print("starting code")
-    tic = time.perf_counter()
+    #
+    # name: name of the simulation
+    # path: path to the simulation raw output
+    # debug_config_input: config input debugging
+    #
+    #
+    #####-------
+    #
+    def __init__(self,name,path="",debug_config_input =False):
+        self.name=name
+        print("-----------------------------------##")
+        print("                   |||||------##")
+        print("                   |||||------object < "+self.name+"> creation")
+        print("                   |||||------##")
+        print("---------------------------------##")
+        if path =="":
+            path = os.getcwd()
+        self.path = path
         #
-    print(tic)
-    #   main_code
-    num__base=6
-    if basic:        
-        simulations = ["isotropic_2","isotropic_3"]
-        home = iso_home
-        base = len(simulations)
-        set_of_sims = [m for m in range(0,base,1)]
-    else:
-        base = len(simulations[:90])
-        set_of_sims = [m for m in range(0,base,1)]
-    print("----")
-    sims = np.array([set_of_sims,np.tile(num__base,(base))
-                    ,np.tile(home,(base)),np.tile(basic,(base))
-                    ,np.tile(step,(base))]).T
-    #value = pool.map(calc_grain_stress_delta,sims)
-    #value = calc_grain_stress_delta(sims[-1])
-    #value = calc_grain_stress_misori(sims[-1])
-    #print("sims 01",sims[-1],value)
-    #exit(0)
+        self.name=name
+        #
+        #   Simulation attributes
+        #
+        #--# Optional Input
+        #
+        self.optional_input = {}
+        #
+        #--# Material Parameters
+        #
+        self.material_parameters = {}
+        #
+        #--# Deformation History
+        #
+        self.deformation_history = {}
+        #
+        #--# Boundary Condition
+        #
+        self.boundary_conditions = {}
+        #
+        #--# Printing Results
+        #
+        self.print_results  = []
+        #
+        #
+        ##@ Status checks
+        self.sim=""
+        self.is_sim=False
+        self.results_dir=os.listdir(path)
+        self.completed = "post.report" in self.results_dir
+        self.has_config = "simulation.config" in self.results_dir
+        if path[-4:] == ".sim":
+            self.is_sim=True
+            self.post_processed=True
+            pass
+        else:
+            self.post_processed=os.path.isdir(path+".sim")
+        #
+        #
+        #
+        #
+        # If the config file exists poulate the attributes
+        #
+        if self.is_sim:
+            print("########---- opening "+path+"/simulation.config")
+            self.post_process()
+            config = open(path+"/inputs/simulation.config").readlines()
 
-    if basic:
-        value = calc_grain_stress_misori(sims[0])
-        pprint(value)
-        value = calc_grain_stress_misori(sims[1])
-        pprint(value)
-    else:
-        value = pool.map(calc_grain_stress_misori,sims)
-        data +=value   
-    toc = time.perf_counter()
+        elif self.has_config and not self.is_sim:
+            #print(self.name,"has config")
+            print("########---- opening "+path+"/simulation.config")
+            config = open(path+"/simulation.config").readlines()
+        else:
+            #
+            ##@ Status checks
+            self.sim=""
+            self.results_dir=os.listdir(path)
+            self.completed = "post.report" in self.results_dir
+            self.has_config = "simulation.config" in self.results_dir
+            self.post_processed=os.path.isdir(path+".sim")
+            #
+            # If the config file exists poulate the attributes
+            #
+            if self.has_config:
+                #print(self.name,"has config")
+                print("########---- opening "+path+"/simulation.config")
+                config = open(path+"/simulation.config").readlines()
+            else:
+                print(self.name,"has not_config initalization aborted")
+                return
+                #
+            #
+        #
+        #
+        for i in config:
+            if i.startswith("##"):
+                #print(i)
+                current = i
+            if "Optional Input" in current:
+                if len(i.split())>1 and "Optional Input" not in i:
+                    option= i.split()
+                    self.optional_input[option[0]]=option[1]
+                    #print(option)
+                #
+            #
+            if "Material Parameters" in current:
+                if len(i.split())>1 and not "Material Parameters" in i:
+                    option= i.split()
+                    self.material_parameters[option[0]]=option[1:]
+                    #print(option)
+                #
+            #
+            if "Deformation History" in current:
+                if len(i.split())>1 and "Deformation History" not in i:
+                    option= i.split()
+                    self.deformation_history[option[0]]=option[1]
+                    #print(option)
+                #
+            #
+            if "Boundary Condition" in current:
+                if len(i.split())>1 and "Boundary Condition" not in i :
+                    option= i.split()
+                    self.boundary_conditions[option[0]]=option[1]
+                    #print(option)
+                #
+            #
+            if "Printing Results" in current:
+                if len(i.split())>1 and "Printing Results" not in i:
+                    option= i.split()
+                    self.print_results.append(option[1])
+                    #print(option)
+                #
+            #
+        if debug_config_input:
+            pprint(self.optional_input)
+            pprint(self.material_parameters)
+            pprint(self.deformation_history)
+            pprint(self.boundary_conditions)
+            pprint(self.print_results)
+        #
+    #
+    def get_num_steps(self):
+        if self.deformation_history["def_control_by"]=="uniaxial_load_target":
+            num =self.deformation_history["number_of_load_steps"]
+            #print("number_of_load_steps",num)
+        if self.deformation_history["def_control_by"]=="uniaxial_strain_target":
+            num =self.deformation_history["number_of_strain_steps"]
+            #print("number_of_strain_steps",num)
+        if self.deformation_history["def_control_by"]=="triaxial_constant_strain_rate":
+            num =self.deformation_history["number_of_strain_steps"]
+            #print("number_of_strain_steps",num)
+        if self.deformation_history["def_control_by"]=="triaxial_constrant_load_rate":
+            num =self.deformation_history["number_of_strain_steps"]
+            #print("number_of_strain_steps",num)
+        return int(num)
+        #
+    #
+    #
+    def get_results(self,steps=[],res="mesh"):
+        #
+        # Available results
+        print("____Results__availabe___are:")
+        #
+        pprint(self.print_results, preamble="\n#__|")
+        #
+        node_only = ["coo","disp","vel"]
+        mesh= [i for i in self.print_results if i not in node_only ]
+        #
+        print("\n____Getting results at "+res+" scale\n   initializing results\n")
+        #
+        num_steps=self.get_num_steps()
+        if res == "mesh":
+            length= len(mesh)
 
-    name = "calculation_stress_misori_step_"+step
-    df1 = pd.DataFrame(data)
-    df1.columns=df1.iloc[0]
-    df1[1:].to_csv(destination+name+".csv")
-    print("===")
-    print("===")
-    print("===")
-    print(f"Generated data in {toc - tic:0.4f} seconds")
-    #exit(0)
+        #
+        #
+        results_dict= {self.name: "sim","num": num_steps}
+        #
+        pprint(results_dict)
+        self.json = self.path+"/"+self.name+".txt"
+        #
+        #
+        if self.json in os.listdir(self.path):
+            converter_file= open(self.json,"r")
+            print("json file exists parsing")
+            results_dict = json.load(converter_file)
+            converter_file.close()
+            return results_dict
+        else:
+            for index in range(length):
+                result=mesh[index]
+                #print("\n\n--===== start"+result+"\n")
+                steps =[]
+                fill = '█'
+                percent = round(index / float(length-1),3)
+                filledLength = int(40 * percent)
+                percent*=100
+                bar = fill * filledLength + '-' * (length - filledLength)
+                prefix=" \n\n== Getting <"+res+">results for <"+result+">\n--step<"
 
-
+                for step in range(num_steps):
+                    prefix+=str(step)
+                    if step==10:
+                        prefix+="\n"
+                    try:
+                        vals = [float(i) for i in self.get_output(result,step=str(step),res=res)]
+                        steps.append(vals)
+                        print(f'\r{prefix} |{bar}| {percent}% ')
+                    except FileNotFoundError:
+                        #print("file not found Trying nodes")
+                        prefix=self.name+" \n\n===== Getting <nodes>results for <"+result+">----\n-----<"
+                        try:
+                            vals = [float(i) for i in self.get_output(result,step=str(step),res="nodes")]
+                            steps.append(vals)
+                            print(f'\r{prefix} |{bar}| {percent}% ')
+                        except FileNotFoundError:
+                            error = " youre outa luck"
+                            print(f'\r{prefix+error} |{bar}| {percent}% ')
+                prefix+= ">--------|\n+++\n+++"
+                #print("--===== end"+result+"\n")
+                results_dict[result]=steps
+            with open(self.json,"w") as converter_file:
+                converter_file.write(json.dumps(results_dict))
+                self.results_dir=self.path+"/"+self.name+".txt"
+            return results_dict
+        #
+        #
+    #
+    #
+    def get_output(self,output,id=0,step= "0", res="",ids=[0],num_steps=0,debug=False):
+        step = str(step)
+        value = {}
+        if res=="":
+            res="mesh"
+        #
+        ##
+        if output in ["coo","disp","vel"] and res !="nodes":
+            print("invalid output try again")
+            return 
+        #
+        # #       
+        if step=="malory_archer":
+            if num_steps==0:
+                num_steps = self.get_num_steps()
+            print(num_steps)
+            vals = []
+            #
+            # #     
+            for step in range(num_steps):
+                print(str(step))
+                value = self.get_output(output,ids=ids,step=step,res=res)
+                vals.append(value)
+            return vals
+        #
+        # #     
+        if self.path[-4:] == ".sim":
+            step_file = self.path+"/results/"+res+"/"+output+"/"+output+".step"+step
+        else:
+            step_file = self.path+".sim/results/"+res+"/"+output+"/"+output+".step"+step
+                #
+        # #     
+        file = open(step_file)
+        values=file.readlines()
+        num_components= len(values[0].split())
+        if ids =="all":
+            ids= [i for i in range(len(values))]
+        #print(ids)
+        for id in ids:
+            #print(id,"--------")
+            value[str(id)] = [float(i) for i in values[id].split()]
+            #pprint(value,max=1000)
+        if len(ids)==1:
+            return value[str(ids[0])]
+        else:
+            return [value[i] for i in value]
+        #
+       #
+      #
+     #
+    #
+    #
+    def post_process(self,options="",debug=False):
+        #
+        if self.post_processed:
+            print("Already post processed")
+            end=".sim/.sim"
+            if self.is_sim:
+                end= "/.sim"
+            if self.sim == "":
+                values = {}
+                with open(self.path+end) as file:
+                    sim_file = [i.strip() for  i in file.readlines()]
+                    for line in sim_file:
+                        if line.startswith("***"):
+                            print(line,"\n")
+                        elif line.startswith("**"):
+                            values[line[2:]]= sim_file[sim_file.index(line)+1].strip()
+                self.sim= values
+            if debug:
+                pprint(values)
+                print(values["general"][8])
+            return
+        #
+        elif options!="":
+            print(options.split("-res"))
+            print("\n\n")
+            print(os.getcwd())
+            print(options)
+            os.chdir(self.path)
+            os.system(options)
+            print("\n\n")
+            with open(self.path+".sim/.sim") as file:
+                self.sim=file.readlines()
+                return
+        #
+        #
+        elif not self.completed:
+            print("simulation not done come back after it is")
+            return
+        #
+       #
+      #
+     #
+    #
+    #
+    def get_summary(self):
+        return "stuff"
+        #
+       #
+      #
+     #
+    #
+    #
+    def __del__(self):
+        print("-----------------------------------##")
+        print("                   |||||------##")
+        print("                   |||||------object < "+self.name+"> destruction")
+        print("                   |||||------##")
+        print("---------------------------------##")
+        #
+       #
+      #
+     #
+    #
+    #
+    #
+   #
+  #
+ #
+#
+### 
 iso_home="/home/etmengiste/jobs/aps/slip_study/"
 home="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 
@@ -338,8 +826,9 @@ basic = False
 #basic = True
 
 for step in steps[-1:]:
-    means = []
-    stds = []
+    print("===")
+    print("===")
+    generate_data()
     print("===")
     print("===")
     print("===")
@@ -361,237 +850,5 @@ for step in steps[-1:]:
     print(f"Generated plot in {toc - tic:0.4f} seconds")
 
 del sim_iso
-exit(0)
-
-toc = time.perf_counter()
-print(f"Ran the code in {toc - tic:0.4f} seconds")
-
-#stress_calculation code
-name = "calculation_stress_delta_"
-y_lab ="$\Delta\sigma$ (MPa)"
-ylims = [0,250]
-
-y_ticks = [5.00,7.50,10.00,12.50,15.00]
-y_tick_lables = ["5.00","7.50","10.00","12.50","15.00"]
-
-
-df1 = pd.DataFrame(data)
-df1.columns=df1.iloc[0]
-df1[1:].to_csv(name+".csv")
-
-#ax = plt.figure().add_subplot(projection='3d')
-plot_mean_data(name,y_label=y_lab,ylims=ylims,debug=False)
-
-
-toc = time.perf_counter()
-print(f"Generated plot in {toc - tic:0.4f} seconds")
-exit(0)
-
 
 exit(0)
-
-fig, ax = plt.subplots(1, 2,sharey="row")
-
-ax[0].plot([1.25,1.5,1.75,2,4],means)
-
-ax[1].plot([1.25,1.5,1.75,2,4],stds)
-plt.show()
-exit(0)
-
-start = np.array([[-0.92396065,  0.34995201,  0.03178429],
-         [0.37975053, 0.88091702, 0.04159496],
-         [-0.04567549, -0.31862015,  0.99862887]]).T
-
-
-fin =np.array([ [-0.9938902,  -0.10962086,  0.01487836],
-              [ 0.00147866,  0.21194585, -0.9997406 ],
-              [-0.1103634,   0.97111391, -0.01724456]]).T
-
-fig, axs = plt.subplots(1, 3,sharey="row")
-for j in range(3):
-       ax = axs[j]
-       ax.cla()
-       ax.set_ylim([-0.1,2.1])
-       ax.set_xlim([0.9,4.1])
-       slip = slips[j]
-       ax.set_title(slip+" slip systems strengthened")
-       print(j+1)       
-       for i in range(30*j,30*j+30,6):
-              print(i)
-              name=aps_home+"sim_"+domain+"_"+str(i)+"_eff_pl_str"
-              print(name)
-              dat = pd.read_csv(name,index_col=0)
-              #print(dat)
-              print("--")
-              ratios= dat.iloc[0]
-              altered= dat.iloc[1]
-              unaltered= dat.iloc[2]
-              print("altered ",altered)
-              print("unaltered ",unaltered)
-              set =int((i-30*j)/6)
-              print(set)
-              ax.plot(ratios,unaltered,"k-o",ls=sets[set],ms=marker_size,label="Set "+str(set+1))
-              ax.plot(ratios,altered,"kD",ls=sets[set],ms=marker_size)
-              ax.set_xticks(ratios)
-              ax.set_xticklabels(an,rotation=90)     
-              ax.set_yticks([0,0.5,1,1.5,2])
-              ax.set_yticklabels(["0.00","0.50","1.00","1.50","2.00"]) 
-
-
-remote= "/run/user/1001/gvfs/sftp:host=acmelabpc2.eng.ua.edu,user=etmengiste"
-home=remote+"/media/etmengiste/acmelabpc2_2TB/DATA/jobs/aps/spring_2023/slip_study_rerun/"
-
-
-simulations = os.listdir(home)
-simulations.sort()
-simulations.remove("common_files")
-colors = ["k", (10/255,10/255,10/255),
-          (70/255,70/255,70/255),
-          (150/255,150/255,150/255),
-          (200/255,200/255,200/255),
-          (230/255,230/255,230/255)]
-#
-
-
-#start = np.array([[1,0,0],[0,1,0],[0,0,1]])
-
-
-value = np.dot(start,np.linalg.inv(start))
-print(value)
-print(np.linalg.tensorsolve(start,fin))
-exit(0)
-Q_ij, Q_ji =rot_mat(start,fin)
-pprint(Q_ij)
-pprint(Q_ji)
-pprint(start,preamble="start")
-pprint(fin,preamble="end")
-pprint(Q_ij,preamble="q_ij")
-pprint(Q_ji,preamble="q_ji")
-print( np.dot(Q_ij,start[0]))
-print( np.dot(Q_ji,fin[0]))
-
-val1 = np.dot(Q_ij,start[0])
-ax.quiver(0,0,0,val1[0],val1[1],val1[2],color="b",length=0.02)
-val1 = np.dot(Q_ji,fin[0])
-ax.quiver(0,0,0,val1[0],val1[1],val1[2],color="b",length=0.02)
-#exit(0)
-plt.scatter(0,0,0)
-for val1,val2 in zip(start,fin):
-       ax.quiver(0,0,0,val1[0],val1[1],val1[2],color="k",length=0.02)
-       ax.quiver(0,0,0,val2[0],val2[1],val2[2],color="r",length=0.02)
-
-plt.show()
-
-exit(0)
-
-#
-for val,col in zip([75,50,51,52,53,54],colors):
-       print(simulations[val])
-       sim = fepx_sim("Cube.sim",path=home+simulations[val]+"/Cube.sim")
-       step= "28"
-       for id in range(500,502):
-              stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
-              ori = sim.get_output("ori",step=step,res="elsets",ids=[id])
-              print("rod ini",ori)
-              ori= rod_to_quat(ori)
-              print("quat ini",ori)
-              ori = ret_to_funda(ori,cub)
-              print("quat fin",ori)
-
-              ori= quat_to_rod(ori)
-              print("rod fin",ori)
-              #exit(0)
-              stress_mat= to_matrix(stress)
-              eig_val, eig_vect = np.linalg.eig(stress_mat)
-              print("eig_val",eig_val)
-              eig_val = normalize_vector(eig_val)
-              print("eig_val",eig_val)
-              pprint(eig_vect)
-              ax.scatter(ori[0],ori[1],ori[2],color=col)
-              start = ori#[0, 0 ,0]
-              for ind,eig in enumerate(eig_vect):
-                     ax.quiver(start[0],start[1],start[2],
-                            start[0]+eig[0],start[1]+eig[1],start[2]+eig[2]
-                            ,length=eig_val[ind]/30,normalize=True,color=col)
-
-ax.axis("off")
-ax.view_init(elev=35., azim=45)
-plt.show()
-plt.savefig("funda_region")
-exit(0)
-
-# https://www.geeksforgeeks.org/python-get-the-indices-of-all-occurrences-of-an-element-in-a-list/#
-surf1= [ind for ind, elt in enumerate(X) if  elt ==  b[0]]
-Vx= [X[i]for i in surf1]
-Vy= [Y[i]for i in surf1]
-Vz= [Z[i]for i in surf1]
-verts = [list(zip(Vx,Vy,Vz))]
-#ax.add_collection3d(Poly3DCollection(verts,zsort=min,alpha=0.1))
-surf2= [ind for ind, elt in enumerate(X) if  elt ==  -b[0]]
-
-surf3= [ind for ind, elt in enumerate(Y) if  elt ==  b[0]]
-surf4= [ind for ind, elt in enumerate(Y) if  elt ==  -b[0]]
-
-surf5= [ind for ind, elt in enumerate(Z) if  elt ==  b[0]]
-surf6= [ind for ind, elt in enumerate(Z) if  elt ==  -b[0]]
- 
-# left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1
-    
-
-ax = plt.figure().add_subplot(projection='3d')
-X= [20.0, 0.0, 0.0, 0.0, 10.0, 20.0, 30.0, 10.0, 30.0, 10.0, 20.0, 40.0, 30.0, 40.0, 40.0, 25.0, 30.0, 35.0, 25.0, 35.0, 25.0, 30.0, 60.0, 35.0, 20.0, 40.0, 60.0, 20.0, 40.0, 60.0]
-Y= [20.0, 20.0, 10.5, 1.0, 15.25, 15.25, 15.25, 10.5, 10.5, 5.75, 5.75, 20.0, 5.75, 15.25, 5.75, 12.875, 12.875, 12.875, 10.5, 10.5, 8.125, 8.125, 20.0, 8.125, 10.5, 10.5, 10.5, 1.0, 1.0, 1.0]
-Z= [22.76535053029903, 38.96497960559887, 66.77662089771968, 95.93421141486863, 28.38618575891917, 15.135746066298575, 18.89683134970845, 42.13047903563476, 12.313994721968864, 56.269231987969555, 32.07046324924786, 55.2219601120633, 12.35786940187457, 41.921945008763586, 28.16061601330233, 10.070378551835649, 13.476236202374565, 23.735327551549496, 11.389019427629599, 21.305869908317952, 13.20425316321665, 11.845200358118927, 100.34872346753596, 20.213927716104187, 18.26818405993052, 30.495051027879345, 74.47058506243454, 54.23429875499636, 24.48021292531605, 29.959116124492354]
-
-# Plot the 3D surface
-ax.scatter(X,Y,Z,marker=".")
-ax.plot_trisurf(X, Y, Z,alpha=0.3)
-
-
-exit(0)
-# Plot projections of the contours for each dimension.  By choosing offsets
-# that match the appropriate axes limits, the projected contours will sit on
-# the 'walls' of the graph
-ax.contourf(X, Y, Z, zdir='z', offset=-20, cmap='coolwarm')
-ax.contourf(X, Y, Z, zdir='x', offset=-40, cmap='coolwarm')
-ax.contourf(X, Y, Z, zdir='y', offset=40, cmap='coolwarm')
-
-ax.set(xlim=(-40, 40), ylim=(-40, 40), zlim=(-100, 100),
-       xlabel='X', ylabel='Y', zlabel='Z')
-
-
-
-
-#### old and broken
-
-
-
-array = [b, c, d]
-print("input",np.array(array))
-arr_funda = []
-quats = []
-for ori in array:       
-       ori= rod_to_quat(ori)
-       quats.append(ori)
-       arr_funda.append(ret_to_funda(ori,cub,debug=True))
-print("vals",np.array(quats))
-arr_funda = np.array(arr_funda)
-print("output",arr_funda)
-
-exit(0)
-ori = b
-ax.quiver(0,0,0,ori[0],ori[1],ori[2])
-
-print("rod ini",ori)
-ori= rod_to_quat(ori)
-print("quat ini",ori)
-ori = ret_to_funda(ori,cub)
-print("quat fin",ori)
-ori= quat_to_rod(ori)
-print("rod fin",ori)
-
-exit(0)
-
-ax.quiver(0,0,0,ori[0],ori[1],ori[2])
-
-
