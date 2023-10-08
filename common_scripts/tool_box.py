@@ -2,6 +2,7 @@
 from sklearn.linear_model import LinearRegression
 import numpy as np
 import pandas as pd
+from scipy.spatial.transform import Rotation as R
 import os
 import time
 import math
@@ -12,20 +13,7 @@ def find_nearest(a, a0):
     a=np.array(a)
     idx = np.abs(a - a0).argmin()
     return idx
-#
-def quaternion_misorientation(q1,q2):
-       # https://gitlab.tudelft.nl/-/snippets/190
-       # Input:
-       #       q1 = [w1,x1,y1,z1]
-       #       q2 = [w2,x2,y2,z2]
-       # Output: 
-       #        Theta
-       print(len(q1))
-       w1,x1,y1,z1 = q1
-       w2,x2,y2,z2 = q2
-       theta = 2*math.acos(w1*w2 +x1*x2 + y1*y2 + z1*z2)
-       return theta
-## yield calculation for simulation data
+### yield calculation for simulation data
 def find_yield(stress, strain, offset="",number=""):
     load_steps= len(strain)
     #
@@ -34,6 +22,7 @@ def find_yield(stress, strain, offset="",number=""):
     if number == '':
         E = stress[1]/ strain[1]
         index = ''
+        print("e=",E)
         stress_off = [(E * i) - (E * offset) for i in strain]
         for i in range(load_steps):
             if  stress_off[i] > stress[i]:
@@ -102,6 +91,22 @@ def find_yield(stress, strain, offset="",number=""):
 
     #print(tess_destination+".tess")
     return tesselation+".tess"
+#
+def quat_of_angle_ax(angle, raxis):
+       # angle axis to quaternion
+       #
+       half_angle = 0.5*angle
+       #
+       cos_phi_by2 = math.cos(half_angle)
+       sin_phi_by2 = math.sin(half_angle)
+       #
+       rescale = sin_phi_by2 / np.sqrt(np.dot(raxis,raxis))
+       quat = np.append([cos_phi_by2],np.tile(rescale,[3])*raxis)
+       if cos_phi_by2<0:
+              quat = -1*quat
+       #
+       #
+       return quat
 #
 def generate_tess(n,name,main_dir=".",source_code="neper",options={"mode" :"run"}):
     print("\n===")
@@ -336,6 +341,158 @@ def job_submission_script(path,num_nodes,num_processors,fepx_path="fepx",name="j
     file.close()
     #os.system(f"sbatch --job-name={name} --hint=nomultithread run.sh")
 
+def quat_prod_multi(q1,q2):
+	quat =[]
+	for i in range(len(q1)):
+		quat.append(quat_prod(q1[i],q2[i]))
+	max = 0
+	max_ind=0
+	for ind,q in enumerate(quat):
+		if q[0]<0:
+			quat[ind] = -1*quat[ind]
+		if ind==0:
+			max= quat[ind][0]
+			max_ind=ind
+		elif quat[ind][0]>max:
+			#print("larger")
+			#print(quat[ind])
+			max=quat[ind][0]
+			max_ind=ind
+		#
+	value = normalize_vector(quat[max_ind])
+	#print("--------",value)
+	return value
+##
+def normalize_vector(vect,magnitude=False):
+    value= 0
+    final = vect
+    for i in vect:
+        value+=(i**2)
+    mag=(value)**0.5
+    for i in range(len(vect)):
+        final[i] = final[i]/mag
+    if magnitude:
+        return [final,mag]
+    else:
+        return final
+  #
+ #
+#
+def Cubic_sym_quats():
+    # Generate Cubic symetry angle axis pairs for the cubic fundamental region
+    pi = math.pi
+    AngleAxis =  np.array([[0.0     , 1 ,   1,    1 ],   # % identity
+                    [pi*0.5  , 1 ,   0,    0 ],   # % fourfold about x1
+                    [pi      , 1 ,   0,    0 ],   #
+                    [pi*1.5  , 1 ,   0,    0 ],   #
+                    [pi*0.5  , 0 ,   1,    0 ],   # % fourfold about x2
+                    [pi      , 0 ,   1,    0 ],   #
+                    [pi*1.5  , 0 ,   1,    0 ],   #
+                    [pi*0.5  , 0 ,   0,    1 ],   # % fourfold about x3
+                    [pi      , 0 ,   0,    1 ],   #
+                    [pi*1.5  , 0 ,   0,    1 ],   #
+                    [pi*2/3  , 1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,   1,    1 ],   #
+                    [pi*2/3  ,-1 ,   1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,   1,    1 ],   #
+                    [pi*2/3  , 1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  , 1 ,  -1,    1 ],   #
+                    [pi*2/3  ,-1 ,  -1,    1 ],   # % threefold about 111
+                    [pi*4/3  ,-1 ,  -1,    1 ],   #
+                    [pi      , 1 ,   1,    0 ],   # % twofold about 110
+                    [pi      ,-1 ,   1,    0 ],   #
+                    [pi      , 1 ,   0,    1 ],   #
+                    [pi      , 1 ,   0,   -1 ],   #
+                    [pi      , 0 ,   1,    1 ],   #
+                    [pi      , 0 ,   1,   -1 ]])
+
+    cubic_sym = np.array([quat_of_angle_ax(a[0],a[1:]) for a in AngleAxis])
+    return cubic_sym
+
+def rod_to_angle_axis(rod):
+       # Rodrigues vector to Quaternion
+       #
+       norm,mag = normalize_vector(rod,magnitude=True)
+       omega= 2*math.atan(mag)
+       return [norm,omega]
+
+def angle_axis_to_mat(angle,axis):
+    cos_thet = math.cos(angle)
+    sin_thet = math.sin(angle)
+
+    u_x,u_y,u_z = axis
+    r11 = cos_thet + (u_x ** 2 * (1-cos_thet))
+    r12 = (u_x * u_y * (1-cos_thet)) - (u_z * sin_thet)
+    r13 = (u_x * u_z * (1-cos_thet)) + (u_y * sin_thet)
+
+    r21 = (u_y * u_x * (1-cos_thet)) + (u_z * sin_thet)
+    r22 = cos_thet + (u_y ** 2 * (1-cos_thet))
+    r23 = (u_y * u_z * (1-cos_thet)) - (u_x * sin_thet)
+
+    r31 = (u_z * u_x * (1-cos_thet)) - (u_y * sin_thet)
+    r32 = (u_z * u_y * (1-cos_thet)) + (u_x * sin_thet)
+    r33 = cos_thet + (u_z ** 2 * (1-cos_thet))
+    Rot_Mat = [ [r11,r12,r13],
+                [r21,r22,r23],
+                [r31,r32,r33]]
+    return Rot_Mat
+
+###
+def ret_to_funda(quat="",rod="", sym_operators=Cubic_sym_quats(),debug=False):
+       #    Return quaternion to the fundamental region given symerty 
+       #        operatiors
+       #
+       if str(rod)!="":
+            quat = rod_to_quat(rod)
+       #
+       m = len(sym_operators)
+       n = 1
+       # if passing a set of symetry operators make sure to [quat]
+       tiled_quat = np.tile(quat,( m,1))
+       #
+       reshaped_quat=tiled_quat.reshape(m*n,4,order='F').copy()
+       #sym_operators=sym_operators.T
+       equiv_quats = quat_prod_multi(reshaped_quat,np.tile(sym_operators,(1,n)))
+       return equiv_quats
+#
+def dif_degs_local(start,fin,debug=False):
+	# Get basis mats
+	q_ij,q_ji = rot_mat(start,fin)
+	#print("misorientation matrix",q_ij)
+	# Get misorination mat
+	v1 = normalize_vector(R.from_matrix(q_ij).as_quat())
+	v1=[v1[3],v1[0],v1[1],v1[2]]
+	#v1 = normalize_vector(rot_to_quat_function(q_ij,option=""))
+	#print("quaternion of misori",v1)
+	# Get fuda
+	r1 = ret_to_funda(v1)
+	#print("funda quaternion of misori",r1)
+	# Get degs
+	thet_ij =2* math.degrees(math.acos(min([v1[0],1])))
+
+	return thet_ij
+###
+def rot_mat(arr1,arr2):
+    #   Find the roation matrix from a basis matrix 
+    #       Q_ij = arr1 => arr2
+    #       Q_ji = arr1 => arr2
+    R_ij = []
+    R_ji = []
+    if len(arr1) ==len(arr2):
+        for a in arr1:
+            temp = []
+            for b in arr2:
+                    temp.append(np.dot(a,b))
+            R_ij.append(temp)
+        #
+        for b in arr1:
+            temp = []
+            for a in arr2:
+                    temp.append(np.dot(a,b))
+            R_ji.append(temp)                     
+        return [np.array(R_ij),np.array(R_ji)] 
+    else:  
+            print("not same size")
 ##
 def quat_prod(q1, q2,debug=False):
        # Quaternion Product

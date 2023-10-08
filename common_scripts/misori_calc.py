@@ -20,37 +20,7 @@ def quat_of_angle_ax(angle, raxis):
        #
        #
        return quat
-def Cubic_sym_quats():
-    # Generate Cubic symetry angle axis pairs for the cubic fundamental region
-    pi = math.pi
-    AngleAxis =  np.array([[0.0     , 1 ,   1,    1 ],   # % identity
-                    [pi*0.5  , 1 ,   0,    0 ],   # % fourfold about x1
-                    [pi      , 1 ,   0,    0 ],   #
-                    [pi*1.5  , 1 ,   0,    0 ],   #
-                    [pi*0.5  , 0 ,   1,    0 ],   # % fourfold about x2
-                    [pi      , 0 ,   1,    0 ],   #
-                    [pi*1.5  , 0 ,   1,    0 ],   #
-                    [pi*0.5  , 0 ,   0,    1 ],   # % fourfold about x3
-                    [pi      , 0 ,   0,    1 ],   #
-                    [pi*1.5  , 0 ,   0,    1 ],   #
-                    [pi*2/3  , 1 ,   1,    1 ],   # % threefold about 111
-                    [pi*4/3  , 1 ,   1,    1 ],   #
-                    [pi*2/3  ,-1 ,   1,    1 ],   # % threefold about 111
-                    [pi*4/3  ,-1 ,   1,    1 ],   #
-                    [pi*2/3  , 1 ,  -1,    1 ],   # % threefold about 111
-                    [pi*4/3  , 1 ,  -1,    1 ],   #
-                    [pi*2/3  ,-1 ,  -1,    1 ],   # % threefold about 111
-                    [pi*4/3  ,-1 ,  -1,    1 ],   #
-                    [pi      , 1 ,   1,    0 ],   # % twofold about 110
-                    [pi      ,-1 ,   1,    0 ],   #
-                    [pi      , 1 ,   0,    1 ],   #
-                    [pi      , 1 ,   0,   -1 ],   #
-                    [pi      , 0 ,   1,    1 ],   #
-                    [pi      , 0 ,   1,   -1 ]])
 
-    cubic_sym = np.array([quat_of_angle_ax(a[0],a[1:]) for a in AngleAxis])
-    return cubic_sym
-#
 #
 ###
 def quat_prod(q1, q2):

@@ -18,6 +18,23 @@ def reori():
     os.system("./batch_compiled_ori_ipfs.sh")
     exit(0)
 
+def compare_oris(sim1,sim2,destination=""):
+    file = open(destination+"misoris.txt","w")
+    vals = []
+    for ori1,ori2 in zip(sim1,sim2):
+        mis = misori(ori1,ori2)
+        file.write(str(mis)+"\n")
+        vals.append(mis)
+    file.close()
+    return np.array(vals)
+
+def misori(ori1,ori2):
+    axis,angle = rod_to_angle_axis(ori1)
+    rotMat1 =angle_axis_to_mat(angle=angle,axis=axis)
+    axis,angle = rod_to_angle_axis(ori2)
+    rotMat2 =angle_axis_to_mat(angle=angle,axis=axis)
+    return dif_degs_local(rotMat1,rotMat2)
+
 def get_yields():
     values = [["name","ystress"]]
     print("starting code")
@@ -104,5 +121,20 @@ def yield_streses():
 
 if __name__ == "__main__":
     path = "/home/etmengiste/jobs/aps/aps_add_slip/"
-    individual_svs(path,"072_halved",show=False)
+    #individual_svs(path,"072_g_0_28",show=False)
+    #exit(0)
+    sim_1 = fepx_sim("072_g_0_28",path=path+"072_g_0_28.sim")
+    path = "/media/schmid_2tb_1/etmengiste/files/research/aps/aps_ori_2022/output_data/slip_system_study/"
+    sim_2 = fepx_sim("072",path=path+"072/Cube.sim")
+
+    oris_1 = sim_2.get_output("ori",res="elsets",ids="all",step=27)
+    oris_2 = sim_1.get_output("ori",res="elsets",ids="all",step=27)
+
+    misoris = compare_oris(oris_1,oris_2,destination="/home/etmengiste/jobs/aps/aps_add_slip/")
+    mean = np.mean(misoris)
+    mean = np.std(misoris)
+    fig, ax = plt.subplots()
+    ax.hist(misoris,bins=1000,label="Mean = "+str(mean)+" Standard deviation = "+str(mean))
+    ax.legend()
+    plt.show()
     exit(0)
