@@ -119,13 +119,15 @@ class fepx_sim:
     #
     #####-------
     #
-    def __init__(self,name,path="",debug_config_input =False):
+    def __init__(self,name,path="",debug_config_input =False,verbose=False):
         self.name=name
-        print("-----------------------------------##")
-        print("                   |||||------##")
-        print("                   |||||------object < "+self.name+"> creation")
-        print("                   |||||------##")
-        print("---------------------------------##")
+        self.verbose=verbose
+        if verbose:
+            print("-----------------------------------##")
+            print("                   |||||------##")
+            print("                   |||||------object < "+self.name+"> creation")
+            print("                   |||||------##")
+            print("---------------------------------##")
         if path =="":
             path = os.getcwd()
         self.path = path
@@ -444,11 +446,12 @@ class fepx_sim:
     #
     #
     def __del__(self):
-        print("-----------------------------------##")
-        print("                   |||||------##")
-        print("                   |||||------object < "+self.name+"> destruction")
-        print("                   |||||------##")
-        print("---------------------------------##")
+        if self.verbose:
+            print("-----------------------------------##")
+            print("                   |||||------##")
+            print("                   |||||------object < "+self.name+"> destruction")
+            print("                   |||||------##")
+            print("---------------------------------##")
         #
        #
       #
@@ -483,7 +486,7 @@ def sort_by_vals(arr,mat):
               curr_ind =arr.index(arr_sorted[i])
               #print(curr_ind)
               mat_sorted.append(mat[curr_ind])
-       return [arr_sorted,mat_sorted]
+       return [np.array(arr_sorted),np.array(mat_sorted)]
 #
 ##
 def inner_prod(a,b):

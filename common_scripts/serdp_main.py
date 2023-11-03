@@ -59,8 +59,48 @@ def show_crss_precip_test(path):
     for i in list_of_dirs:
         print(i)
 #
-
-def multi_svs(paths,sims,destination=".",normalize=False,show=False):
+##
+def svs_real_svs_sim(sim,path,real_paths):
+    simulation = fepx_sim(sim,path=path+"/"+sim)
+    # Check if simulation value is available 
+    # if not post process and get
+    try:
+        stress=simulation.get_output("stress",step="all",comp=2)
+        strain=simulation.get_output("strain",step="all",comp=2)
+    except:
+        simulation.post_process(options="-resmesh stress,strain")
+        stress=simulation.get_output("stress",step="all",comp=2)
+        strain=simulation.get_output("strain",step="all",comp=2)
+    #
+    del simulation
+    # calculate the yield values
+    yield_values = find_yield(stress,strain)
+    ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
+    stress_off = yield_values["stress_offset"]
+    #
+    fig, ax = plt.subplots(1, 1,figsize=[5,7])
+    for real_svs in real_paths:
+        exx= pd.read_csv(real_svs)
+        try:
+            stress_exp = [float(i) for i in exx["stress"]]
+            strain_exp = [float(i) for i in exx["strain"]]
+        except:
+            stress_exp = [float(i) for i in exx["'stress'"]]
+            strain_exp = [float(i) for i in exx["'strain'"]]
+        yield_values = find_yield(stress_exp,strain_exp,number=100)
+        plot_stress_strain(ax,stress_exp[:-3000],strain_exp[:-3000],col="r",lw=1,ylim=[0,500],xlim=[1.0e-7,max(strain)+0.001])
+    ax.plot(ystrain,ystress,"k*",ms=20)
+    plot_stress_strain(ax,stress,strain,lw=3,ylim=[0,550],xlim=[1.0e-7,max(strain)+0.001])
+    ax.plot(strain,stress_off,"ko--",ms=5)
+    if sim !="feed_stock":
+        ax.set_ylabel("")
+        ax.set_yticklabels([])
+ 
+    fig.subplots_adjust(left=0.2, right=0.97,top=0.97, bottom=0.15, wspace=0.07)
+    #ax.legend()   
+    plt.savefig(sim)
+    ax.cla()
+def multi_svs(paths,sims,destination=".",ylim=[0,1.2],xlim=[1.0e-7,0.025],normalize=False,show=False):
     #
     fig, ax = plt.subplots(1, 1)
     ys = []
@@ -86,6 +126,10 @@ def multi_svs(paths,sims,destination=".",normalize=False,show=False):
         ax.plot(strain,stress_off,"ko--",ms=5)
         ax.set_ylabel("$\sigma$")
         ax.set_xlabel("$\\varepsilon$")
+    
+    # Compile labels for the graphs
+    plt.ylim(ylim)
+    plt.xlim(xlim)
     fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
     ax.legend()  
     if show:
@@ -97,9 +141,41 @@ def multi_svs(paths,sims,destination=".",normalize=False,show=False):
         print("wrote"+destination+sim+"_svs.png")
         fig.savefig(destination+"/"+name+"_svs.png")
 #
+def plot_real_vs_sim_svs():    
+    sim = "sample-feedstock"
+    sim = "feed_stock"
+    path= "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/grid_search_run/034"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs2.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs3.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs4.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs1.csv"]
+    svs_real_svs_sim(sim,path,real_paths)
+    exit(0)
+    sim = "sample-bottom"
+    sim = "dep_rapid_bottom"
+    path= "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/grid_search_run/034"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_5.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_4.csv"]
+    svs_real_svs_sim(sim,path,real_paths)
+    sim = "sample-deposited"
+    sim = "dep_old"
+    path= "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/grid_search_run/034"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD1_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD2_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD3_mono.csv"]
+    svs_real_svs_sim(sim,path,real_paths)
+    sim = "sample-top"
+    sim = "dep_rapid_top"
+    path= "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/grid_search_run/034"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_1.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_0.csv"]
+    svs_real_svs_sim(sim,path,real_paths)
+    exit(0)
+
 
 if __name__ == "__main__":
-
+    plot_real_vs_sim_svs()
+    exit(0)
     path1 = "/home/etmengiste/jobs/SERDP/dense_mesh/equivalent_homogenous"
     path2 = "/home/etmengiste/jobs/SERDP/dense_mesh/layer_1_inv"
     paths = [path1,path2]
@@ -356,7 +432,7 @@ def job_submission():
         #
     exit(0)
 
-def processing():
+def processing_mod():
     preamble = "\makeDataslide{"
     files_processed = ""
     os.chdir(mesh_loc+layer) 
@@ -425,6 +501,7 @@ def other_other_stuff():
     #====::: Post_process
     #  neper -S
     #
+#
 def post_process_one():
     #show_svs_precip_test(jobs_path)
     layer = "layer_1_inv"

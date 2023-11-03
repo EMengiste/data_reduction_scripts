@@ -246,15 +246,15 @@ class fepx_sim:
             return 
         #
         # #       
-        if step=="malory_archer":
+        if step=="malory_archer" or step=="all":
             if num_steps==0:
                 num_steps = self.get_num_steps()
-            print(num_steps)
+            #print(num_steps)
             vals = []
             #
             # #     
             for step in range(num_steps):
-                print(str(step))
+                #print(str(step))
                 value = self.get_output(output,ids=ids,step=step,res=res)
                 if comp!="":
                     value = value[comp]

@@ -11,6 +11,7 @@ from mpl_toolkits.mplot3d import axes3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.pyplot as plt
 
+from math import acos,cos,sin,asin,pi,degrees
 from ezmethods import *
 # Latex interpretation for plots
 plt.rcParams.update({'font.size': 20})
@@ -21,6 +22,30 @@ plt.rcParams["figure.dpi"] =100
 plt.rcParams['figure.figsize'] = 23,23
 plt.rcParams['axes.edgecolor'] = 'k'
 
+
+def sort_size(eig):
+    eig_val, eig_vect =eig 
+    sorting = np.argsort(eig_val)
+    eig_val = eig_val[sorting]
+    eig_vect = eig_vect[sorting]
+    return [eig_val, eig_vect]
+
+def sort_consistency(eig_vect1,eig_vect2):
+    # sort eig_vect2 against eig_vect1
+    #  that is for 1 [0,1,2] find order of 2 s.t.   
+    #print("dot product")
+    order = eig_vect2
+    for i in range(3):
+        #print("dot product",i)
+        min_deg = 0
+        for j in range(3):
+            val = degrees(acos(min(np.dot(eig_vect1[i],eig_vect2[j]),1)))
+            if val>135:
+                val = 180-val
+                eig_vect2[j]= -eig_vect2[j]
+            if val<45:
+                order[i] = eig_vect2[j]
+    return order
 # left=0.08, right=0.98,top=0.9, bottom=0.2, wspace=0.02, hspace=0.1
 
 #fig = plt.figure()
@@ -56,6 +81,8 @@ simulations.remove("common_files")
 cub = Cubic_sym_quats()
 #
 sims =[simulations.index("isotropic")]
+
+sim_iso = fepx_sim("Cube.sim",path=home+"isotropic/Cube.sim")
 sims += [i for i in range(start_sim,start_sim+6)]
 print([simulations[i] for i in sims])
 value=[]
@@ -68,7 +95,7 @@ show_circles=False
 #
 ##grain_of_interest_1 = 592
 # -1 to not show circled grains
-grain_of_interest_1 = -1#574
+grain_of_interest_1 =574
 fig_g1 = plt.figure(figsize=(13.5,23))
 ax_g1 = fig_g1.add_subplot(projection='3d')
 ax_g1.set_title("Grain 1",fontsize=fs)
@@ -76,7 +103,7 @@ ax_g1.set_title("Grain 1",fontsize=fs)
 
 
 
-grain_of_interest_2 = -1#545
+grain_of_interest_2 =545
 fig_g2 = plt.figure(figsize=(13.5,23))
 ax_g2 = fig_g2.add_subplot(projection='3d')
 ax_g2.set_title("Grain 2",fontsize=fs)
@@ -88,13 +115,15 @@ of_lab_2=[-0.15,-0.01 ,-0.112] #label offset grain 2
 fig_large = plt.figure(figsize=(27,23))
 ax_large = fig_large.add_subplot(projection='3d')
 plot_rod_outline(ax_large)
-grain_ids=[i for i in range(500,600,2)]
-grain_ids=[539,570,508,565,567,552,515,570,542,531
-           ,555,598,526,541,529,595, 533,597,516,520
-           ,596,579,525,566,589,585,592, 594,549,544
-           ,554,568,536,500,593,586,540,559,548,501,530,574,545]
+grain_ids=[i for i in range(500,600,1)]
+# grain_ids=[539,570,508,565,567,552,515,570,542,531
+#            ,555,598,526,541,529,595, 533,597,516,520
+#            ,596,579,525,566,589,585,592, 594,549,544
+#            ,554,568,536,500,593,586,540,559,548,501,530,574,545]
+#grain_ids = [572]
 print(len(grain_ids))
 #grain_ids=[grain_of_interest_2,grain_of_interest_1]
+stresses = []
 for grain_id in grain_ids:#[-60:-40]:
        sty="solid"
        for val,alp,col in zip(sims,aniso,colors):
@@ -105,6 +134,8 @@ for grain_id in grain_ids:#[-60:-40]:
               id= grain_id
               print("-----====",simulations[val],id,"=====---")
               stress = sim.get_output("stress",step=step,res="elsets",ids=[id])
+              stress_iso = sim_iso.get_output("stress",step=step,res="elsets",ids=[id])
+              #
               ori = sim.get_output("ori",step=step,res="elsets",ids=[id])
               #print("rod ini",ori)
               ori = ret_to_funda(rod=ori,sym_operators=cub)
@@ -114,13 +145,18 @@ for grain_id in grain_ids:#[-60:-40]:
               #print("rod fin",ori)
               #exit(0)
               stress_mat= to_matrix(np.array(stress))
-              #print(stress)
+              print(val)
+              stresses.append(stress)
               #print(stress_mat)
-              eig_val, eig_vect = np.linalg.eig(stress_mat)
-              eig_val, eig_vect = sort_by_vals(eig_val, eig_vect)
+              eig_val, eig_vect = sort_size(np.linalg.eig(stress_mat))
 
+              stress_mat_iso= to_matrix(np.array(stress_iso))
+
+              eig_val_iso, eig_vect_iso = sort_size(np.linalg.eig(stress_mat_iso))
               #print("eig_val",eig_val)
-                     
+              eig_vect = sort_consistency(eig_vect_iso,eig_vect)
+              
+              #
               max_v_mineigs.append(abs(max(eig_val)/min(eig_val)))
 
               #eig_vects.append(eig_val)
@@ -145,8 +181,8 @@ for grain_id in grain_ids:#[-60:-40]:
                      ax_large.quiver(start[0],start[1],start[2],
                             eig[0],eig[1],eig[2]
                             ,length=leng*15,normalize=True
-                            ,color="k",alpha=1/alp, linestyle = sty,linewidth=lw/5,
-                            edgecolor="k")
+							,facecolor=col,alpha=1, linestyle = sty,linewidth=lw/5,
+							edgecolor=col)
                      if grain_id == grain_of_interest_1:
                             ax_g1.quiver(start[0],start[1],start[2],
                                    eig[0],eig[1],eig[2]
@@ -210,7 +246,13 @@ for grain_id in grain_ids:#[-60:-40]:
               xyz_offset = [[0.002,0.0015,0],[-.0,0.001,0],[-0.004,0,0.0045]]# for 574
               coordinate_axis(ax_g1,first,coo_labs=["$r_1,z$","$r_2,x$","$r_3,y$"],fs=fs,leng=0.007,offset_text=1.3,offset=offset,xyz_offset=xyz_offset)
               
-              
+for name,val in zip(["stressiso","stress1"
+					,"stress2","stress3","stress4","stress5",
+					"stress6"]
+				,stresses):
+	print(name,"=",val)
+	
+
 ax_g2.set_aspect("equal")
 ax_g2.axis("off")
 ax_g2.margins(0.24)
@@ -255,6 +297,7 @@ show = True
 show = False
 
 destination = "/home/etmengiste/jobs/aps/step27/rod_space_plots"
+destination = "."
 if show:
        plt.show()
 else:  
