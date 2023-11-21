@@ -1,0 +1,43 @@
+starting code
+1225326.392636453
+homogenous_rcl0_235.sim ['homogenous_rcl0_235.sim', 'inhomogenous_elt_rcl0_235.sim', 'inhomogenous_elset_rcl0_235.sim']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//homogenous_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+=====
+
+
+ 166.52 31.17
+
+
+
+======
+=====
+
+
+ 163.68 28.7
+
+
+
+======
+=====
+
+
+ 170.6 34.01
+
+
+
+======
+===
+===
+Generated data in 18.6783 seconds
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##

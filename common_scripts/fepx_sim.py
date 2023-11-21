@@ -40,6 +40,7 @@ class fepx_sim:
         #--# Deformation History
         #
         self.deformation_history = {}
+        self.sim_steps = ["0.0"]
         #
         #--# Boundary Condition
         #
@@ -123,6 +124,8 @@ class fepx_sim:
                     self.deformation_history[option[0]]=option[1]
                     print(option)
                 #
+                elif len(i.split())>3:
+                    self.sim_steps.append(i.split()[1])
             #
             if "Boundary Condition" in current:
                 if len(i.split())>1 and "Boundary Condition" not in i :
@@ -146,91 +149,17 @@ class fepx_sim:
             pprint(self.print_results)
         #
     #
+    #
     def get_num_steps(self):
         if self.deformation_history["def_control_by"]=="uniaxial_load_target":
             num =self.deformation_history["number_of_load_steps"]
             #print("number_of_load_steps",num)
-        if self.deformation_history["def_control_by"]=="uniaxial_strain_target":
-            num =self.deformation_history["number_of_strain_steps"]
-            #print("number_of_strain_steps",num)
-        if self.deformation_history["def_control_by"]=="triaxial_constant_strain_rate":
-            num =self.deformation_history["number_of_strain_steps"]
-            #print("number_of_strain_steps",num)
-        if self.deformation_history["def_control_by"]=="triaxial_constrant_load_rate":
+        if self.deformation_history["def_control_by"] in ["uniaxial_strain_target",
+                                                        "triaxial_constant_strain_rate",
+                                                        "triaxial_constrant_load_rate"]:
             num =self.deformation_history["number_of_strain_steps"]
             #print("number_of_strain_steps",num)
         return int(num)
-        #
-    #
-    #
-    def get_results(self,steps=[],res="mesh"):
-        #
-        # Available results
-        print("____Results__availabe___are:")
-        #
-        pprint(self.print_results, preamble="\n#__|")
-        #
-        node_only = ["coo","disp","vel"]
-        mesh= [i for i in self.print_results if i not in node_only ]
-        #
-        print("\n____Getting results at "+res+" scale\n   initializing results\n")
-        #
-        num_steps=self.get_num_steps()
-        if res == "mesh":
-            length= len(mesh)
-
-        #
-        #
-        results_dict= {self.name: "sim","num": num_steps}
-        #
-        pprint(results_dict)
-        self.json = self.path+"/"+self.name+".txt"
-        #
-        #
-        if self.json in os.listdir(self.path):
-            converter_file= open(self.json,"r")
-            print("json file exists parsing")
-            results_dict = json.load(converter_file)
-            converter_file.close()
-            return results_dict
-        else:
-            for index in range(length):
-                result=mesh[index]
-                #print("\n\n--===== start"+result+"\n")
-                steps =[]
-                fill = '█'
-                percent = round(index / float(length-1),3)
-                filledLength = int(40 * percent)
-                percent*=100
-                bar = fill * filledLength + '-' * (length - filledLength)
-                prefix=" \n\n== Getting <"+res+">results for <"+result+">\n--step<"
-
-                for step in range(num_steps):
-                    prefix+=str(step)
-                    if step==10:
-                        prefix+="\n"
-                    try:
-                        vals = [float(i) for i in self.get_output(result,step=str(step),res=res)]
-                        steps.append(vals)
-                        print(f'\r{prefix} |{bar}| {percent}% ')
-                    except FileNotFoundError:
-                        #print("file not found Trying nodes")
-                        prefix=self.name+" \n\n===== Getting <nodes>results for <"+result+">----\n-----<"
-                        try:
-                            vals = [float(i) for i in self.get_output(result,step=str(step),res="nodes")]
-                            steps.append(vals)
-                            print(f'\r{prefix} |{bar}| {percent}% ')
-                        except FileNotFoundError:
-                            error = " youre outa luck"
-                            print(f'\r{prefix+error} |{bar}| {percent}% ')
-                prefix+= ">--------|\n+++\n+++"
-                #print("--===== end"+result+"\n")
-                results_dict[result]=steps
-            with open(self.json,"w") as converter_file:
-                converter_file.write(json.dumps(results_dict))
-                self.results_dir=self.path+"/"+self.name+".txt"
-            return results_dict
-        #
         #
     #
     #
@@ -254,7 +183,6 @@ class fepx_sim:
             #
             # #     
             for step in range(num_steps):
-                #print(str(step))
                 value = self.get_output(output,ids=ids,step=step,res=res)
                 if comp!="":
                     value = value[comp]
@@ -330,6 +258,77 @@ class fepx_sim:
        #
       #
      #
+    # 
+    #    
+    def get_results(self,steps=[],res="mesh"):
+        #
+        # Available results
+        print("____Results__availabe___are:")
+        #
+        pprint(self.print_results, preamble="\n#__|")
+        #
+        node_only = ["coo","disp","vel"]
+        mesh= [i for i in self.print_results if i not in node_only ]
+        #
+        print("\n____Getting results at "+res+" scale\n   initializing results\n")
+        #
+        num_steps=self.get_num_steps()
+        if res == "mesh":
+            length= len(mesh)
+
+        #
+        #
+        results_dict= {self.name: "sim","num": num_steps}
+        #
+        pprint(results_dict)
+        self.json = self.path+"/"+self.name+".txt"
+        #
+        #
+        if self.json in os.listdir(self.path):
+            converter_file= open(self.json,"r")
+            print("json file exists parsing")
+            results_dict = json.load(converter_file)
+            converter_file.close()
+            return results_dict
+        else:
+            for index in range(length):
+                result=mesh[index]
+                #print("\n\n--===== start"+result+"\n")
+                steps =[]
+                fill = '█'
+                percent = round(index / float(length-1),3)
+                filledLength = int(40 * percent)
+                percent*=100
+                bar = fill * filledLength + '-' * (length - filledLength)
+                prefix=" \n\n== Getting <"+res+">results for <"+result+">\n--step<"
+
+                for step in range(num_steps):
+                    prefix+=str(step)
+                    if step==10:
+                        prefix+="\n"
+                    try:
+                        vals = [float(i) for i in self.get_output(result,step=str(step),res=res)]
+                        steps.append(vals)
+                        print(f'\r{prefix} |{bar}| {percent}% ')
+                    except FileNotFoundError:
+                        #print("file not found Trying nodes")
+                        prefix=self.name+" \n\n===== Getting <nodes>results for <"+result+">----\n-----<"
+                        try:
+                            vals = [float(i) for i in self.get_output(result,step=str(step),res="nodes")]
+                            steps.append(vals)
+                            print(f'\r{prefix} |{bar}| {percent}% ')
+                        except FileNotFoundError:
+                            error = " youre outa luck"
+                            print(f'\r{prefix+error} |{bar}| {percent}% ')
+                prefix+= ">--------|\n+++\n+++"
+                #print("--===== end"+result+"\n")
+                results_dict[result]=steps
+            with open(self.json,"w") as converter_file:
+                converter_file.write(json.dumps(results_dict))
+                self.results_dir=self.path+"/"+self.name+".txt"
+            return results_dict
+        #
+        #
     #
     #
     def get_summary(self):
@@ -338,6 +337,7 @@ class fepx_sim:
        #
       #
      #
+    #
     #
     def __del__(self):
         print("-----------------------------------##")
@@ -349,7 +349,6 @@ class fepx_sim:
        #
       #
      #
-    #
     #
     #
    #

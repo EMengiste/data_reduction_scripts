@@ -6,7 +6,65 @@ from scipy.spatial.transform import Rotation as R
 import os
 import time
 import math
+from math import cos,sin,acos,degrees,pi
 
+
+def to_matrix(arr):
+    # if arr.shape ==(6,):
+    row1 = [arr[0],arr[-1],arr[-2]]
+    row2 = [arr[-1],arr[1],arr[-3]]
+
+    row3 = [arr[-2],arr[-3],arr[2]]
+    matrix = [row1 ,row2, row3]
+    return matrix
+    # else:
+    #     matrix = []
+    #     for array in arr:
+    #         row1 = [array[0],array[-1],array[-2]]
+    #         row2 = [array[-1],array[1],array[-3]]
+    #         row3 = [array[-2],array[-3],array[2]]
+    #         matrix.append(np.array([row1 ,row2, row3]))
+    #     return matrix
+        
+def von_mises_stress(stress):
+    s11,s22,s33,s23,s13,s12 = stress
+    ans =  (s11-s22)**2
+    ans += (s22-s33)**2
+    ans += (s33-s11)**2
+    ans += 6*(s12**2 +s23**2 + s13**2)
+    ans /=2
+    return ans**0.5
+def deviatoric(value):
+    ## assume voight notation
+    hydro= sum(value[:3])/3
+    value[0] = value[0]-hydro
+    value[1] = value[1]-hydro
+    value[2] = value[2]-hydro
+    return value
+
+def find_equivalent(value):
+    s11,s22,s33,s23,s13,s12 = deviatoric(value)
+    ans =  (s11-s22)**2
+    ans += (s22-s33)**2
+    ans += (s33-s11)**2
+    ans += 6*(s12**2 +s23**2 + s13**2)
+    ans /=2
+    return ans**0.5
+
+def stress_triaxiality(stress):
+    #
+    stress_mat= to_matrix(np.array(stress))
+    #
+    #
+    vm_stress = von_mises_stress(np.array(stress))
+    eig_val= np.linalg.eigvals(stress_mat)
+    #
+    #
+    psi =(eig_val[0]+eig_val[1]+eig_val[2])/(3*vm_stress)
+    #
+    #
+    return psi
+#
 def find_nearest(a, a0):
     # https://stackoverflow.com/a/2566508
     "Element in nd array `a` closest to the scalar value `a0`"
@@ -63,45 +121,18 @@ def find_yield(stress, strain, offset="",number=""):
     return values
   #
  #
-#def generate_tess(n,destination_name,source_dir,options={"mode" :"run"}):
-    print("\n===")
-    tesselation= main_dir+"/input_data"+destination_name
 
-    commands= ["-n "+str(n),"-o "+tesselation]
-    neper_command=options["source code"]+" -T "+commands[0]
-    # populate the commands using the optional input dictionary
-    for i in options:
-        if i[0]== "-":
-            neper_command+=" "+i+' '+options[i]
-            commands.append(i+' '+options[i])
-    #
-    neper_command+=" "+commands[1]
-    if options["mode"] =="debug":
-        #print(source_dir)
-        print(os.getcwd())
-        pprint(commands)
-        print("Tess command:\n",neper_command)
-    elif options["mode"] =="run":
-        print("Tess command:\n",neper_command)
-        if os.path.exists(tesselation+".tess"):
-            print("tesselation already exists")
-        else:
-            print("tesselation doesn't exist generating new")
-            os.system(neper_command+' '+commands[1])
-
-    #print(tess_destination+".tess")
-    return tesselation+".tess"
-#
 def quat_of_angle_ax(angle, raxis):
        # angle axis to quaternion
        #
        half_angle = 0.5*angle
        #
-       cos_phi_by2 = math.cos(half_angle)
-       sin_phi_by2 = math.sin(half_angle)
+       cos_phi_by2 = cos(half_angle)
+       sin_phi_by2 = sin(half_angle)
        #
        rescale = sin_phi_by2 / np.sqrt(np.dot(raxis,raxis))
        quat = np.append([cos_phi_by2],np.tile(rescale,[3])*raxis)
+       #
        if cos_phi_by2<0:
               quat = -1*quat
        #
@@ -341,28 +372,12 @@ def job_submission_script(path,num_nodes,num_processors,fepx_path="fepx",name="j
     file.close()
     #os.system(f"sbatch --job-name={name} --hint=nomultithread run.sh")
 
-def quat_prod_multi(q1,q2):
-	quat =[]
-	for i in range(len(q1)):
-		quat.append(quat_prod(q1[i],q2[i]))
-	max = 0
-	max_ind=0
-	for ind,q in enumerate(quat):
-		if q[0]<0:
-			quat[ind] = -1*quat[ind]
-		if ind==0:
-			max= quat[ind][0]
-			max_ind=ind
-		elif quat[ind][0]>max:
-			#print("larger")
-			#print(quat[ind])
-			max=quat[ind][0]
-			max_ind=ind
-		#
-	value = normalize_vector(quat[max_ind])
-	#print("--------",value)
-	return value
-##
+def norm(vect):
+    value= 0
+    for i in vect:
+        value+=(i**2)
+    mag=(value)**0.5
+    return mag
 def normalize_vector(vect,magnitude=False):
     value= 0
     final = vect
@@ -437,6 +452,21 @@ def angle_axis_to_mat(angle,axis):
                 [r31,r32,r33]]
     return Rot_Mat
 
+def normalize_vector(vect,magnitude=False):
+    value= 0
+    final = vect
+    for i in vect:
+        value+=(i**2)
+    mag=(value)**0.5
+    for i in range(len(vect)):
+        final[i] = final[i]/mag
+    if magnitude:
+        return [final,mag]
+    else:
+        return final
+  #
+ #
+#
 ###
 def ret_to_funda(quat="",rod="", sym_operators=Cubic_sym_quats(),debug=False):
        #    Return quaternion to the fundamental region given symerty 
@@ -472,6 +502,19 @@ def dif_degs_local(start,fin,debug=False):
 
 	return thet_ij
 ###
+def rod_to_quat(val,debug=False):
+       # Rodrigues vector to Quaternion
+       #
+       norm,mag = normalize_vector(val,magnitude=True)
+       omega= 2*math.atan(mag)
+       if debug:
+              print("an ax",quat_of_angle_ax(omega,norm))
+              print(omega)
+       s= math.sin(omega/2)
+       c= math.cos(omega/2)
+       values = np.array([c, s*norm[0],s*norm[1], s*norm[2]])
+       return values
+##
 def rot_mat(arr1,arr2):
     #   Find the roation matrix from a basis matrix 
     #       Q_ij = arr1 => arr2
@@ -494,9 +537,19 @@ def rot_mat(arr1,arr2):
     else:  
             print("not same size")
 ##
-def quat_prod(q1, q2,debug=False):
+def quat_misori(q1, q2):     
+       a=-q1[0]
+       b=q2[0]
+       avect=np.array(q1[1:])
+       bvect=np.array(q2[1:])
+       #
+       dotted_val=np.dot(avect,bvect)
+       ind1 =  a* b - dotted_val
+       return degrees(acos(ind1))*2
+       
+def quat_prod(q1, q2):
        # Quaternion Product
-       # input a q1 and 4*1
+       # input a q1,q2 4*1
        a=q1[0]
        b=q2[0]
        avect=np.array(q1[1:])
@@ -508,13 +561,56 @@ def quat_prod(q1, q2,debug=False):
        ind1 =  a* b - dotted_val
        v    =  a*bvect + b*avect +crossed_val
        #
-       if debug:
-              print(v)
        quat = np.array([ind1,v[0],v[1],v[2]])
        #
        if quat[0]<0:
               quat=-1*quat
        #print(quat)
+       return quat
+       #
+
+def quat_to_angle_axis(q1):
+    omega = 2*acos(q1[0])
+    s= sin(omega/2)
+    norm = [ i/s for i in q1[1:]]
+    return [omega,norm]
+
+def quat_prod_multi(q1,q2):
+	quat =[]
+	for i in range(len(q1)):
+		quat.append(quat_prod(q1[i],q2[i]))
+	max = 0
+	max_ind=0
+	for ind,q in enumerate(quat):
+		if q[0]<0:
+			quat[ind] = -1*quat[ind]
+		if ind==0:
+			max= quat[ind][0]
+			max_ind=ind
+		elif quat[ind][0]>max:
+			#print("larger")
+			#print(quat[ind])
+			max=quat[ind][0]
+			max_ind=ind
+		#
+	value = normalize_vector(quat[max_ind])
+	#print("--------",value)
+	return value
+##   
+def quat_of_angle_ax(angle, raxis):
+       # angle axis to quaternion
+       #
+       half_angle = 0.5*angle
+       #
+       cos_phi_by2 = math.cos(half_angle)
+       sin_phi_by2 = math.sin(half_angle)
+       #
+       rescale = sin_phi_by2 / np.sqrt(np.dot(raxis,raxis))
+       quat = np.append([cos_phi_by2],np.tile(rescale,[3])*raxis)
+       if cos_phi_by2<0:
+              quat = -1*quat
+       #
+       #
        return quat
 #
 def sampled_trajectories(cur_path,offset=0,sampled_elts="",sample_dense=1,debug=True,sim=1,end_path=""):

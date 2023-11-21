@@ -1,0 +1,29 @@
+coo: Nodal coordinates
+crss: Critical resolved shear stress
+defrate: Deformation rate tensor
+defrate-eq: Equivalent deformation rate
+defrate-pl: Plastic deformation rate tensor
+defrate-pl-eq: Equivalent plastic deformation rate
+disp: Nodal displacements
+elt-vol: Elemental volume
+ori: Crystallographic orientations
+slip: Slip system shear
+sliprate: Slip system shear rate
+spinrate: Plastic spin rate tensor
+strain: Total strain tensor
+strain-eq: Equivalent total strain
+strain-el: Elastic strain tensor
+strain-el-eq: Equivalent elastic strain
+strain-pl: Plastic strain tensor
+strain-pl-eq: Equivalent plastic strain
+stress: Stress tensor
+stress-eq: Equivalent stress
+vel: Nodal velocity
+velgrad: Velocity gradient tensor
+work: Work
+work-pl: Plastic work
+workrate: Work Rate
+workrate-pl: Plastic work rate
+forces: Surface forces
+convergence: Simulation convergence statistics
+restart: Simulation restart data

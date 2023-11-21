@@ -1,0 +1,187 @@
+starting code
+1221710.544199895
+homogenous_rcl0_235.sim ['homogenous_rcl0_235.sim', 'inhomogenous_elt_rcl0_235.sim', 'inhomogenous_elset_rcl0_235.sim']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//homogenous_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+=====
+
+
+ 166.52 31.17
+
+
+
+======
+homogenous_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//homogenous_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+(669806, 6, 2)
+Generated first plot in in 4.0521 seconds
+inhomogenous_elt_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elt_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//inhomogenous_elt_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(669806, 6, 2)
+Generated first plot in in 3.9060 seconds
+inhomogenous_elset_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elset_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//inhomogenous_elset_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elt_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(669806, 6, 2)
+Generated first plot in in 3.7364 seconds
+=====
+
+
+ 163.68 28.7
+
+
+
+======
+homogenous_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//homogenous_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elset_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(395352, 6, 2)
+Generated first plot in in 2.3908 seconds
+inhomogenous_elt_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elt_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//inhomogenous_elt_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(395352, 6, 2)
+Generated first plot in in 2.3921 seconds
+inhomogenous_elset_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elset_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//inhomogenous_elset_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elt_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(395352, 6, 2)
+Generated first plot in in 2.3878 seconds
+=====
+
+
+ 170.6 34.01
+
+
+
+======
+homogenous_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//homogenous_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elset_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(274454, 6, 2)
+Generated first plot in in 1.7536 seconds
+inhomogenous_elt_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elt_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//inhomogenous_elt_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(274454, 6, 2)
+Generated first plot in in 1.7443 seconds
+inhomogenous_elset_rcl0_235.sim
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elset_rcl0_235.sim> creation
+                   |||||------##
+---------------------------------##
+########---- opening /home/etmengiste/jobs/SERDP/dense_mesh//inhomogenous_elset_rcl0_235.sim/simulation.config
+['def_control_by', 'uniaxial_strain_target']
+['number_of_strain_steps', '32']
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elt_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+(274454, 6, 2)
+Generated first plot in in 1.7849 seconds
+===
+===
+Generated data in 61.3061 seconds
+-----------------------------------##
+                   |||||------##
+                   |||||------object < homogenous_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##
+-----------------------------------##
+                   |||||------##
+                   |||||------object < inhomogenous_elset_rcl0_235.sim> destruction
+                   |||||------##
+---------------------------------##

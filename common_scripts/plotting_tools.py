@@ -18,7 +18,7 @@ plt.rc('legend', fontsize=SIZE)    # legend fontsize
 plt.rc('figure', titlesize=SIZE)  #
 
 def plot_stress_strain(ax,stress,strain,labels=True,lw=5,ls="-",col="k",ylim=[0,201],xlim=[1.0e-7,0.5]):
-    ax.plot(strain, stress,col,linestyle=ls,linewidth=lw)
+    ax.plot(strain, stress,col,ms=1,linestyle=ls,linewidth=lw)
     stress = "Stress "
     strain='$'
     strain+="\\varepsilon"
