@@ -88,8 +88,6 @@ def get_boundary_elts(stelt):
     array = [ i for i,val in enumerate(file) if val[1]<1]
     return array
 
-
-
 def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,destination=""):
     xlims= [0,0.175]
     ylims =[0,50]
@@ -101,11 +99,11 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,des
     #
     print(sim,sims)
     pool = multiprocessing.Pool(processes=96)
-    sim1 = fepx_sim(sim,path=path+"/"+sims[0])
+    sim1 = fepx_sim(sim,path=path+"/"+sim)
     sim_steps = sim1.sim_steps
     #steps = sim1.get_num_steps()
-    sim_obj = [fepx_sim(i,path=path+"/"+i) for i in sims[1:]]
-    for step in [32]:#[2,13,32]:#[2,8,13,18,22,32]: #range(steps+1):
+    sim_obj = [fepx_sim(i,path=path+"/"+i) for i in sims[:]]
+    for step in [2,13,32]:#[32]:#[2,8,13,18,22,32]: #range(steps+1):
         print(step)
         #oris_homo = sim1.get_output("ori",res="elts",step=step,ids="all")
         stelt_file = "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/dense_mesh/mesh_rcl0_235.stelt"
@@ -130,11 +128,12 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,des
             if stress_plot:
                 stress_homo=sim1.get_output("stress",res="elts",step=step,ids=ids_truncatedd)
                 vm_stress = pool.map(von_mises_stress,stress_homo)
-                fig_name = "vm_stress_homogenous"
+                fig_name = "vm_stress"
+                suffix   = "_"+place+sim[:-4]+"_"+str(step)
                 x_label = "$\sigma_{vm}$"
                 print("max Value",min(vm_stress))
                 stress_xlims= [min(vm_stress)*.99,max(vm_stress)*1.01]
-                bins_list = np.linspace(xlims[0],xlims[1],1000)
+                bins_list = np.linspace(stress_xlims[0],stress_xlims[1],1000)
                 ylims =[0,0.75]
                 #
                 #
@@ -142,10 +141,10 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,des
                                         ,y_label,x_label,stress_xlims#,ylims
                                         ,destination,fig_name,"_cummulative"+suffix,bins_list
                                         ,histtype="step",title=title_val)
-                plot_histogram(vm_stress
-                                        ,y_label,x_label,stress_xlims,ylims
-                                        ,destination,fig_name,suffix,bins_list
-                                        ,histtype="step",title=title_val)
+                # plot_histogram(vm_stress
+                #                         ,y_label,x_label,stress_xlims,ylims
+                #                         ,destination,fig_name,suffix,bins_list
+                #                         ,histtype="step",title=title_val)
             #exit(0)          
             if strain_pl_plot: 
                 strain_pl_homo=sim1.get_output("strain",res="elts",step=step,ids=ids_truncatedd)
@@ -176,29 +175,42 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,des
                 #
                 tic = time.perf_counter()
                 # #
+                stress=sim2.get_output("stress",res="elts",step=step,ids=ids_truncatedd)
+                vm_stress = pool.map(von_mises_stress,stress)
+                # if place ==places[0]:
+                vm_values = np.array([stress_homo,stress])
+                print("-------++++===",vm_values.shape)
+                vm_values= np.moveaxis(vm_values,0,1)
+                print("-------++++===",vm_values.shape)
+                vm_stress_comparison = pool.map(compare_vm_stress,vm_values)
+                fig_name = "vm_stress"
+                suffix   = "_"+place+i[:-4]+"_"+str(step)
+                xlims = [0.99*min(vm_stress_comparison),1.01*max(vm_stress_comparison)]
+                bins_list = np.linspace(xlims[0],xlims[1],1000)
+                print(40*"--",destination+fig_name+suffix+"comparison")
+                np.savetxt(destination+fig_name+suffix+"comparison",vm_stress_comparison)
+                plot_cummulative_histogram(vm_stress_comparison
+                                        ,y_label,x_label,xlims#,ylims
+                                        ,destination,fig_name+"comparison",suffix,bins_list
+                                        ,histtype="step",title=title_val)
+                
+                continue
+                exit(0)
                 if stress_plot:
-                    stress=sim2.get_output("stress",res="elts",step=step,ids=ids_truncatedd)
-                    vm_stress = pool.map(von_mises_stress,stress)
-                    vm_stress_comparison = pool.map(compare_vm_stress,[stress,stress_homo])
-                    fig_name = "vm_stress"
-                    suffix   = "_"+place+i[:-4]+"_"+str(step)
-
-                    np.savetxt(fig_name+suffix+"comparison",vm_stress_comparison)
-                    exit(0)
                     y_label = "Density"
                     x_label = "$\sigma_{vm}$"
                     xlims= [0,400]
-                    bins_list = np.linspace(xlims[0],xlims[1],1000)
+                    bins_list = np.linspace(stress_xlims[0],stress_xlims[1],1000)
                     ylims =[0,0.75]
                     plot_cummulative_histogram(vm_stress
                                             ,y_label,x_label,stress_xlims#,ylims
                                             ,destination,fig_name,"_cummulative"+suffix,bins_list
                                             ,histtype="step",title=title_val)
                     #
-                    plot_histogram(vm_stress
-                                            ,y_label,x_label,stress_xlims,ylims
-                                            ,destination,fig_name,suffix,bins_list
-                                            ,histtype="step",title=title_val)
+                    # plot_histogram(vm_stress
+                    #                         ,y_label,x_label,stress_xlims,ylims
+                    #                         ,destination,fig_name,suffix,bins_list
+                    #                         ,histtype="step",title=title_val)
                     #
                 #exit(0)          
                 if strain_pl_plot: 
@@ -417,7 +429,6 @@ def plot_real_vs_sim_svs():
     svs_real_svs_sim(sim,path,real_paths)
     exit(0)
 
-
 def plot_element_volume_distribution(stelt_file):
     file = np.loadtxt(stelt_file)
     file = np.array([ val for i,val in enumerate(file) if val[1]<1])
@@ -432,13 +443,26 @@ def plot_element_volume_distribution(stelt_file):
     ax.legend()
     fig.savefig("volumes")
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
+    # stress1 = [-11.64722, -12.73054, 143.3881, 6.903182, -28.18609, 31.0733]
+    # stress2 = [-11.64722, -12.73054, 143.3881, 6.903182, -28.18609, 31.0733] 
+    # stresses = [stress1 for i in range(10)]
+    # stresses = np.array([stresses,stresses])
+    # stresses = np.moveaxis(stresses,0,1)
+    # print(stresses.shape)
+    # print(stresses[0])
+    # # exit(0)
+    # # print(stresses[:,:])
+    # # exit(0)
+    # pool = multiprocessing.Pool(processes=96)
+    # print(pool.map(compare_vm_stress,stresses))
+    # exit(0)
     ##   plot element stress distribution
     path = "/home/etmengiste/jobs/SERDP/dense_mesh/"
     sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim","inhomogenous_elset_rcl0_235.sim"]
     # multi_svs([path,path,path],sims,destination=path,ylim=[0,160],xlim=[1.0e-7,0.10],normalize=False,show=False)
     # exit(0)
-    per_elt_comparisions(path,sims[0],sims[:],strain_pl_plot=False,stress_plot=True,destination=path+"images/")
+    per_elt_comparisions(path,sims[0],sims[1:],strain_pl_plot=False,stress_plot=True,destination=path+"images/")
     exit(0)
     ##
     ##   plot element volume distribution
