@@ -139,6 +139,76 @@ def quat_of_angle_ax(angle, raxis):
        #
        return quat
 #
+def generate_tesr(n,name,source_dir="",scale=1000,source_code="neper",from_nf=False,from_ff=True,fin_dir="",options={"mode" :"run"}):
+    print("\n===")
+    tesselation= name
+    if from_ff:                
+        file1= open(fin_dir+n+'centroids', 'w')
+        file2= open(fin_dir+n+'centvols', 'w')
+        file3= open(fin_dir+n+'radii', 'w')
+        file4 = pd.read_csv(source_dir+name)
+
+
+        file4.sort_values(by=['Z','X','Y'], ascending=[True, True, True], inplace= True)
+
+        x= np.sort(pd.unique(file4['X']))
+        y= np.sort(pd.unique(file4['Y']))
+        z= np.sort(pd.unique(file4['Z']))
+
+        file4['X']-= x[0]
+        file4['Y']-= y[0]
+        file4['Z']-= z[0]
+
+        x= file4['X']/scale
+        z= file4['Y']/scale
+        y= file4['Z']/scale
+        try:
+            weight= file4['Grain Radius']/scale
+        except:             
+            weight= file4['Radius']/scale
+
+        for i in range(len(file4)):
+            file1.write(str(x[i])+' '+str(y[i])+' '+str(z[i])+'\n')
+            file2.write(str(x[i])+' '+str(y[i])+' '+str(z[i])+' '+str((4*(weight[i]**3))*(math.pi/3))+'\n')
+            file3.write(str(weight[i])+'\n')
+        file1.close()
+        file2.close()
+        domain=str(max(x))+","+str(max(y))+","+str(max(z))
+        out =[len(weight), domain]
+        print(out)
+        return out    
+    if from_nf:                
+        file3= open(fin_dir+tesselation+'.tesr', 'w')
+        file4 = pd.read_csv(source_dir+name)
+
+
+        file4.sort_values(by=['Z','X','Y'], ascending=[True, True, True], inplace= True)
+
+        x= np.sort(pd.unique(file4['X']))
+        y= np.sort(pd.unique(file4['Y']))
+        z= np.sort(pd.unique(file4['Z']))
+
+        file4['X']-= x[0]
+        file4['Y']-= y[0]
+        file4['Z']-= z[0]
+
+        x= file4['X']/scale
+        z= file4['Y']/scale
+        y= file4['Z']/scale
+
+
+
+        for i in range(len(file4)):
+            file1.write(str(x[i])+' '+str(y[i])+' '+str(z[i])+'\n')
+            file2.write(str(x[i])+' '+str(y[i])+' '+str(z[i])+' '+str((4*(weight[i]**3))*(math.pi/3))+'\n')
+            file3.write(str(weight[i])+'\n')
+        file1.close()
+        file2.close()
+        domain=str(max(x))+","+str(max(y))+","+str(max(z))
+        out =[len(weight), domain]
+        print(out)
+        return out
+
 def generate_tess(n,name,main_dir=".",source_code="neper",options={"mode" :"run"}):
     print("\n===")
     curr_dir = os.getcwd()
@@ -225,7 +295,7 @@ def generate_msh(source_dir,num_partition,source_code="neper",options={"mode" :"
     os.chdir(curr_dir)
     return mesh_dir+"/"+mesh_name+".msh"
 #
-def visualize(input_source,source_code="neper",options={"mode" :"run"}):
+def visualize(input_source,source_code="neper",outname="default_img",options={"mode" :"run"}):
     commands = []
     input_name= input_source.split("/")[-1]
     neper_command=source_code+" -V "+input_source+" "
@@ -234,7 +304,7 @@ def visualize(input_source,source_code="neper",options={"mode" :"run"}):
         if i[0]== "-":
             neper_command+=" "+i+' '+options[i]
             commands.append(i+' '+options[i])
-    neper_command+=" -print "+input_name[:-4]
+    neper_command+=" -print "+outname
     if options["mode"]=="debug":
         #print(input_source)
         print(os.getcwd())
@@ -242,15 +312,45 @@ def visualize(input_source,source_code="neper",options={"mode" :"run"}):
         print("Visualization command:\n",neper_command)
     elif options["mode"]=="run":
         print("Visualization command:\n",neper_command)
-        if os.path.exists(input_source[0:-4]+".png"):
-            print("Image already exists",input_source[0:-4]+".png")
+        if os.path.exists(outname+".png"):
+            print("Image already exists",outname+".png")
         else:
             print("Image doesn't exist generating new")
             print(os.getcwd())
-            os.system(neper_command+" > vis_output"+input_name)
+            os.system(neper_command+" ")#> vis_output"+input_name)
     elif options["mode"]=="rerun":
         os.system(neper_command+" > vis_output")
 #
+#
+if __name__=="__main__":
+    print("trying")
+    print(os.getcwd())
+    # exit(0)
+    source_dir="/home/etmengiste/jobs/aps/full_aps_data_set/Fe9Cr HEDM data repository/Fe9Cr-61116 (unirr)/In-situ ff-HEDM/"
+    fin_dir="/home/etmengiste/jobs/aps/far_field_data_presentation/"
+    
+    opt= generate_tesr("1",name="In-situ FF Parent Grain Data Pre-def.csv",source_dir=source_dir,fin_dir=fin_dir)
+    print(opt)
+    generate_tess("1","border",fin_dir,source_code="neper",options={"-domain":" 'cube("+opt[1]+")'","mode" :"run"})
+    os.chdir(fin_dir)
+    visualize("border.tess,1centroids",source_code="neper",options={"mode" :"run",
+                                                                    "-datacelltrs": "1.23",
+                                                                    "-datapointrad": "1radii"})
+    tess = generate_tess(opt[0],"FF_predef",fin_dir,source_code="neper",options={"-domain":" 'cube("+opt[1]+")'",
+                                                                       "-morpho":"'centroidsize:file(1centvols)'",
+                                                                       "mode" :"run"})
+    visualize(tess,source_code="neper",options={"mode" :"run",
+                                                "-datacellcol":"ori"})
+    exit(0)
+    print("trying")
+    print(os.getcwd())
+    source_dir="/home/etmengiste/jobs/aps/full_aps_data_set/Fe9Cr HEDM data repository/Fe9Cr-61116 (unirr)/ex-situ nf-HEDM/"
+    fin_dir="/home/etmengiste/jobs/aps/far_field_data_presentation/"
+
+    opt= generate_tesr("Near_field",name="Ex-situ NF Deformed Grain Data.csv",source_dir=source_dir,fin_dir=fin_dir)
+    ####
+    exit(0)
+
 def post_process(sim_path,main_dir=".",options={"source code":"neper"}):
     print("\n===")
     print(sim_path)

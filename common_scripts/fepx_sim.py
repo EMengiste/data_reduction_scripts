@@ -1,5 +1,9 @@
 import os
-
+import time
+import numpy as np
+intro = "++==++"+"||\n"
+intro = 4*intro +"fepx_sim setup\n"+ 4*intro
+print(intro," time is ",time.time())
 def pprint(arr):
     for i in arr:
         print(i)
@@ -14,7 +18,7 @@ class fepx_sim:
     #
     #####-------
     #
-    def __init__(self,name,path="",debug_config_input =False):
+    def __init__(self,name,path="",verbose=False):
         self.name=name
         print("-----------------------------------##")
         print("                   |||||------##")
@@ -53,10 +57,13 @@ class fepx_sim:
         #
         ##@ Status checks
         self.sim=""
+        self.verbose = verbose
         self.is_sim=False
         self.results_dir=os.listdir(path)
+        self.compressed=False
         self.completed = "post.report" in self.results_dir
         self.has_config = "simulation.config" in self.results_dir
+        #
         if path[-4:] == ".sim":
             self.is_sim=True
             self.post_processed=True
@@ -141,125 +148,27 @@ class fepx_sim:
                     #print(option)
                 #
             #
-        if debug_config_input:
-            pprint(self.optional_input)
-            pprint(self.material_parameters)
-            pprint(self.deformation_history)
-            pprint(self.boundary_conditions)
-            pprint(self.print_results)
+        if self.verbose:
+            self.get_summary()
         #
-    #
     #
     def get_num_steps(self):
         if self.deformation_history["def_control_by"]=="uniaxial_load_target":
             num =self.deformation_history["number_of_load_steps"]
             #print("number_of_load_steps",num)
-        if self.deformation_history["def_control_by"] in ["uniaxial_strain_target",
-                                                        "triaxial_constant_strain_rate",
-                                                        "triaxial_constrant_load_rate"]:
+        if self.deformation_history["def_control_by"]=="uniaxial_strain_target":
+            num =self.deformation_history["number_of_strain_steps"]
+            #print("number_of_strain_steps",num)
+        if self.deformation_history["def_control_by"]=="triaxial_constant_strain_rate":
+            num =self.deformation_history["number_of_strain_steps"]
+            #print("number_of_strain_steps",num)
+        if self.deformation_history["def_control_by"]=="triaxial_constrant_load_rate":
             num =self.deformation_history["number_of_strain_steps"]
             #print("number_of_strain_steps",num)
         return int(num)
         #
     #
     #
-    def get_output(self,output,id=0,step= "0", res="",ids=[0],num_steps=0,comp="0:-1",debug=False):
-        step = str(step)
-        value = {}
-        if res=="":
-            res="mesh"
-        #
-        ##
-        if output in ["coo","disp","vel"] and res !="nodes":
-            print("invalid output try again")
-            return 
-        #
-        # #       
-        if step=="malory_archer" or step=="all":
-            if num_steps==0:
-                num_steps = self.get_num_steps()
-            #print(num_steps)
-            vals = []
-            #
-            # #     
-            for step in range(num_steps):
-                value = self.get_output(output,ids=ids,step=step,res=res)
-                if comp!="":
-                    value = value[comp]
-                vals.append(value)
-            return vals
-        #
-        # #     
-        if self.path[-4:] == ".sim":
-            step_file = self.path+"/results/"+res+"/"+output+"/"+output+".step"+step
-        else:
-            step_file = self.path+".sim/results/"+res+"/"+output+"/"+output+".step"+step
-                #
-        # #     
-        file = open(step_file)
-        values=file.readlines()
-        num_components= len(values[0].split())
-        if ids =="all":
-            ids= [i for i in range(len(values))]
-        #print(ids)
-        for id in ids:
-            #print(id,"--------")
-            value[str(id)] = [float(i) for i in values[id].split()]
-            #pprint(value,max=1000)
-        if len(ids)==1:
-            return value[str(ids[0])]
-        else:
-            return [value[i] for i in value]
-        #
-       #
-      #
-     #
-    #
-    #
-    def post_process(self,options="",debug=False):
-        #
-        if options!="":
-            print(options.split("-res"))
-            print("\n\n")
-            print(os.getcwd())
-            print(options)
-            os.chdir(self.path)
-            os.system("neper -S . "+options)
-            print("\n\n")
-            with open(self.path+".sim/.sim") as file:
-                self.sim=file.readlines()
-                return
-        #
-        elif self.post_processed:
-            print("Already post processed")
-            end=".sim/.sim"
-            if self.is_sim:
-                end= "/.sim"
-            if self.sim == "":
-                values = {}
-                with open(self.path+end) as file:
-                    sim_file = [i.strip() for  i in file.readlines()]
-                    for line in sim_file:
-                        if line.startswith("***"):
-                            print(line,"\n")
-                        elif line.startswith("**"):
-                            values[line[2:]]= sim_file[sim_file.index(line)+1].strip()
-                self.sim= values
-            if debug:
-                pprint(values)
-                print(values["general"][8])
-            return
-        #
-        #
-        elif not self.completed:
-            print("simulation not done come back after it is")
-            return
-        #
-       #
-      #
-     #
-    # 
-    #    
     def get_results(self,steps=[],res="mesh"):
         #
         # Available results
@@ -331,28 +240,138 @@ class fepx_sim:
         #
     #
     #
-    def get_summary(self):
-        return "stuff"
+    def get_output(self,output,id=0,step= "0", res="",ids=[0],num_steps=0,comp="0:-1",debug=False):
+        step = str(step)
+        value = {}
+        ##
+        if output in ["coo","disp","vel"]:
+            res ="nodes"
+        elif res=="":
+            res="mesh"
+        #
+        #
+        # #    
+        if self.path[-4:] == ".sim":
+            step_file = self.path+"/results/"+res+"/"+output+"/"+output+".step"+step
+        else:
+            step_file = self.path+".sim/results/"+res+"/"+output+"/"+output+".step"+step
+                #
+        # print(step_file)
+        # #      
+        if step=="all":
+            if num_steps==0:
+                num_steps = self.get_num_steps()
+            # print(num_steps)
+            vals = []
+            #
+            # #    
+            for step in range(num_steps):
+                # print(str(step))
+                value = self.get_output(output,ids=ids,step=step,res=res)
+                if comp!="":
+                    value = value[comp]
+                vals.append(value)
+            return vals
+        #
+        # #    
+        file = open(step_file)
+        values=file.readlines()
+
+        if ids =="all":
+            ids= [i for i in range(len(values))]
+        #print(ids)
+        for id in ids:
+            #print(id,"--------")
+            value[str(id)] = [float(i) for i in values[id].split()]
+            #pprint(value,max=1000)
+        if len(ids)==1:
+            return value[str(ids[0])]
+        else:
+            return [value[i] for i in value]
         #
        #
       #
      #
     #
+    #
+    def post_process(self,options="",debug=False):
+        #
+        if options!="":
+            print(options.split("-res"))
+            print("\n\n")
+            print(os.getcwd())
+            print(options)
+            os.chdir(self.path)
+            os.system("neper -S . "+options)
+            print("\n\n")
+            with open(self.path+".sim/.sim") as file:
+                self.sim=file.readlines()
+                return
+        #
+        elif self.post_processed:
+            print("Already post processed")
+            end=".sim/.sim"
+            if self.is_sim:
+                end= "/.sim"
+            if self.sim == "":
+                values = {}
+                with open(self.path+end) as file:
+                    sim_file = [i.strip() for  i in file.readlines()]
+                    for line in sim_file:
+                        if line.startswith("***"):
+                            print(line,"\n")
+                        elif line.startswith("**"):
+                            values[line[2:]]= sim_file[sim_file.index(line)+1].strip()
+                self.sim= values
+            if debug:
+                pprint(values)
+                print(values["general"][8])
+            return
+        #
+        #
+        elif not self.completed:
+            print("simulation not done come back after it is")
+            return
+        #
+       #
+      #
+     #
+    #
+    #
+    def get_summary(self):
+        print(self.name)
+        pprint(self.material_parameters)
+        pprint(self.deformation_history)
+        pprint(self.boundary_conditions)
+        print(self.completed)
+        print(self.compressed)
+        #
+       #
+      #
+     #
+    #
+    def __repr__(self) -> str:
+        return self.name
     #
     def __del__(self):
-        print("-----------------------------------##")
-        print("                   |||||------##")
-        print("                   |||||------object < "+self.name+"> destruction")
-        print("                   |||||------##")
-        print("---------------------------------##")
+        if self.verbose:
+            print("-----------------------------------##")
+            print("                   |||||------##")
+            print("                   |||||------object < "+self.name+"> destruction")
+            print("                   |||||------##")
+            print("---------------------------------##")
+        else:
+            pass
         #
        #
       #
      #
+    #
     #
     #
    #
   #
  #
 #
+
 

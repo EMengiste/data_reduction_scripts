@@ -174,7 +174,6 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
                         ,color="k", linestyle = sty,linewidth=lw)
                     #
 #
-
     
 def plot_mean_data(NAME,ylims="",y_label="",name="case",
                        unit="",y_ticks ="",y_tick_lables="",debug=False):
@@ -278,3 +277,39 @@ def plot_mean_data(NAME,ylims="",y_label="",name="case",
         fig.subplots_adjust(left=0.09, right=0.98,top=0.9, bottom=0.2, wspace=0.07, hspace=0.1)
         fig.savefig(NAME+"_"+str(DOM[DOMAIN.index(dom)])+"_mean.png",dpi=400)
     
+def plot_node(ax,coo,vel="",disp="",cc="k"):
+    ax.scatter(coo[0],coo[1],coo[2],color=cc)
+    if vel!="":
+        ax.quiver(coo[0],coo[1],coo[2],vel[0],vel[1],vel[2],color="r")
+    if disp!="":
+        ax.quiver(coo[0]-disp[0],coo[1]-disp[1],coo[2]-disp[2],disp[0],disp[1],disp[2],color="b")
+
+def plot_multi_nodes(ax,coo,ids,vel="",disp=""):
+    for id_val in ids:
+        if vel !=disp !="":
+            plot_node(ax,coo[id_val],vel[id_val],disp[id_val])
+        else:
+            plot_node(ax,coo[id_val],cc="y")
+
+# if __name__=="__main__":
+#     sim_name = "homogenous_rcl0_235.sim" #"01_bcc_reference.sim"
+#     main_path = "/home/etmengiste/jobs/SERDP/dense_mesh/"#code/FEPX-dev/build/"
+#     simulation = fepx_sim(sim_name,main_path+sim_name)
+#     step_num = 13
+#     node_origin = simulation.get_output("coo",ids="all",step=0)
+#     #
+#     node_coo = simulation.get_output("coo",ids="all",step=step_num)
+#     node_disp = simulation.get_output("disp",ids="all",step=step_num)
+#     node_vel = simulation.get_output("vel",ids="all",step=step_num)
+#     #
+#     id_vals = [i for i in range(len(node_coo))]#100)] #[10,1]#
+#     # #
+#     print(len(id_vals[::4000]))
+#     # exit(0)
+#     fig = plt.figure(figsize=(13.5,23))
+#     ax = fig.add_subplot(projection='3d')
+#     plot_multi_nodes(ax,node_origin,id_vals[::4000])
+#     plot_multi_nodes(ax,node_coo,id_vals[::4000],node_disp,node_vel)
+#     #figure out element connectivity internally
+#     plt.show()
+#     # print(simulation.get_summary())

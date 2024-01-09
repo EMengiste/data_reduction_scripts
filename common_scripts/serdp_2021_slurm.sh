@@ -8,7 +8,8 @@
 
 
 # If you run on one of the workstations, use:
-mpirun -np 48 /home/etmengiste/code/FEPX-dev/build/fepx
+# /home/etmengiste/code/FEPX-dev/build/
+mpirun -np 48 fepx
 
 # If you run on the HPC, use:
 #srun --mpi=pmi2 fepx

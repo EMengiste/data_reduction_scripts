@@ -7,7 +7,7 @@ import time
 import multiprocessing 
 import os
 
-jobs_path = "/home/etmengiste/jobs/SERDP/inhomo_precip/034_precip_09_11_2023"
+# jobs_path = "/home/etmengiste/jobs/SERDP/inhomo_precip/034_precip_09_11_2023"
 
 
 
@@ -16,9 +16,20 @@ def compare_vm_stress(stress):
     stress1,stress2=stress
     vms1 = von_mises_stress(stress1)
     vms2 = von_mises_stress(stress2)
+    if vms1==0:
+        return 0 
     array = (vms1-vms2)/vms1
     return array
 
+def compare_abs_vm_stress(stress):
+    # compare elemental equivalent stress
+    stress1,stress2=stress
+    vms1 = von_mises_stress(stress1)
+    vms2 = von_mises_stress(stress2)
+    if vms1==0:
+        return 0 
+    array = abs(vms1-vms2)/vms1
+    return array
 def compare_stress_triaxiality(stress):
     #
     # compare elemental equivalent stress
@@ -27,7 +38,6 @@ def compare_stress_triaxiality(stress):
     stri2 = stress_triaxiality(stress2)
     array = stri2/stri1
     return array
-
 
 def plot_cummulative_histogram(values,y_label,x_label,xlims,destination,fig_name,suffix,bins_list,histtype="step",value_type="\sigma}_{vm",title=""):
     fig, ax = plt.subplots(1, 1)
@@ -88,7 +98,7 @@ def get_boundary_elts(stelt):
     array = [ i for i,val in enumerate(file) if val[1]<1]
     return array
 
-def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,destination=""):
+def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,steps=[2,13,32],destination=""):
     xlims= [0,0.175]
     ylims =[0,50]
     # return histogram 
@@ -101,21 +111,29 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,des
     pool = multiprocessing.Pool(processes=96)
     sim1 = fepx_sim(sim,path=path+"/"+sim)
     sim_steps = sim1.sim_steps
-    #steps = sim1.get_num_steps()
+    if steps == "all": 
+        steps = [i for i in range(1,sim1.get_num_steps())]
     sim_obj = [fepx_sim(i,path=path+"/"+i) for i in sims[:]]
-    for step in [2,13,32]:#[32]:#[2,8,13,18,22,32]: #range(steps+1):
+        
+    #oris_homo = sim1.get_output("ori",res="elts",step=step,ids="all")
+    #
+    #
+    #
+    #### get the interior and exterior element ids
+    stelt_file = "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/dense_mesh/mesh_rcl0_235.stelt"
+    ids =[]
+    places = []
+    ids.append("all")#[i for i in range(20000)]    
+    places.append("")
+    ids.append(get_interior_elts(stelt_file))
+    places.append("interior")
+    ids.append(get_boundary_elts(stelt_file))
+    places.append("boundary")
+    ###
+    #
+    #
+    for step in steps:#[32]:#[2,8,13,18,22,32]: #range(steps+1):
         print(step)
-        #oris_homo = sim1.get_output("ori",res="elts",step=step,ids="all")
-        stelt_file = "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/dense_mesh/mesh_rcl0_235.stelt"
-        ids =[]
-        places = []
-        ids.append("all")#[i for i in range(20000)]    
-        places.append("")
-        ids.append(get_interior_elts(stelt_file))
-        places.append("interior")
-        ids.append(get_boundary_elts(stelt_file))
-        places.append("boundary")
-        #
         for place,ids_truncatedd in zip(places,ids):
             tic1 = time.perf_counter()
             sim_step = sim_steps[step]
@@ -185,10 +203,11 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,des
                 vm_stress_comparison = pool.map(compare_vm_stress,vm_values)
                 fig_name = "vm_stress"
                 suffix   = "_"+place+i[:-4]+"_"+str(step)
-                xlims = [0.99*min(vm_stress_comparison),1.01*max(vm_stress_comparison)]
+                xlims =[-0.3,0.5] #[0.99*min(vm_stress_comparison),1.01*max(vm_stress_comparison)]
                 bins_list = np.linspace(xlims[0],xlims[1],1000)
                 print(40*"--",destination+fig_name+suffix+"comparison")
                 np.savetxt(destination+fig_name+suffix+"comparison",vm_stress_comparison)
+                print("plotting comparison values")
                 plot_cummulative_histogram(vm_stress_comparison
                                         ,y_label,x_label,xlims#,ylims
                                         ,destination,fig_name+"comparison",suffix,bins_list
@@ -355,21 +374,21 @@ def svs_real_svs_sim(sim,path,real_paths):
     plt.savefig(sim)
     ax.cla()
 
-def multi_svs(paths,sims,destination=".",ylim=[0,1.2],xlim=[1.0e-7,0.025],normalize=False,show=False):
+def multi_svs(paths,sims,destination=".",name="untitled",ylim=[0,1.2],xlim=[1.0e-7,0.025],normalize=False,show=False):
     #
     fig, ax = plt.subplots(1, 1)
     ys = []
-    for mk,sim,path in zip(["*","o","v"],sims,paths):
+    for sim,path in zip(sims,paths):
         simulation = fepx_sim(sim,path=path+"/"+sim)
         # Check if simulation value is available 
         # if not post process and get
         try:
-            stress=simulation.get_output("stress",step="malory_archer",comp=2)
-            strain=simulation.get_output("strain",step="malory_archer",comp=2)
+            stress=simulation.get_output("stress",step="all",comp=2)
+            strain=simulation.get_output("strain",step="all",comp=2)
         except:
             simulation.post_process(options="-resmesh stress,strain")
-            stress=simulation.get_output("stress",step="malory_archer",comp=2)
-            strain=simulation.get_output("strain",step="malory_archer",comp=2)
+            stress=simulation.get_output("stress",step="all",comp=2)
+            strain=simulation.get_output("strain",step="all",comp=2)
         #
         print(strain[-1])
         # calculate the yield values
@@ -377,8 +396,8 @@ def multi_svs(paths,sims,destination=".",ylim=[0,1.2],xlim=[1.0e-7,0.025],normal
         ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
         ys.append(ystress)
         stress_off = yield_values["stress_offset"]
-        plot_stress_strain(ax,np.array(stress),strain,col="k"+mk,lw=1,ylim=[0,120],xlim=[1.0e-7,max(strain)+0.001])
-        ax.plot(ystrain,ystress,"k"+mk,ms=20)
+        plot_stress_strain(ax,np.array(stress),strain,col="k",lw=.1,ylim=ylim,xlim=xlim)
+        ax.plot(ystrain,ystress,"k",ms=20)
         print(ystrain)
         #ax.plot(strain,stress_off,"ko--",ms=5)
         ax.set_ylabel("$\sigma$")
@@ -394,9 +413,8 @@ def multi_svs(paths,sims,destination=".",ylim=[0,1.2],xlim=[1.0e-7,0.025],normal
     else:
         print(ys)
         print("max",max(ys))
-        name = destination.split("/")[-1]
-        print("wrote"+destination+sim+"_svs.png")
-        fig.savefig(destination+"/"+name+"_svs.png")
+        print("wrote "+destination+name+"_svs.png")
+        fig.savefig(destination+name+"_svs.png",dpi=200)
 #
 def plot_real_vs_sim_svs():    
     sim = "sample-feedstock"
@@ -443,6 +461,167 @@ def plot_element_volume_distribution(stelt_file):
     ax.legend()
     fig.savefig("volumes")
 
+def per_step_elt_val_plotting(path,sim,sims,filename,xlim=[0,0.101],ylim=[-0.2,0.5],steps=[2,13,32]
+                              ,destination="",show=False,section="",comp_function = compare_vm_stress):
+    print("_+++===per_step_elt_val_plotting()")
+    print("starting code")
+    tic = time.perf_counter()
+        #
+    print(tic)
+    print(path)
+    print(sim)
+    print(sims)
+    print(destination)
+    #
+    parameter = "stress"
+    res="elts"
+    #        #### get the interior and exterior element ids
+    stelt_file = "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/dense_mesh/mesh_rcl0_235.stelt"
+    ids = "all"#[i for i in range(20000)]   
+    #
+    if section=="interior": 
+        ids = get_interior_elts(stelt_file)
+    if section=="boundary": 
+        ids = get_boundary_elts(stelt_file)
+        ###
+    # ids = ids[:10]
+    print(3*"==="+"\n")
+    print(3*"==="+"\n")
+    print(3*(section+"    ")+"\n")
+    print(3*"==="+"\n")
+    print(3*"==="+"\n")
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+    sim1 = fepx_sim(sim,path=path+"/"+sim) # reference simulation
+    sim_steps = sim1.sim_steps
+    if steps == "all": 
+        steps = [i for i in range(1,sim1.get_num_steps())]
+    sim_obj = {i:fepx_sim(i,path=path+"/"+i) for i in sims[:]}
+    values = {}
+
+        ####
+    for sim2 in sims: #  set of test cases
+        sim2 = sim_obj[sim2]        
+        values[sim2]=[]
+        for step in steps:#range(1,32):#
+            # timer
+            # timer
+            print("starting step",step)
+            tic = time.perf_counter()
+            # timer
+            # timer
+            # print(ids)
+            sim1_values = sim1.get_output(parameter,ids=ids,step=step,res=res)            
+            sim2_values = sim2.get_output(parameter,ids=ids,step=step,res=res)
+            computed_values = np.array([sim1_values,sim2_values])
+            # print("-------++++===",computed_values.shape)
+            computed_values= np.moveaxis(computed_values,0,1)
+            # print("-------++++===",computed_values.shape)
+            compared_value = pool.map(comp_function,computed_values)
+            mean = np.mean(compared_value)
+            std = np.std(compared_value)
+            values[sim2].append([float(sim_steps[step]),mean,std])
+
+            # timer
+            # timer
+            toc = time.perf_counter()
+            print("===")
+            print("===")
+            print(f"Generated data in {toc - tic:0.4f} seconds")
+            # timer
+            # timer        
+        values[sim2] =np.array(values[sim2])
+        print("data prepaired plotting")
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        ax.plot(values[sim2][:,0],values[sim2][:,1],"k-*",label="mean")
+        ax.plot(values[sim2][:,0],values[sim2][:,2],"r-v",label="std")
+
+        strain='$'
+        strain+="\\varepsilon"
+        strain+='$'
+
+        x_label = f'{strain}'
+        ax.set_xlabel(x_label)
+        ax.set_ylabel("$\sigma_{"+"diff"+"}$")
+        scale = sim2.name[:-4].split("_")[1]
+        # ax.set_title(scale+" "+section)
+        ax.set_xlim([0,0.101])
+        ax.set_ylim([-0.2,0.5])
+        ax.legend()
+        fig.subplots_adjust(left=0.17, right=0.95,  bottom=0.11, wspace=0.1, hspace=0.1) 
+        if show:
+            plt.show()
+        fig.savefig(destination+file_name+scale+"_"+section+"comparision_file")
+
+        print(destination+file_name+sim2.name[:-4]+section+"comparision_file")
+        np.savetxt(destination+file_name+sim2.name[:-4]+section+"comparision_file"
+                   ,values[sim2])
+        
+def plot_stress_diff_from_file(sims,xlim=[0,0.101],ylim=[0,0.3]
+                              ,destination="",show=True,section=""):    
+    values = {}
+
+    for sim2 in sims: #  set of test cases
+        values[sim2] =np.loadtxt(destination+file_name+sim2[:-4]+section+"comparision_file")
+        print("data prepaired plotting")
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        ax.plot(values[sim2][:,0],values[sim2][:,1],"k-*",label="mean")
+        ax.plot(values[sim2][:,0],values[sim2][:,2],"r-v",label="std")
+
+        strain='$'
+        strain+="\\varepsilon"
+        strain+='$'
+
+        x_label = f'{strain}'
+        ax.set_xlabel(x_label)
+        ax.set_ylabel("$\sigma_{"+"diff"+"}$")
+        scale = sim2.split("_")[1]
+        # ax.set_title(scale+" "+section)
+        ax.set_xlim([0,0.101])
+        ax.set_ylim([0,0.3])
+        ax.legend()
+        fig.subplots_adjust(left=0.17, right=0.95,  bottom=0.11, wspace=0.1, hspace=0.1) 
+        if show:
+            plt.show()
+        fig.savefig(destination+file_name+scale+"_"+section+"comparision_file")
+        print(destination+file_name+scale+"_"+section+"comparision_file")
+
+def write_ori_file(ext_file):
+    file= open(ext_file,"r").readlines()
+    ori_file=open("simulation.ori","w")
+    ori_file.write("$ElsetOrientations\n")
+    ori_file.write(str(len(file))+" euler-bunge\n")
+    for ind,line in enumerate(file):
+        ori_file.write(str(ind+1)+" "+line)
+    ori_file.write("$EndElsetOrientations")
+
+def job_submission(script_fdr="",sim_set_path="",run=False):
+    dir_contents = [i for i in os.listdir() if i.endswith(".msh")]
+    ext_file = [i for i in os.listdir() if i.endswith(".ori")]
+    sims = []
+    rcls = []
+    print(dir_contents)
+    print(ext_file)
+    write_ori_file(ext_file[1])
+    for ind,mesh in enumerate(dir_contents[::-1]):
+        mesh_name = mesh#[0][:-4]
+        print("  ")
+        print("==>",mesh_name,"    ",float(mesh_name[8:-4].replace("_",".")))
+        rcl=float(mesh_name[8:-4].replace("_","."))
+        name = "00"+str(ind)
+        # os.mkdir("../"+name[-3:])
+        print(os.getcwd())
+        os.system("cp "+mesh_name+" ../"+name+"/simulation.msh")
+        os.system("cp simulation.ori ../"+name+"/")
+        os.system("cp simulation.config ../"+name+"/")
+        os.chdir(sim_set_path+"/"+name)
+        sims.append(name)
+        rcls.append(rcl)
+        if run : os.system(f"sbatch --job-name=RCL{rcl} --hint=nomultithread "+script_fdr+"/serdp_2021_slurm.sh") 
+        os.chdir(sim_set_path+"/common_files")
+    return sims,rcls
+
 if __name__ == "__main__":
     # stress1 = [-11.64722, -12.73054, 143.3881, 6.903182, -28.18609, 31.0733]
     # stress2 = [-11.64722, -12.73054, 143.3881, 6.903182, -28.18609, 31.0733] 
@@ -458,12 +637,37 @@ if __name__ == "__main__":
     # print(pool.map(compare_vm_stress,stresses))
     # exit(0)
     ##   plot element stress distribution
-    path = "/home/etmengiste/jobs/SERDP/dense_mesh/"
-    sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim","inhomogenous_elset_rcl0_235.sim"]
-    # multi_svs([path,path,path],sims,destination=path,ylim=[0,160],xlim=[1.0e-7,0.10],normalize=False,show=False)
-    # exit(0)
-    per_elt_comparisions(path,sims[0],sims[1:],strain_pl_plot=False,stress_plot=True,destination=path+"images/")
+    sim_set_path= "/home/etmengiste/jobs/SERDP/mesh_study"
+    path = sim_set_path+"/common_files"
+    script_fdr=os.getcwd()
+    os.chdir(path)
+    print(os.getcwd())
+    sims,rcls = job_submission(script_fdr,sim_set_path)
+    pprint(sims)
+    pprint(rcls)
+    paths = [sim_set_path for _ in sims]
+    pprint(paths)
+    multi_svs(paths,sims,destination=".",name="untitled",ylim=[0,300],xlim=[1.0e-7,0.025],normalize=False,show=False)
     exit(0)
+    sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim","inhomogenous_elset_rcl0_235.sim"]
+    # multi_svs([path,path,path],sims,destination=path,ylim=[0,160],xlim=[1.0e-7,0.10],normalize=False,show=True)
+    # exit(0)
+    file_name = "vm_stress_"
+    steps ="all"# [2,13,32]# 
+    suffix = "comparison"
+    # per_elt_comparisions(path,sims[0],sims[1:],steps=steps,strain_pl_plot=False,stress_plot=True,destination=path+"images/")
+
+    dest = "/home/etmengiste/jobs/SERDP/dense_mesh/common_files/figures/abs_"
+    # dest = ""
+ 
+    plot_stress_diff_from_file(sims[1:],file_name,show=False,destination=dest,section="")
+    plot_stress_diff_from_file(sims[1:],file_name,show=False,destination=dest,section="boundary")
+    plot_stress_diff_from_file(sims[1:],file_name,show=False,destination=dest,section="interior")
+    exit(0)    
+    per_step_elt_val_plotting(path,sims[0],sims[1:],file_name,steps=steps,destination=dest,comp_function=compare_abs_vm_stress,section="")
+    per_step_elt_val_plotting(path,sims[0],sims[1:],file_name,steps=steps,destination=dest,comp_function=compare_abs_vm_stress,section="boundary")
+    per_step_elt_val_plotting(path,sims[0],sims[1:],file_name,steps=steps,destination=dest,comp_function=compare_abs_vm_stress,section="interior")
+    exit(0)   
     ##
     ##   plot element volume distribution
 
@@ -712,7 +916,7 @@ def get_val_name(var):
     #print(float(ans))
     return float(ans)
 
-def job_submission():
+def job_submission_1():
     for mesh in dir_contents[::-1]:
         mesh_name = mesh[0][:-4]
         #====::: Generate,process,remesh mesh

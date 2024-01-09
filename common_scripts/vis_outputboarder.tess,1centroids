@@ -1,0 +1,22 @@
+
+========================    N   e   p   e   r    =======================
+Info   : A software package for polycrystal generation and meshing.
+Info   : Version 4.6.1
+Info   : Built with: gsl|muparser|opengjk|openmp|nlopt|libscotch (full)
+Info   : Running on 96 threads.
+Info   : <https://neper.info>
+Info   : Copyright (C) 2003-2022, and GNU GPL'd, by Romain Quey.
+Info   : Loading initialization file `/home/etmengiste/.neperrc'...
+Info   : ---------------------------------------------------------------
+Info   : MODULE  -V loaded with arguments:
+Info   : [ini file] -imagesize 1100:1000 -showelt1d all -datacsyslabel
+         $X$:$Y$:$Z$ -dataelset3dcol id -dataelt3dedgerad 0.001
+         -dataelt1drad 0.0025 -cameraangle 14 -showcsys 1 -datacsysrad
+         0.005 -lightsource none -lightambient 1 -datacsyscoo
+         0.05:-0.42:0
+Info   : [com line]
+         /home/etmengiste/jobs/aps/far_field_data_presentation/boarder.tess,1centroids
+         -print default_img
+Info   : ---------------------------------------------------------------
+Info   :   - Reading arguments...
+Error  : /home/etmengiste/jobs/aps/far_field_data_presentation/boarder.tess: no such file.
