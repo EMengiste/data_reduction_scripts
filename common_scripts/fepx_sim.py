@@ -1,9 +1,10 @@
 import os
 import time
+from datetime import datetime
 import numpy as np
-intro = "++==++"+"||\n"
+intro = 3*"++==++"+"||\n"
 intro = 4*intro +"fepx_sim setup\n"+ 4*intro
-print(intro," time is ",time.time())
+print(intro," today is: ",datetime.now())
 def pprint(arr):
     for i in arr:
         print(i)
@@ -20,11 +21,6 @@ class fepx_sim:
     #
     def __init__(self,name,path="",verbose=False):
         self.name=name
-        print("-----------------------------------##")
-        print("                   |||||------##")
-        print("                   |||||------object < "+self.name+"> creation")
-        print("                   |||||------##")
-        print("---------------------------------##")
         if path =="":
             path = os.getcwd()
         self.path = path
@@ -62,7 +58,7 @@ class fepx_sim:
         self.results_dir=os.listdir(path)
         self.compressed=False
         self.completed = "post.report" in self.results_dir
-        self.has_config = "simulation.config" in self.results_dir
+        self.has_config = "simulation.config" in self.results_dir or "simulation.cfg" in self.results_dir
         #
         if path[-4:] == ".sim":
             self.is_sim=True
@@ -73,18 +69,28 @@ class fepx_sim:
         #
         #
         #
+        if verbose:
+            print("-----------------------------------##")
+            print("                   |||||------##")
+            print("                   |||||------object < "+self.name+"> creation")
+            print("                   |||||------##")
+            print("---------------------------------##")
+        else:
+            path = "/".join(path.split("/")[-2:])
         #
         # If the config file exists poulate the attributes
         #
         if self.is_sim:
             print("########---- opening "+path+"/simulation.config")
             #self.post_process()
-            config = open(path+"/inputs/simulation.config").readlines()
-
+            try:
+                config = open(self.path+"/inputs/simulation.config").readlines()
+            except:
+                config = open(self.path+"/inputs/simulation.cfg").readlines()
         elif self.has_config and not self.is_sim:
             #print(self.name,"has config")
             print("########---- opening "+path+"/simulation.config")
-            config = open(path+"/simulation.config").readlines()
+            config = open(self.path+"/simulation.config").readlines()
         else:
             #
             ##@ Status checks
@@ -99,7 +105,7 @@ class fepx_sim:
             if self.has_config:
                 #print(self.name,"has config")
                 print("########---- opening "+path+"/simulation.config")
-                config = open(path+"/simulation.config").readlines()
+                config = open(self.path+"/simulation.config").readlines()
             else:
                 print(self.name,"has not_config initalization aborted")
                 return
@@ -129,7 +135,6 @@ class fepx_sim:
                 if len(i.split())==2 and "Deformation History" not in i:
                     option= i.split()
                     self.deformation_history[option[0]]=option[1]
-                    print(option)
                 #
                 elif len(i.split())>3:
                     self.sim_steps.append(i.split()[1])
@@ -151,6 +156,10 @@ class fepx_sim:
         if self.verbose:
             self.get_summary()
         #
+       #
+      #
+     #
+    #
     #
     def get_num_steps(self):
         if self.deformation_history["def_control_by"]=="uniaxial_load_target":
@@ -167,6 +176,48 @@ class fepx_sim:
             #print("number_of_strain_steps",num)
         return int(num)
         #
+       #
+      #
+     #
+    #
+    #
+    def get_mesh_stat(self):
+        # print(self.path)
+        outputs = [i for i in os.listdir(self.path) if i.startswith("output.")]
+        # print(outputs)
+        file= open(self.path+"/"+outputs[1]).readlines()
+        start_ind=0
+        for ind,i in enumerate(file):
+            if i.startswith("Info   :   - Mesh parameters:"):
+                start_ind = ind
+                continue
+        nodes,elts = int(file[start_ind+1].split(":")[-1]),int(file[start_ind+2].split(":")[-1])
+        self.nodes = nodes
+        self.elts = elts
+        #
+       #
+      #
+     #
+    #
+    #
+    def get_runtime(self,unit="s"):
+        outputs = [i for i in os.listdir(self.path) if i.startswith("output.")]
+        try:
+            file= open(self.path+"/"+outputs[1]).readlines()
+            # print(file[-3].split(" "))
+            self.runtime = float(file[-3].split(" ")[-2])
+            # print(self.runtime)
+        except:
+            file= open(self.path+"/"+outputs[0]).readlines()
+            # print(file[-3].split(" "))
+            self.runtime = float(file[-3].split(" ")[-2])
+            # print(self.runtime)
+        if unit=="hr":
+            self.runtime/=3600
+        #
+       #
+      #
+     #
     #
     #
     def get_results(self,steps=[],res="mesh"):
@@ -240,7 +291,7 @@ class fepx_sim:
         #
     #
     #
-    def get_output(self,output,id=0,step= "0", res="",ids=[0],num_steps=0,comp="0:-1",debug=False):
+    def get_output(self,output,id=0,step= "0", res="",ids=[0],num_steps=0,comp="",debug=False):
         step = str(step)
         value = {}
         ##
@@ -271,7 +322,7 @@ class fepx_sim:
                 if comp!="":
                     value = value[comp]
                 vals.append(value)
-            return vals
+            return np.array(vals)
         #
         # #    
         file = open(step_file)
@@ -304,7 +355,7 @@ class fepx_sim:
             os.chdir(self.path)
             os.system("neper -S . "+options)
             print("\n\n")
-            with open(self.path+".sim/.sim") as file:
+            with open(self.path+"/.sim") as file:
                 self.sim=file.readlines()
                 return
         #
@@ -352,6 +403,10 @@ class fepx_sim:
     #
     def __repr__(self) -> str:
         return self.name
+       #
+      #
+     #
+    #
     #
     def __del__(self):
         if self.verbose:

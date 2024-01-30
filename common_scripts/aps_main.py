@@ -1,6 +1,7 @@
 from fepx_sim import *
 from plotting_tools import *
 from tool_box import *
+from pre_processing import *
 
 jobs_path = "/home/etmengiste/jobs/aps/step27/oris/ms_n_t_kasemer"
 
@@ -120,9 +121,54 @@ def yield_streses():
     print(f"Generated plot in {toc - tic:0.4f} seconds")
 
 if __name__ == "__main__":
-    path = "/home/etmengiste/jobs/aps/aps_add_slip/"
-    #individual_svs(path,"072_g_0_28",show=False)
-    #exit(0)
+    #
+    script_fdr=os.getcwd()
+    #
+    out_path = "/home/etmengiste/jobs/aps/motion_pictures"
+    path = "/media/schmid_2tb_1/etmengiste/files/slip_system_study"
+    # individual_svs(path,"isotropic/Cube.sim",show=True)
+    ids = [i for i in range(499,600,2)]
+    oris = np.array([])
+    ipf_plotting =  False#True #
+    ## initialize sim object
+    sim = "isotropic/Cube.sim"
+    simulation = fepx_sim(sim,path=path+"/"+sim)
+    
+    try:
+        stress=simulation.get_output("stress",step="all",comp=2)
+        strain=100*simulation.get_output("strain",step="all",comp=2)
+    except:
+        simulation.post_process(options="-resmesh stress,strain")
+        stress=simulation.get_output("stress",step="all",comp=2)
+        strain=100*simulation.get_output("strain",step="all",comp=2)
+    #
+    # calculate the yield values
+    yield_values = find_yield(stress,strain)
+    ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
+    stress_off = yield_values["stress_offset"]
+    load_steps =len(stress)# 1 # 
+    fig, ax = plt.subplots(1, 1)
+    fig2 = plt.figure()
+    ax3d = fig2.add_subplot(projection="3d")
+    os.chdir(out_path)
+    for i in range(0,load_steps):
+        print(" Plotting step "+str(i))
+        if ipf_plotting:
+            step_oris = simulation.get_output("ori",step=i,res="elsets",ids=ids)
+            oris = np.append(oris,step_oris)
+            file_name="ori_"+str(i)
+            if i ==0: 
+                np.savetxt("ini",oris)
+            np.savetxt(file_name,oris)
+            os.system(script_fdr+"/bash/ori_ipfs.sh "+str(i)+" >> log_neper")
+        # exit(0)
+        plot_stress_strain(ax,stress[0:i],strain[0:i],lw=7,ylim=[0,201],xlim=[1.0e-7,5])  
+        fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.12, wspace=0.1, hspace=0.1)        
+        # plt.show()
+        fig.savefig(str(i),dpi=140)
+        ax.cla()
+    #os.system("./"script_fdr+"/combine_n_animate.sh")
+    exit(0)
     sim_1 = fepx_sim("072_g_0_28",path=path+"072_g_0_28.sim")
     path = "/media/schmid_2tb_1/etmengiste/files/research/aps/aps_ori_2022/output_data/slip_system_study/"
     sim_2 = fepx_sim("072",path=path+"072/Cube.sim")

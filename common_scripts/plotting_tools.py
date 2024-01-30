@@ -1,7 +1,8 @@
-
-import matplotlib.pyplot as plt
 from tool_box import *
 from fepx_sim import *
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 SIZE=20
 
 plt.rcParams.update({'font.size': SIZE})
@@ -17,34 +18,45 @@ plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SIZE)    # legend fontsize
 plt.rc('figure', titlesize=SIZE)  #
 
+marker_styles = ['o','*','x','X','+','P','s','D','p','v']
+def plot3d_scatter_heat(coo,val,label='Name [units]'):
+    fig= plt.figure()
+    ax = fig.add_subplot(111,projection="3d")
+    X,Y,Z=coo
+    C = ax.scatter(X,Y,Z,s=val,c="b")
+    fig.colorbar(C, ax=ax, fraction=0.02, pad=0.1, label=label)
+    plt.show()
+    exit(0)
+
 def plot_stress_strain(ax,stress,strain,labels=True,lw=5,ls="-",col="k",ylim=[0,201],xlim=[1.0e-7,0.5]):
     ax.plot(strain, stress,col,ms=1,linestyle=ls,linewidth=lw)
-    stress = "Stress "
+    stress = "$\sigma_{yy}$"
     strain='$'
-    strain+="\\varepsilon"
+    strain+="\\varepsilon_{yy}"
     strain+='$'
 
-    x_label = f'{strain} (mm/mm)'
-    y_label = f'{stress} (MPa)'
+    x_label = f'Strain-yy (\%)'
+    y_label = f'Stress-yy (MPa)'
+    if labels:
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label,labelpad=10)
     # Compile labels for the graphs
     plt.ylim(ylim)
     plt.xlim(xlim)
     #ax.legend()
-    if labels:
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label,labelpad=10)
 
-def individual_svs(path,sim,show=False):
+def individual_svs(path,sim,show_yield=False,outpath= "",show_offset=False,show=False):
     simulation = fepx_sim(sim,path=path+"/"+sim)
     # Check if simulation value is available 
+    outpath =path+"/imgs/" if outpath== "" else outpath
     # if not post process and get
     try:
-        stress=simulation.get_output("stress",step="malory_archer",comp=2)
-        strain=simulation.get_output("strain",step="malory_archer",comp=2)
+        stress=simulation.get_output("stress",step="all",comp=2)
+        strain=simulation.get_output("strain",step="all",comp=2)
     except:
         simulation.post_process(options="-resmesh stress,strain")
-        stress=simulation.get_output("stress",step="malory_archer",comp=2)
-        strain=simulation.get_output("strain",step="malory_archer",comp=2)
+        stress=simulation.get_output("stress",step="all",comp=2)
+        strain=simulation.get_output("strain",step="all",comp=2)
     #
     # calculate the yield values
     yield_values = find_yield(stress,strain)
@@ -52,15 +64,17 @@ def individual_svs(path,sim,show=False):
     stress_off = yield_values["stress_offset"]
     #
     fig, ax = plt.subplots(1, 1)
-    plot_stress_strain(ax,stress,strain,lw=1,ylim=[0,500],xlim=[1.0e-7,max(strain)+0.001])
-    ax.plot(ystrain,ystress,"k*",ms=20,label="$\sigma_y$="+str(yield_values["y_stress"]))
-    ax.plot(strain,stress_off,"ko--",ms=5)
+    plot_stress_strain(ax,stress,strain,lw=1,ylim=[0,1.1*max(stress)],xlim=[1.0e-7,max(strain)+0.001])
+    
+    if show_yield: ax.plot(ystrain,ystress,"k*",ms=20,label="$\sigma_y$="+str(yield_values["y_stress"]))
+    if show_offset: ax.plot(strain,stress_off,"ko--",ms=5)
+    
     fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
-    ax.legend()  
+    
     if show:
         plt.show()
     else:
-        fig.savefig(path+"/imgs/"+sim+"_svs")
+        fig.savefig(sim+"_svs.png")
 #
 def draw_lattice(ax,type="bcc",scale=20,dims=[1,1,1],quat="",angle=0,axis = [1,0,0],lw=5,ec="k",ms=50,offset=np.array([0,0,0])):
     if quat!="":
@@ -72,8 +86,10 @@ def draw_lattice(ax,type="bcc",scale=20,dims=[1,1,1],quat="",angle=0,axis = [1,0
                 matrix = np.array(angle_axis_to_mat(angle,axis))*scale
                 start = np.dot(np.array([i,j,k])+offset,matrix)
                 plot_crystal(ax,start=start,type=type,lw=lw,ec=ec,matrix=matrix,ms=ms)
+
 def scalar_multi(arr,s):
     return [a*s for a in arr]
+
 def look_at_single_crystals(ax,offset,scale=20,lw=5,ls="-",spacing=1,ec="k",ms=50,col="k",ylim=[0,201],xlim=[1.0e-7,0.5],quats=True,show=True,debug=False):
     if quats!="":
         quats=[[1,0,0,0],[1,0,0,0],[1,0,0,0]]
@@ -108,6 +124,7 @@ def look_at_single_crystals(ax,offset,scale=20,lw=5,ls="-",spacing=1,ec="k",ms=5
     ax.axis("off")
 
     #exit(0)
+
 def plot_crystal(ax,start=[0,0,0],dim=[1,1,1],type="",lw=5,matrix="",c="k",c2="r",ec="k",ms=20):
     X=scalar_multi([1,0,0,0,0,1,1,1,1],dim[0])
     Y=scalar_multi([1,1,1,0,0,1,0,0,1],dim[1])
@@ -173,8 +190,7 @@ def coordinate_axis(ax,ori,leng = 0.002,offset_text=1.6,
                         ,length=leng,normalize=True
                         ,color="k", linestyle = sty,linewidth=lw)
                     #
-#
-    
+#    
 def plot_mean_data(NAME,ylims="",y_label="",name="case",
                        unit="",y_ticks ="",y_tick_lables="",debug=False):
     norm =False
@@ -291,6 +307,56 @@ def plot_multi_nodes(ax,coo,ids,vel="",disp=""):
         else:
             plot_node(ax,coo[id_val],cc="y")
 
+def plot_rod_outline(ax):
+    #
+    a = [ (2**0.5)-1,   3-(2*(2**0.5)),  ((2**0.5)-1)]
+    b = [ (2**0.5)-1,     ((2**0.5)-1), 3-(2*(2**0.5))]
+    c = [ 3-(2*(2**0.5)),   (2**0.5)-1,   ((2**0.5)-1)]
+    #
+    X= [a[0],b[0],c[0]]
+    Y= [a[1],b[1],c[1]]
+    Z= [a[2],b[2],c[2]]
+
+    #print("x",X)
+    #print("y",Y)
+    #print("z",Z)
+
+    neg_x= [-i for i in X]
+    neg_y= [-i for i in Y]
+    neg_z= [-i for i in Z]
+
+    X+=neg_x+X    +X    +neg_x+X    +neg_x+neg_x
+    Y+=neg_y+Y    +neg_y+Y    +neg_y+neg_y+Y
+    Z+=neg_z+neg_z+Z    +Z    +neg_z+Z    +neg_z
+
+
+    # Plot the 3D surface
+    ax.scatter(X,Y,Z,marker=".",c="k")
+    #ax.plot_trisurf(X, Y, Z,alpha=0.3)
+    ax.scatter(0, 0, 0,color="k")
+    #https://stackoverflow.com/questions/67410270/how-to-draw-a-flat-3d-rectangle-in-matplotlib
+    for i in range(0,len(X),3):
+            verts = [list(zip(X[i:i+3],Y[i:i+3],Z[i:i+3]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="k",alpha=0.001))
+
+    s = 3-(2*(2**0.5))
+    l = (2**0.5)-1
+    new_X= [l, l,  l,  l,  l,  l,  l, l]
+    new_Y= [l, s, -s, -l, -l, -s,  s, l]
+    new_Z= [s, l,  l,  s, -s, -l, -l, -s]
+    vals = [new_X,new_Y,new_Z]
+    for i in range(3):
+            verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="k",alpha=0.001))
+    #
+    #
+    new_X= [-l, -l,  -l,  -l,  -l,  -l,  -l, -l]
+    vals = [new_X,new_Y,new_Z]
+    for i in range(3):
+            verts = [list(zip(vals[i-2],vals[i-1],vals[i]))]
+            ax.add_collection3d(Poly3DCollection(verts,color="grey",alpha=0.001))
+    #
+#
 # if __name__=="__main__":
 #     sim_name = "homogenous_rcl0_235.sim" #"01_bcc_reference.sim"
 #     main_path = "/home/etmengiste/jobs/SERDP/dense_mesh/"#code/FEPX-dev/build/"

@@ -2,6 +2,7 @@ import os
 from fepx_sim import *
 from plotting_tools import *
 from tool_box import *
+from pre_processing import *
 
 import time
 import multiprocessing 
@@ -30,6 +31,7 @@ def compare_abs_vm_stress(stress):
         return 0 
     array = abs(vms1-vms2)/vms1
     return array
+
 def compare_stress_triaxiality(stress):
     #
     # compare elemental equivalent stress
@@ -105,7 +107,7 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,ste
     print("starting code")
     tic = time.perf_counter()
         #
-    print(tic)
+    print("time is ",tic)
     #
     print(sim,sims)
     pool = multiprocessing.Pool(processes=96)
@@ -278,7 +280,6 @@ def per_elt_comparisions(path,sim,sims,stress_plot=False,strain_pl_plot=True,ste
     # do for interior elts
     # return histogram of number of elts
     return
-
 # precip test with 100 grain
 def show_svs_precip_test(path):
     print(path)
@@ -331,7 +332,6 @@ def show_crss_precip_test(path):
     print(list_of_dirs)
     for i in list_of_dirs:
         print(i)
-#
 ##
 def svs_real_svs_sim(sim,path,real_paths):
     simulation = fepx_sim(sim,path=path+"/"+sim)
@@ -374,47 +374,94 @@ def svs_real_svs_sim(sim,path,real_paths):
     plt.savefig(sim)
     ax.cla()
 
-def multi_svs(paths,sims,destination=".",name="untitled",ylim=[0,1.2],xlim=[1.0e-7,0.025],normalize=False,show=False):
+def multi_svs(paths,sims,name_dict="",names=[],destination=".",name="untitled"
+              ,ylim=[0,1.2],inset=False,xlim=[1.0e-7,0.025],vm=False,lw=1
+              ,normalize=False,show=False,verbose=False):
     #
     fig, ax = plt.subplots(1, 1)
-    ys = []
+    label_name=""
+    y_stress = []
+    y_strain=[]
+    elt_num = []
+    run_times = []
     for sim,path in zip(sims,paths):
         simulation = fepx_sim(sim,path=path+"/"+sim)
+        sim = sims.index(sim)
+
+        if names!="":
+            label_name = names[sim]
+        if verbose:
+            simulation.get_mesh_stat()
+            num_elts=simulation.elts
+            elt_num.append(num_elts)
+            #
+            simulation.get_runtime(unit="s")
+            run_time=simulation.runtime
+            run_times.append(run_time)
+        # exit(0)
         # Check if simulation value is available 
         # if not post process and get
         try:
-            stress=simulation.get_output("stress",step="all",comp=2)
-            strain=simulation.get_output("strain",step="all",comp=2)
+            stress=simulation.get_output("stress",step="all")
+            strain=simulation.get_output("strain",step="all")
         except:
             simulation.post_process(options="-resmesh stress,strain")
-            stress=simulation.get_output("stress",step="all",comp=2)
-            strain=simulation.get_output("strain",step="all",comp=2)
+            stress=simulation.get_output("stress",step="all")
+            strain=simulation.get_output("strain",step="all")
         #
-        print(strain[-1])
+        # print(strain[-1])
+        if vm:
+            stress = [von_mises_stress(i)for i in stress]
+            strain = [von_mises_stress(i)for i in strain]
+        else:
+            stress = stress[:,2]
+            strain = strain[:,2]
+        print(max(strain))
         # calculate the yield values
         yield_values = find_yield(np.array(stress),strain)
         ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
-        ys.append(ystress)
-        stress_off = yield_values["stress_offset"]
-        plot_stress_strain(ax,np.array(stress),strain,col="k",lw=.1,ylim=ylim,xlim=xlim)
-        ax.plot(ystrain,ystress,"k",ms=20)
-        print(ystrain)
+        y_stress.append(ystress)
+        y_strain.append(ystrain)
+        plot_stress_strain(ax,np.array(stress),strain,col="k",lw=lw,ylim=ylim,xlim=xlim)
+        ax.plot(ystrain,ystress,"k"+marker_styles[int(sim)],ms=20,label=label_name)
+        # print(ystrain)
         #ax.plot(strain,stress_off,"ko--",ms=5)
         ax.set_ylabel("$\sigma$")
         ax.set_xlabel("$\\varepsilon$")
-    
+    ## Adding insets is difficult
+            # 
+
+            # x1,x2,y1,y2 = 0.005,0.008,250,275
+            # axins = ax.inset_axes(
+            #     [0.25, 0.25, 0.47, 0.47],
+            #     xlim=(x1, x2), ylim=(y1, y2), xticklabels=[], yticklabels=[])
+            # axins.imshow(Z2, extent=extent, origin="lower")
+            # ax.indicate_inset_zoom(axins, edgecolor="black")
     # Compile labels for the graphs
+    if inset:
+        x1,x2,y1,y2 = min(y_strain), max(y_strain), min(y_stress), max(y_stress)
+        xlim= [.996*x1,1.005*x2]
+        ylim= [.998*y1,1.001*y2]
+        name+="_zoomed"
+        # # https://stackoverflow.com/a/27512450
+        handles, labels = ax.get_legend_handles_labels()
+        # labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+        # print(labels)
+        ax.legend(handles[::-1], labels[::-1])
     plt.ylim(ylim)
     plt.xlim(xlim)
-    fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
-    #ax.legend()  
+    fig.subplots_adjust(left=0.15, right=0.95,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
+    if names!="":
+        ax.legend(loc=4)  
+    
     if show:
         plt.show()
     else:
-        print(ys)
-        print("max",max(ys))
+        # print(y_stress)
+        # print("max",max(y_stress))
         print("wrote "+destination+name+"_svs.png")
         fig.savefig(destination+name+"_svs.png",dpi=200)
+        return y_stress,elt_num,run_times
 #
 def plot_real_vs_sim_svs():    
     sim = "sample-feedstock"
@@ -494,7 +541,7 @@ def per_step_elt_val_plotting(path,sim,sims,filename,xlim=[0,0.101],ylim=[-0.2,0
     sim1 = fepx_sim(sim,path=path+"/"+sim) # reference simulation
     sim_steps = sim1.sim_steps
     if steps == "all": 
-        steps = [i for i in range(1,sim1.get_num_steps())]
+        steps = [i for i in range(1,sim1.get_num_steps()+1)]
     sim_obj = {i:fepx_sim(i,path=path+"/"+i) for i in sims[:]}
     values = {}
 
@@ -533,8 +580,8 @@ def per_step_elt_val_plotting(path,sim,sims,filename,xlim=[0,0.101],ylim=[-0.2,0
         print("data prepaired plotting")
         fig = plt.figure()
         ax = fig.add_subplot()
-        ax.plot(values[sim2][:,0],values[sim2][:,1],"k-*",label="mean")
-        ax.plot(values[sim2][:,0],values[sim2][:,2],"r-v",label="std")
+        ax.plot(values[sim2][:,0],values[sim2][:,1],"k-*",label="Mean")
+        ax.plot(values[sim2][:,0],values[sim2][:,2],"r-v",label="")
 
         strain='$'
         strain+="\\varepsilon"
@@ -566,8 +613,8 @@ def plot_stress_diff_from_file(sims,xlim=[0,0.101],ylim=[0,0.3]
         print("data prepaired plotting")
         fig = plt.figure()
         ax = fig.add_subplot()
-        ax.plot(values[sim2][:,0],values[sim2][:,1],"k-*",label="mean")
-        ax.plot(values[sim2][:,0],values[sim2][:,2],"r-v",label="std")
+        ax.plot(values[sim2][:,0],values[sim2][:,1],"k-*",label="Mean")
+        ax.plot(values[sim2][:,0],values[sim2][:,2],"r-v",label="Std. Dev.")
 
         strain='$'
         strain+="\\varepsilon"
@@ -596,24 +643,27 @@ def write_ori_file(ext_file):
         ori_file.write(str(ind+1)+" "+line)
     ori_file.write("$EndElsetOrientations")
 
-def job_submission(script_fdr="",sim_set_path="",run=False):
+def job_submission(script_fdr="",sim_set_path="",run=False,verbose=False,ori_file=False):
     dir_contents = [i for i in os.listdir() if i.endswith(".msh")]
     ext_file = [i for i in os.listdir() if i.endswith(".ori")]
     sims = []
     rcls = []
-    print(dir_contents)
-    print(ext_file)
+    if verbose:
+        print(dir_contents)
+        print(ext_file)
     write_ori_file(ext_file[1])
     for ind,mesh in enumerate(dir_contents[::-1]):
         mesh_name = mesh#[0][:-4]
-        print("  ")
-        print("==>",mesh_name,"    ",float(mesh_name[8:-4].replace("_",".")))
-        rcl=float(mesh_name[8:-4].replace("_","."))
         name = "00"+str(ind)
+
+        if verbose:
+            print("  "+name)
+            print("==>",mesh_name,"    ",float(mesh_name[8:-4].replace("_",".")))
+            print(os.getcwd())
+        rcl=float(mesh_name[8:-4].replace("_","."))
         # os.mkdir("../"+name[-3:])
-        print(os.getcwd())
         os.system("cp "+mesh_name+" ../"+name+"/simulation.msh")
-        os.system("cp simulation.ori ../"+name+"/")
+        if ori_file: os.system("cp simulation.ori ../"+name+"/")
         os.system("cp simulation.config ../"+name+"/")
         os.chdir(sim_set_path+"/"+name)
         sims.append(name)
@@ -622,36 +672,263 @@ def job_submission(script_fdr="",sim_set_path="",run=False):
         os.chdir(sim_set_path+"/common_files")
     return sims,rcls
 
-if __name__ == "__main__":
-    # stress1 = [-11.64722, -12.73054, 143.3881, 6.903182, -28.18609, 31.0733]
-    # stress2 = [-11.64722, -12.73054, 143.3881, 6.903182, -28.18609, 31.0733] 
-    # stresses = [stress1 for i in range(10)]
-    # stresses = np.array([stresses,stresses])
-    # stresses = np.moveaxis(stresses,0,1)
-    # print(stresses.shape)
-    # print(stresses[0])
-    # # exit(0)
-    # # print(stresses[:,:])
-    # # exit(0)
-    # pool = multiprocessing.Pool(processes=96)
-    # print(pool.map(compare_vm_stress,stresses))
+def mesh_density_study(num_mesh,tesselation_name="sample",num_grains=100,mode="run",
+                       mesh_loc = "/home/etmengiste/jobs/SERDP/dense_mesh"):
+    # generate dense 100 grain mesh
+    print(mesh_loc)
+    tess = generate_tess(num_grains,tesselation_name,mesh_loc,options={"mode" :"run"})
+    print(tess)
+    rcl_increment = 0.85/num_mesh
+    print(rcl_increment)
+    distributions = []
+    names= []
+    num_elts = []
+    for i in range(num_mesh):
+        rcl = str(round(1- (i*rcl_increment),3))
+        print(rcl)
+        mesh = generate_msh(tess,40,options={"mode" :mode
+                                      ,"-rcl": rcl
+                                      ,"-statelt":"id,elsetbody,vol,elsetnb,x,y,z"
+                                      ,"-o":"mesh_rcl"+rcl.replace(".","_")})
+        file = np.loadtxt(mesh[:-4]+".stelt")
+        print(np.shape(file)[0])
+        num_elts.append(str(np.shape(file)[0]))
+        distributions.append(file)
+        names.append("mesh_rcl"+rcl.replace(".","_"))
+        print("max depth = ",max(file[:,0]))
+    bins = [i for i in range(1,11)]
+    fig, ax = plt.subplots(1, 1)
+    for dist,name,elts in zip(distributions[::-1],names[::-1],num_elts[::-1]):
+        ax.hist(dist[:,0],bins,density=True,label=(name)+" elts="+elts)
+    ax.legend()
+    plt.show()
+    return distributions,names
+
+def exponential_fit(xi,xf,num,x_in,y_in):
+    from scipy import odr
+    data = odr.Data(x_in, y_in)
+    odr_obj = odr.ODR(data, odr.exponential)
+    output = odr_obj.run()
+    print(output.beta)
+    x = np.arange(xi,xf,num)
+    a,b = output.beta
+    y = a+(np.exp(b*x))
+    return x,y
+
+def quadratic_fit(xi,xf,num,x_in,y_in):
+    from scipy import odr
+    data = odr.Data(x_in, y_in)
+    odr_obj = odr.ODR(data, odr.quadratic)
+    output = odr_obj.run()
+    print(output.beta)
+    x = np.arange(xi,xf,num)
+    a,b,c = output.beta
+    y = a*x**2 +b*x +c
+    return x,y
+
+def run_post_processing(script_fdr,sim_set_path,sims,rcls):
+
+    # # https://stackoverflow.com/a/27512450
+    rcls, sims = zip(*sorted(zip(rcls, sims), key=lambda t: t[0]))
+
+    # pprint(rcls)
+    name_dict = {s:r for s,r in zip(sims,rcls)}
+    # print(name_dict)
+    paths = [sim_set_path for _ in sims]
+    # pprint(paths)
+    ys_values,elt_num,run_times = multi_svs(paths,sims,destination="./",name="untitled",name_dict=name_dict,
+            ylim=[0,300],xlim=[1.0e-7,0.025],inset=False,normalize=False,show=False)
+
+    ## Additional analysis        
+    ys_values,elt_num,run_times = multi_svs(paths,sims,destination="./",name="untitled",name_dict=name_dict,
+            ylim=[0,300],xlim=[1.0e-7,0.025],inset=True,normalize=False,show=False)
+    
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(elt_num ,ys_values,"k-o",ms=7,mew=1,mec ="w")
+    x,y = exponential_fit(0,700000,1,elt_num ,ys_values)
+    ax.plot(x,y,"k-",label="Fit curve")
+    ax.set_xlabel("Elements")
+    ax.set_ylabel("$\sigma_{y}$",labelpad=8)
+    ax.set_ylim([263.23,265.27])
+    fig.subplots_adjust(left=0.2, right=0.95,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)   
+    fig.savefig("yield_stress_vs_numelts",dpi=200)
+
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(rcls ,ys_values,"k-o",ms=7,mew=1,mec ="w")
+    ax.set_xlabel("RCL")
+    ax.set_ylabel("$\sigma_{y}$",labelpad=8)
+    ax.set_ylim([263.23,265.27])
+    fig.subplots_adjust(left=0.2, right=0.95,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)   
+    fig.savefig("yield_stress_vs_rcl",dpi=200)
+
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(elt_num,run_times,"k-o",ms=7,mew=1,mec ="w")
+    ax.set_xlabel("Elements")
+    x,y = quadratic_fit(0,700000,1,elt_num,run_times)
+    ax.plot(x,y,"k-",label="Fit curve")
+    ax.set_ylabel("Run time (s)",labelpad=8)
+    fig.subplots_adjust(left=0.2, right=0.95,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)   
+    fig.savefig("num_elts_vs_runtime",dpi=300)
+    exit(0)
+
+def strength_function(inputs):
+    dist,base_strength,vars=inputs
+    if vars == "":
+        strength = base_strength*dist
+    else:
+        strength = vars*dist +base_strength
+    return strength
+
+def error_function(val1, val2):
+    error_calc =  (abs(val1 - val2)/val1)*100
+    return error_calc
+#
+def generate_strength_files(adjustment=0,base_strength = 25,vis=False):
+
+    mesh = generate_msh("./simulation",48,options={"mode" : "stat"
+                                    ,"-statelt3d":"id,elsetbody,vol,elset3d,x,y,z"
+                                    ,"-statelset":"id,vol,x,y,z"
+                                    ,"-o":"simulation"})
+    #
+    # "id,elsetbody,vol,elset3d,x,y,z"
+    elt_data = np.loadtxt(mesh+".stelt3d")
+    # "id,vol,x,y,z"
+    grain_data = np.loadtxt(mesh+".stelset")
+    
+    strength_values1=[]
+    strength_values2=[]
+    distances = []
+    for i in elt_data:
+        elset_id = int(i[-4])
+        coos = i[-3:]
+        dist = euclidian_distance(grain_data[elset_id-1,-3:],coos)
+        distances.append(dist)
+
+
+    distances = np.array(distances)
+    vols = elt_data[:,2]
+    
+    max_dist = max(distances)
+    num_elts = len(distances)
+    
+    strength_values1 =pool.map(strength_function,np.array([distances,np.tile(base_strength,num_elts)
+                        ,np.tile(base_strength,num_elts)]).T)
+    strength_values2 =pool.map(strength_function,np.array([distances-max_dist,np.tile(base_strength+adjustment,num_elts)
+                        ,np.tile(-base_strength,num_elts)]).T)
+    
+
+    # ### volume weighting#### ----- debugging for adjustment value
+    # strength_values1_vol = [vol*strength for strength,vol in zip(strength_values1,vols)]
+    # strength_values2_vol = [vol*strength for strength,vol in zip(strength_values2,vols)]
+    # print("Sample 1 "+'{:0.6e}'.format(sum(strength_values1_vol)))
+    # print("Sample 2 "+'{:0.6e}'.format(sum(strength_values2_vol)))
+    # print("Error ",error_function(sum(strength_values1_vol),sum(strength_values2_vol)))
     # exit(0)
+
+    strength_values1 = np.array(strength_values1)
+    strength_values2 = np.array(strength_values2)
+
+    ### volume weighting
+    strength_values1_vol = [vol*strength for strength,vol in zip(strength_values1,vols)]
+    strength_values2_vol = [vol*strength for strength,vol in zip(strength_values2,vols)]
+    print("Sample 1 "+'{:0.3e}'.format(sum(strength_values1_vol)))
+    print("Sample 2 "+'{:0.3e}'.format(sum(strength_values2_vol)))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(distances,strength_values1,"k.-",label="Sample 1 $\\tau^{vol}_0$ = "+'{:0.3e}'.format(sum(strength_values1_vol)))
+    ax.plot(distances,strength_values2,"r.-",label="Sample 2 $\\tau^{vol}_0$ = "+'{:0.3e}'.format(sum(strength_values2_vol)))
+    ax.hlines(sum(strength_values1_vol),min(distances),max(distances),colors="k")
+    ax.hlines(sum(strength_values2_vol),min(distances),max(distances),colors="r")
+    ax.legend()
+    ax.set_xlabel("d (-)")
+    ax.set_ylabel("$\\tau_0$ (MPa)")
+    fig.subplots_adjust(left=.15,right=0.95,top=0.98, bottom=0.12)   
+    fig.savefig("crss_vs_d",dpi=300)
+    exit(0)
+    write_crss_file(strength_values1,target_dir="",name="simulation_001",res="Element")
+    write_crss_file(strength_values2,target_dir="",name="simulation_002",res="Element")
+    # exit(0)
+    #plot3d_scatter_heat(elt_data[-100:,-3:].T,strength_values[-100:],label='Name [units]')
+    np.savetxt("distances",distances)
+    np.savetxt("strength_mask_pos",strength_values1)    
+    np.savetxt("strength_mask_neg",strength_values2)    
+    # plt.show()    
+    if vis:
+        visualize("./simulation.msh",source_code=neper_path,overwrite_file=True
+                    ,options={"-dataeltcol":"'real:file(strength_mask_pos)'"#,"-dataeltcolscheme":"viridis"
+                            ,"-showelt":'"y>0.5"',"-showelt1d":'elt3d_shown'
+                            ,"-dataeltscale":" 35:55"
+                            ,"mode" :"run"},outname="increasing")
+        visualize("./simulation.msh",source_code=neper_path,overwrite_file=True
+                    ,options={"-dataeltcol":"'real:file(strength_mask_neg)'"#,"-dataeltcolscheme":"viridis"
+                            ,"-showelt":'"y>0.5"',"-showelt1d":'elt3d_shown'
+                            ,"-dataeltscale":" 35:55"
+                            ,"mode" :"run"},outname="decreasing")
+
+if __name__ == "__main__":
+    path = "/home/etmengiste/jobs/SERDP/dense_mesh/"
+
+    sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim","inhomogenous_elset_rcl0_235.sim"]
+    names = ["Homogenous", "Intra-grain","Inter-grain"]
+    multi_svs([path,path,path],sims,vm=True,lw=1,destination=path,names=names
+              ,ylim=[0,160],xlim=[1.0e-7,0.10],normalize=False,name="labeled")
+
+    file_name = "vm_stress_"
+    steps ="all"# [2,13,32]# 
+    suffix = "comparison"
+    dest = "/home/etmengiste/jobs/SERDP/dense_mesh/abs_"
+    # per_step_elt_val_plotting(path,sims[0],sims[1:],file_name,steps=steps,destination=dest,comp_function=compare_abs_vm_stress,section="")
+    
+    plot_stress_diff_from_file(sims[1:],file_name,show=False,destination=dest,section="")
+    exit(0)
+    #
+    script_fdr=os.getcwd()
+    # linear strength increase for grain
+    sim_set_path= "/home/etmengiste/jobs/SERDP/linear_gradient"
+    neper_path = "/home/etmengiste/code/neper/neper-dev/build/neper"
+    fepx_path = "/home/etmengiste/bin/fepx_inhomo_strength"
+    path = sim_set_path+"/common_files"
+    os.chdir(path)
+    print(os.getcwd())
+    # adjustment = -2.5712 # tau = 25
+    adjustment = -4.143 # tau = 40
+    pool = multiprocessing.Pool(processes=os.cpu_count())
+    # generate_strength_files(base_strength=40,adjustment=adjustment)
+
+    # exit(0)
+    sims = [1,2]
+    for sim in sims:
+        sim = ("000"+str(sim))[-3:]
+        print(sim)
+        # os.mkdir("../"+sim)
+        os.chdir("../"+sim)
+        os.system("rm output.*")
+        os.system("rm error.*")
+        cwd = os.getcwd()
+        print(cwd)
+        shutil.copy2(path+"/simulation.msh",cwd)
+        shutil.copy2(path+"/simulation.cfg",cwd)
+        shutil.copy2(path+"/simulation_"+sim+".crss",cwd+"/simulation.crss")
+        job_submission_script(cwd,fepx_path=fepx_path)
+        print(os.listdir())
+        
+    exit(0)
+    ##
+    ##
+    ##
     ##   plot element stress distribution
-    sim_set_path= "/home/etmengiste/jobs/SERDP/mesh_study"
+    sim_set_path= "/home/etmengiste/jobs/SERDP/mesh_study_100g"
     path = sim_set_path+"/common_files"
     script_fdr=os.getcwd()
     os.chdir(path)
     print(os.getcwd())
+    #run simulation
     sims,rcls = job_submission(script_fdr,sim_set_path)
-    pprint(sims)
-    pprint(rcls)
-    paths = [sim_set_path for _ in sims]
-    pprint(paths)
-    multi_svs(paths,sims,destination=".",name="untitled",ylim=[0,300],xlim=[1.0e-7,0.025],normalize=False,show=False)
+    # pprint(sims)
+    # post_process
+    run_post_processing(script_fdr,sim_set_path,sims,rcls)
+
     exit(0)
-    sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim","inhomogenous_elset_rcl0_235.sim"]
-    # multi_svs([path,path,path],sims,destination=path,ylim=[0,160],xlim=[1.0e-7,0.10],normalize=False,show=True)
-    # exit(0)
     file_name = "vm_stress_"
     steps ="all"# [2,13,32]# 
     suffix = "comparison"
@@ -708,38 +985,6 @@ def generate_dense_mesh():
     tess = generate_tess(100,tesselation_name,mesh_loc,options={"mode" :"run"})
     print(tess)
     generate_msh(tess,40,options={"mode" :"remesh","-rcl":"0.1"})
-
-def mesh_density_study(num_mesh,tesselation_name="sample",mode="run"):
-    mesh_loc = "/home/etmengiste/jobs/SERDP/dense_mesh"
-    # generate dense 100 grain mesh
-    print(mesh_loc)
-    tess = generate_tess(100,tesselation_name,mesh_loc,options={"mode" :"run"})
-    print(tess)
-    rcl_increment = 0.85/num_mesh
-    print(rcl_increment)
-    distributions = []
-    names= []
-    num_elts = []
-    for i in range(num_mesh):
-        rcl = str(round(1- (i*rcl_increment),3))
-        print(rcl)
-        mesh = generate_msh(tess,40,options={"mode" :mode
-                                      ,"-rcl": rcl
-                                      ,"-statelt":"id,elsetbody,vol,elsetnb,x,y,z"
-                                      ,"-o":"mesh_rcl"+rcl.replace(".","_")})
-        file = np.loadtxt(mesh[:-4]+".stelt")
-        print(np.shape(file)[0])
-        num_elts.append(str(np.shape(file)[0]))
-        distributions.append(file)
-        names.append("mesh_rcl"+rcl.replace(".","_"))
-        print("max depth = ",max(file[:,0]))
-    bins = [i for i in range(1,11)]
-    fig, ax = plt.subplots(1, 1)
-    for dist,name,elts in zip(distributions[::-1],names[::-1],num_elts[::-1]):
-        ax.hist(dist[:,0],bins,density=True,label=(name)+" elts="+elts)
-    ax.legend()
-    plt.show()
-    return distributions,names
 
 def post_process_mesh_density(mesh_loc=".",debug=False):
     dir_contents = [[i,get_val_name(i)] for i in os.listdir(mesh_loc)
@@ -802,9 +1047,6 @@ def generate_crss_from_mask(base=25,scale=2,layer=1,column=0,for_col_mask=False,
         np.savetxt(mesh_loc+msh_name+"crss",values,delimiter="\n")
     write_crss_file(values,target_dir=mesh_loc,name=msh_name,res="Element")
     print("max depth = ",max(file[:,column]))
-
-def configure_run_script(nodes=1,processors=48):
-    print(nodes,processors)
 
 def run_test_mesh(msh_name="mesh_rcl0_66",script_fdr = os.getcwd(),sim_loc="test_1",mesh_loc = ".",debug=True):
     

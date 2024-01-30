@@ -22,6 +22,7 @@ plt.rc('xtick', labelsize=SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SIZE)    # legend fontsize
 plt.rc('figure', titlesize=SIZE)  #
+
 denoised= 0
 iso_home= "/media/schmid_2tb_1/etmengiste/files/slip_study_rerun/isotropic/Cube"
 #iso_home= "/media/schmid_2tb_1/etmengiste/files/update_03_29_2022/current_param"
