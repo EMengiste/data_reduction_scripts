@@ -4,6 +4,31 @@
 rad=0.01
 
 cu=${PWD##*/}_$1
+neper -V ../simulation.sim \
+      -simstep $1\
+      -datanodecoofact 4\
+      -datanodecoo coo           \
+      -dataelt1drad 0.004        \
+      -dataelt3dedgerad 0.000015   \
+      -dataelt3dcol stress33     \
+      -dataeltscaletitle "Stress-zz (MPa)" \
+      -dataeltscale 0:270        \
+      -showelt1d all             \
+      -imagesize 700:920         \
+      -showcsys 0\
+      -cameraangle 12            \
+      -print defromed_$1 \
+
+echo plotting deformed mesh
+
+# convert -gravity south +append \
+#         defromed_$1.png              \
+#         scalebar-scale3d.png              \
+#         $1.png                 \
+#         motion_pictures_$1.png \
+#         image_$1.png
+
+echo  stitching image_$1.png
 
 neper -V "initial(type=ori):file(ini,des=rodrigues:active),path(type=ori):file(ori_$1,des=rodrigues:active)" \
         -space ipf                                                          \
@@ -20,16 +45,17 @@ neper -V "initial(type=ori):file(ini,des=rodrigues:active),path(type=ori):file(o
 convert ${cu}.png -fill white -draw "rectangle 0,0 380,200" ${cu}.png  \
 
 
+echo plotting ipf
+
 neper --rcfile none  -V ../simulation.sim\
       -simstep $1 -space ipf -ipfmode density             \
       -dataelsetscale 0:2.5\
       -print ${cu}_density\
       -space pf -pfmode density    \
-      -dataelsetscale 0:10\
+      -dataelsetscale 0:4\
       -pfpole 1:0:0                 \
       -print ${cu}_density_pf
 
-exit 0
 #### make rodrigues space heatmap
 neper --rcfile none -V ../simulation.sim/orispace/fr-cub.msh\
         -datanodecol "real:file(../simulation.sim/results/mesh/odfn/odfn.step$1)" \
@@ -49,6 +75,7 @@ neper --rcfile none -V ../simulation.sim/orispace/fr-cub.msh\
         -datanodescaletitle "MRD" \
         -print odf_int_$1
 
+echo plotting ipf
 # neper --rcfile none  -V fr-cub.tess,'pts(type=ori):file(ini)',"step(type=ori):file(ori_$1)" -datacellcol lightblue \
 #         -datacelltrs 0.5 -dataedgerad 0.003 \
 #         -dataptscol red -dataptsrad 0.030\

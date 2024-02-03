@@ -28,7 +28,7 @@ def plot3d_scatter_heat(coo,val,label='Name [units]'):
     plt.show()
     exit(0)
 
-def plot_stress_strain(ax,stress,strain,labels=True,lw=5,ls="-",col="k",ylim=[0,201],xlim=[1.0e-7,0.5]):
+def plot_stress_strain(ax,stress,strain,labels=True,lw=5,ls="-",col="k",ylim=[0,500],xlim=[1.0e-7,0.5]):
     ax.plot(strain, stress,col,ms=1,linestyle=ls,linewidth=lw)
     stress = "$\sigma_{yy}$"
     strain='$'

@@ -870,16 +870,19 @@ if __name__ == "__main__":
 
     sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim","inhomogenous_elset_rcl0_235.sim"]
     names = ["Homogenous", "Intra-grain","Inter-grain"]
+
+    sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim"]
+    names = ["Homogenous", "Intra-grain"]
     multi_svs([path,path,path],sims,vm=True,lw=1,destination=path,names=names
               ,ylim=[0,160],xlim=[1.0e-7,0.10],normalize=False,name="labeled")
-
+    exit(0)
     file_name = "vm_stress_"
     steps ="all"# [2,13,32]# 
     suffix = "comparison"
     dest = "/home/etmengiste/jobs/SERDP/dense_mesh/abs_"
     # per_step_elt_val_plotting(path,sims[0],sims[1:],file_name,steps=steps,destination=dest,comp_function=compare_abs_vm_stress,section="")
     
-    plot_stress_diff_from_file(sims[1:],file_name,show=False,destination=dest,section="")
+    # plot_stress_diff_from_file(sims[1:],file_name,show=False,destination=dest,section="")
     exit(0)
     #
     script_fdr=os.getcwd()
