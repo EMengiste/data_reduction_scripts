@@ -333,25 +333,31 @@ def show_crss_precip_test(path):
     for i in list_of_dirs:
         print(i)
 ##
-def svs_real_svs_sim(sim,path,real_paths):
+def error_function(val1, val2):
+    error_calc =  (abs(val1 - val2)/val1)*100
+    return error_calc
+#
+def svs_real_svs_sim(sim,path,real_paths,name="svs",xlim=[1.0e-7,0.22],outdir=""):
     simulation = fepx_sim(sim,path=path+"/"+sim)
     # Check if simulation value is available 
     # if not post process and get
     try:
-        stress=simulation.get_output("stress",step="all",comp=2)
-        strain=simulation.get_output("strain",step="all",comp=2)
+        stress=simulation.get_output("stress_eq",step="all")
+        strain=simulation.get_output("strain_eq",step="all")
     except:
-        simulation.post_process(options="-resmesh stress,strain")
-        stress=simulation.get_output("stress",step="all",comp=2)
-        strain=simulation.get_output("strain",step="all",comp=2)
+        simulation.post_process(options="-resmesh stress_eq,strain_eq")
+        stress=simulation.get_output("stress_eq",step="all")
+        strain=simulation.get_output("strain_eq",step="all")
     #
     del simulation
     # calculate the yield values
     yield_values = find_yield(stress,strain)
     ystrain,ystress =yield_values["y_strain"],yield_values["y_stress"]
     stress_off = yield_values["stress_offset"]
+    ystress_sim = ystress
     #
     fig, ax = plt.subplots(1, 1,figsize=[5,7])
+    yield_exp = []
     for real_svs in real_paths:
         exx= pd.read_csv(real_svs)
         try:
@@ -360,18 +366,25 @@ def svs_real_svs_sim(sim,path,real_paths):
         except:
             stress_exp = [float(i) for i in exx["'stress'"]]
             strain_exp = [float(i) for i in exx["'strain'"]]
-        yield_values = find_yield(stress_exp,strain_exp,number=100)
-        plot_stress_strain(ax,stress_exp[:-3000],strain_exp[:-3000],col="r",lw=1,ylim=[0,500],xlim=[1.0e-7,max(strain)+0.001])
-    ax.plot(ystrain,ystress,"k*",ms=20)
-    plot_stress_strain(ax,stress,strain,lw=3,ylim=[0,550],xlim=[1.0e-7,max(strain)+0.001])
-    ax.plot(strain,stress_off,"ko--",ms=5)
-    if sim !="feed_stock":
-        ax.set_ylabel("")
+        yield_values = find_yield(stress_exp,strain_exp,number=70)
+        yield_exp.append(yield_values["y_stress"])
+        plot_stress_strain(ax,stress_exp[:-1000],strain_exp[:-1000],col="r",lw=1,ylim=[0,500],xlim=[1.0e-7,max(strain)+0.001])
+    avg_yield = np.mean(yield_exp)
+    print(name,avg_yield)
+    error = error_function(avg_yield,ystress_sim)[0]
+    ax.plot(ystrain,ystress,"k*",ms=20,label=f"error = {error:.03f}\%")
+    
+    plot_stress_strain(ax,stress,strain,lw=3,ylim=[0,570],xlim=xlim)
+    ax.plot(strain,stress_off,"k--",ms=5)
+    if "feed_stock" not in name:
         ax.set_yticklabels([])
+        ax.set_xlabel("$\\varepsilon$ (-)")
+    else:
+        ax.set_ylabel("$\sigma$")
  
     fig.subplots_adjust(left=0.2, right=0.97,top=0.97, bottom=0.15, wspace=0.07)
-    #ax.legend()   
-    plt.savefig(sim)
+    ax.legend(loc=4)
+    plt.savefig(outdir+name)
     ax.cla()
 
 def multi_svs(paths,sims,name_dict="",names=[],destination=".",name="untitled"
@@ -423,7 +436,7 @@ def multi_svs(paths,sims,name_dict="",names=[],destination=".",name="untitled"
         y_stress.append(ystress)
         y_strain.append(ystrain)
         plot_stress_strain(ax,np.array(stress),strain,col="k",lw=lw,ylim=ylim,xlim=xlim)
-        ax.plot(ystrain,ystress,"k"+marker_styles[int(sim)],ms=20,label=label_name)
+        ax.plot(ystrain,ystress,"k"+marker_styles[int(sim)],ms=10,label=label_name)
         # print(ystrain)
         #ax.plot(strain,stress_off,"ko--",ms=5)
         ax.set_ylabel("$\sigma$")
@@ -448,7 +461,7 @@ def multi_svs(paths,sims,name_dict="",names=[],destination=".",name="untitled"
         # labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
         # print(labels)
         ax.legend(handles[::-1], labels[::-1])
-    plt.ylim(ylim)
+    plt.ylim([0,500])
     plt.xlim(xlim)
     fig.subplots_adjust(left=0.15, right=0.95,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
     if names!="":
@@ -460,6 +473,7 @@ def multi_svs(paths,sims,name_dict="",names=[],destination=".",name="untitled"
         # print(y_stress)
         # print("max",max(y_stress))
         print("wrote "+destination+name+"_svs.png")
+        print(os.getcwd())
         fig.savefig(destination+name+"_svs.png",dpi=200)
         return y_stress,elt_num,run_times
 #
@@ -643,6 +657,8 @@ def write_ori_file(ext_file):
         ori_file.write(str(ind+1)+" "+line)
     ori_file.write("$EndElsetOrientations")
 
+
+############ job submission for specific input
 def job_submission(script_fdr="",sim_set_path="",run=False,verbose=False,ori_file=False):
     dir_contents = [i for i in os.listdir() if i.endswith(".msh")]
     ext_file = [i for i in os.listdir() if i.endswith(".ori")]
@@ -779,10 +795,7 @@ def strength_function(inputs):
         strength = vars*dist +base_strength
     return strength
 
-def error_function(val1, val2):
-    error_calc =  (abs(val1 - val2)/val1)*100
-    return error_calc
-#
+
 def generate_strength_files(adjustment=0,base_strength = 25,vis=False):
 
     mesh = generate_msh("./simulation",48,options={"mode" : "stat"
@@ -844,7 +857,7 @@ def generate_strength_files(adjustment=0,base_strength = 25,vis=False):
     ax.set_ylabel("$\\tau_0$ (MPa)")
     fig.subplots_adjust(left=.15,right=0.95,top=0.98, bottom=0.12)   
     fig.savefig("crss_vs_d",dpi=300)
-    exit(0)
+    # exit(0)
     write_crss_file(strength_values1,target_dir="",name="simulation_001",res="Element")
     write_crss_file(strength_values2,target_dir="",name="simulation_002",res="Element")
     # exit(0)
@@ -865,7 +878,121 @@ def generate_strength_files(adjustment=0,base_strength = 25,vis=False):
                             ,"-dataeltscale":" 35:55"
                             ,"mode" :"run"},outname="decreasing")
 
+def linear_gradient_run():
+    #  UAH colaboration Linear gradient run
+    project_home= "/home/etmengiste/jobs/UAH_collaboration/" 
+    script_fdr=os.getcwd()
+
+
+    # linear strength increase for grain
+    sim_set_path= project_home+"linear_gradient"
+    neper_path = "/home/etmengiste/code/neper/neper-dev/build/neper"
+    fepx_path = "/home/etmengiste/bin/fepx_general_input"
+    path = sim_set_path+"/common_files"
+    os.chdir(path)
+    print(os.getcwd())
+    adjustment = -4.143 #-2.358 # tau = 40
+    pool = multiprocessing.Pool(processes=os.cpu_count())
+    # generate_strength_files(base_strength=40,adjustment=adjustment,vis=True)
+
+    # exit(0)
+    sims = [1,2]
+    for sim in sims:
+        sim = ("000"+str(sim))[-3:]
+        print(sim)
+        os.mkdir("../"+sim)
+        os.chdir("../"+sim)
+        os.system("rm output.*")
+        os.system("rm error.*")
+        cwd = os.getcwd()
+        print(cwd)
+        shutil.copy2(path+"/simulation.msh",cwd+"/simulation.msh")
+        shutil.copy2(path+"/simulation.cfg",cwd)
+        shutil.copy2(path+"/simulation_"+sim+".crss",cwd+"/simulation.opt")
+        job_submission_script(cwd,fepx_path=fepx_path)
+        print(os.listdir())
+        
+    exit(0)
+
+def plot_100_mesh_data_precip(outdir=""):
+    path = "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/output_data/grid_search_run/034"
+    sim = "feed_stock.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs2.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs3.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs4.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs1.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="feed_stock_precip_run_100_g",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "dep_rapid_bottom.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_5.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_4.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="rapid_bottom_precip_run_100_g",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "dep_rapid_top.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_1.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_0.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="rapid_top_precip_run_100_g",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "dep_old.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD1_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD2_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD3_mono.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="standard_precip_run_100_g",xlim=[1.0e-7,0.25],outdir=outdir)
+    # exit(0)
+
+def plot_2000_mesh_data_precip(outdir=""):
+    path = "/media/schmid_1tb_1/etmengiste/cauchy_output/aa7050/first_run"
+    sim = "005/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs2.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs3.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs4.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs1.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="feed_stock_precip_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "001/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_5.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_4.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="rapid_bottom_precip_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "003/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_1.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_0.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="rapid_top_precip_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "007/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD1_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD2_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD3_mono.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="standard_precip_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    # exit(0)
+
+def plot_2000_mesh_data_g_0(outdir=""):
+    path = "/media/schmid_1tb_1/etmengiste/cauchy_output/aa7050"
+    sim = "003/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs2.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs3.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs4.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/fs1.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="feed_stock_2nd_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "001/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_5.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_4.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="rapid_bottom_2nd_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "002/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_1.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/Overaged Microstructure and Mechanical Data/Tensile Data/svs_sheets/sheet_0.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="rapid_top_2nd_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    sim = "004/simulation.sim"
+    real_paths = ["/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD1_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD2_mono.csv",
+                  "/media/schmid_2tb_1/etmengiste/files/research/serdp/serdp_precip_2021/experimental_data/tensile_data/LD3_mono.csv"]
+    svs_real_svs_sim(sim,path,real_paths,name="standard_2nd_run",xlim=[1.0e-7,0.25],outdir=outdir)
+    exit(0)
 if __name__ == "__main__":
+    outdir="/home/etmengiste/jobs/SERDP/AA7050/imgs/"
+    plot_100_mesh_data_precip(outdir=outdir)
+    # plot_2000_mesh_data_precip(outdir=outdir)
+    # plot_2000_mesh_data_g_0(outdir=outdir)
+    exit(0)
+    sims = ["00"+str(i+1)+"/simulation.sim" for i in range(8)]
+    paths = [path for i in range(8)]
+    multi_svs(paths,sims,vm=True,lw=1,destination="",names=sims
+              ,xlim=[-1.0e-2,0.70],normalize=False,name="labeled")
+    exit(0)
     path = "/home/etmengiste/jobs/SERDP/dense_mesh/"
 
     sims = ["homogenous_rcl0_235.sim","inhomogenous_elt_rcl0_235.sim","inhomogenous_elset_rcl0_235.sim"]
@@ -884,38 +1011,7 @@ if __name__ == "__main__":
     
     # plot_stress_diff_from_file(sims[1:],file_name,show=False,destination=dest,section="")
     exit(0)
-    #
-    script_fdr=os.getcwd()
-    # linear strength increase for grain
-    sim_set_path= "/home/etmengiste/jobs/SERDP/linear_gradient"
-    neper_path = "/home/etmengiste/code/neper/neper-dev/build/neper"
-    fepx_path = "/home/etmengiste/bin/fepx_inhomo_strength"
-    path = sim_set_path+"/common_files"
-    os.chdir(path)
-    print(os.getcwd())
-    # adjustment = -2.5712 # tau = 25
-    adjustment = -4.143 # tau = 40
-    pool = multiprocessing.Pool(processes=os.cpu_count())
-    # generate_strength_files(base_strength=40,adjustment=adjustment)
 
-    # exit(0)
-    sims = [1,2]
-    for sim in sims:
-        sim = ("000"+str(sim))[-3:]
-        print(sim)
-        # os.mkdir("../"+sim)
-        os.chdir("../"+sim)
-        os.system("rm output.*")
-        os.system("rm error.*")
-        cwd = os.getcwd()
-        print(cwd)
-        shutil.copy2(path+"/simulation.msh",cwd)
-        shutil.copy2(path+"/simulation.cfg",cwd)
-        shutil.copy2(path+"/simulation_"+sim+".crss",cwd+"/simulation.crss")
-        job_submission_script(cwd,fepx_path=fepx_path)
-        print(os.listdir())
-        
-    exit(0)
     ##
     ##
     ##
@@ -1161,7 +1257,7 @@ def get_val_name(var):
     #print(float(ans))
     return float(ans)
 
-def job_submission_1():
+def job_submission_1():################ dont use
     for mesh in dir_contents[::-1]:
         mesh_name = mesh[0][:-4]
         #====::: Generate,process,remesh mesh

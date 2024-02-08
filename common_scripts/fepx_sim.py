@@ -131,7 +131,7 @@ class fepx_sim:
                     #print(option)
                 #
             #
-            if "Deformation History" in current:
+            if "Loading and Boundary Condition" in current:
                 if len(i.split())==2 and "Deformation History" not in i:
                     option= i.split()
                     self.deformation_history[option[0]]=option[1]
@@ -140,6 +140,12 @@ class fepx_sim:
                     self.sim_steps.append(i.split()[1])
             #
             if "Boundary Condition" in current:
+                if len(i.split())>1 and "Boundary Condition" not in i :
+                    option= i.split()
+                    self.boundary_conditions[option[0]]=option[1]
+                    #print(option)
+                #
+            if "Steps" in current:
                 if len(i.split())>1 and "Boundary Condition" not in i :
                     option= i.split()
                     self.boundary_conditions[option[0]]=option[1]
@@ -161,7 +167,13 @@ class fepx_sim:
      #
     #
     #
-    def get_num_steps(self):
+    def get_num_steps(self):     
+        file = open(self.path+"/.sim").readlines()
+        num = file[-2]
+        return int(num)
+        exit(0)
+        if self.deformation_history["number_of_steps"]!="":
+            num = self.deformation_history["number_of_steps"]
         if self.deformation_history["def_control_by"]=="uniaxial_load_target":
             num =self.deformation_history["number_of_load_steps"]
             #print("number_of_load_steps",num)

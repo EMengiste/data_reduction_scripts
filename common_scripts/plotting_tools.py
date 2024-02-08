@@ -28,15 +28,15 @@ def plot3d_scatter_heat(coo,val,label='Name [units]'):
     plt.show()
     exit(0)
 
-def plot_stress_strain(ax,stress,strain,labels=True,lw=5,ls="-",col="k",ylim=[0,500],xlim=[1.0e-7,0.5]):
+def plot_stress_strain(ax,stress,strain,labels=False,lw=5,ls="-",col="k",ylim=[0,500],xlim=[1.0e-7,0.5]):
     ax.plot(strain, stress,col,ms=1,linestyle=ls,linewidth=lw)
     stress = "$\sigma_{yy}$"
     strain='$'
     strain+="\\varepsilon_{yy}"
     strain+='$'
 
-    x_label = f'Strain-yy (\%)'
-    y_label = f'Stress-yy (MPa)'
+    x_label = f'Strain ZZ (\%)'
+    y_label = f'Stress ZZ (MPa)'
     if labels:
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label,labelpad=10)
