@@ -57,7 +57,7 @@ class fepx_sim:
         self.is_sim=False
         self.results_dir=os.listdir(path)
         self.compressed=False
-        self.completed = "post.report" in self.results_dir
+        # self.completed = "post.report" in self.results_dir
         self.has_config = "simulation.config" in self.results_dir or "simulation.cfg" in self.results_dir
         #
         if path[-4:] == ".sim":
@@ -131,6 +131,13 @@ class fepx_sim:
                     #print(option)
                 #
             #
+            if "Deformation History" in current:
+                if len(i.split())==2 and "Deformation History" not in i:
+                    option= i.split()
+                    self.deformation_history[option[0]]=option[1]
+                #
+                elif len(i.split())>3:
+                    self.sim_steps.append(i.split()[1])
             if "Loading and Boundary Condition" in current:
                 if len(i.split())==2 and "Deformation History" not in i:
                     option= i.split()
@@ -232,73 +239,67 @@ class fepx_sim:
      #
     #
     #
-    def get_results(self,steps=[],res="mesh"):
+    def get_results(self,steps=[],res="mesh",process=False):
         #
         # Available results
         print("____Results__availabe___are:")
         #
+        def pprint(arr, preamble=""):
+            for i in arr:
+                i=str(i)
+                if isinstance(arr,dict):
+                    print(preamble+i+": "+str(arr[i])+"                   |||||------|")
+                else:
+                    print(preamble+i+"                   |||||------|")
+
         pprint(self.print_results, preamble="\n#__|")
         #
         node_only = ["coo","disp","vel"]
-        mesh= [i for i in self.print_results if i not in node_only ]
+        mesh= [i for i in self.print_results if i not in node_only and i not in ["forces","ori"]]
         #
+        results = str(mesh)[1:-1].replace("'","").replace(" ","")
+        if process:
+            self.post_process(options=f" -resmesh {results}")
+        # exit(0)
         print("\n____Getting results at "+res+" scale\n   initializing results\n")
         #
         num_steps=self.get_num_steps()
         if res == "mesh":
             length= len(mesh)
-
         #
-        #
-        results_dict= {self.name: "sim","num": num_steps}
+        results_dict= {"sim name":self.name ,"num steps": num_steps}
         #
         pprint(results_dict)
-        self.json = self.path+"/"+self.name+".txt"
         #
         #
-        if self.json in os.listdir(self.path):
-            converter_file= open(self.json,"r")
-            print("json file exists parsing")
-            results_dict = json.load(converter_file)
-            converter_file.close()
-            return results_dict
-        else:
-            for index in range(length):
-                result=mesh[index]
-                #print("\n\n--===== start"+result+"\n")
-                steps =[]
-                fill = '█'
-                percent = round(index / float(length-1),3)
-                filledLength = int(40 * percent)
-                percent*=100
-                bar = fill * filledLength + '-' * (length - filledLength)
-                prefix=" \n\n== Getting <"+res+">results for <"+result+">\n--step<"
+        for index in range(length):
+            result=mesh[index]
+            #print("\n\n--===== start"+result+"\n")
+            steps =[]
+            fill = '█'
+            percent = round(index / float(length-1),3)
+            filledLength = int(40 * percent)
+            percent=int(percent*100)
+            bar = fill * filledLength + '-' * (length - filledLength)
+            prefix=" \n\n== Getting <"+res+">results for <"+result+">\n--step<"
+            for step in range(num_steps):
+                prefix+=str(step)
+                if step==10:
+                    prefix+="\n"
+                try:
+                    prefix=self.name+f" \n\n===== Getting <{res}> scale results for <{result}> at step <{step}>----\n-----<"
+                    print(result,step)
+                    vals = [float(i) for i in self.get_output(result,step=str(step),res=res)]
+                    steps.append(vals)
+                    print(f'\r{prefix} |{bar}| {percent}% ')
+                except FileNotFoundError:
 
-                for step in range(num_steps):
-                    prefix+=str(step)
-                    if step==10:
-                        prefix+="\n"
-                    try:
-                        vals = [float(i) for i in self.get_output(result,step=str(step),res=res)]
-                        steps.append(vals)
-                        print(f'\r{prefix} |{bar}| {percent}% ')
-                    except FileNotFoundError:
-                        #print("file not found Trying nodes")
-                        prefix=self.name+" \n\n===== Getting <nodes>results for <"+result+">----\n-----<"
-                        try:
-                            vals = [float(i) for i in self.get_output(result,step=str(step),res="nodes")]
-                            steps.append(vals)
-                            print(f'\r{prefix} |{bar}| {percent}% ')
-                        except FileNotFoundError:
-                            error = " youre outa luck"
-                            print(f'\r{prefix+error} |{bar}| {percent}% ')
-                prefix+= ">--------|\n+++\n+++"
-                #print("--===== end"+result+"\n")
-                results_dict[result]=steps
-            with open(self.json,"w") as converter_file:
-                converter_file.write(json.dumps(results_dict))
-                self.results_dir=self.path+"/"+self.name+".txt"
-            return results_dict
+                    print(f"file <{result}> not found")
+                    break
+            prefix+= ">--------|\n+++\n+++"
+            #print("--===== end"+result+"\n")
+            results_dict[result]=steps
+        return results_dict
         #
         #
     #
@@ -307,6 +308,37 @@ class fepx_sim:
         step = str(step)
         value = {}
         ##
+        #____Results__availabe___are:
+        #
+        # Nodal outputs
+        #   coo             = [1,2,3]  x,  y,  z
+        #   disp            = [1,2,3] dx, dy, dz
+        #   vel             = [1,2,3] vx, vy, vz
+        # Element outputs (mesh,entity)
+        #   crss            = [1,2,...,n] where n=12,18,32 for bcc/fcc,hcp,bct respectively
+        #   defrate         = [1,2,3,4,5,6] tensor
+        #   defrate_eq      = [1]
+        #   defrate_pl      = [1,2,3,4,5,6]
+        #   defrate_pl_eq   = [1]
+        #   elt_vol         = [1]
+        #   ori             = [1,..,n] where n= 3 if rod of euler or 4 if quat or axis angle
+        #   slip            = [1,2,...,n] where n=12,18,32 for bcc/fcc,hcp,bct respectively
+        #   sliprate        = [1,2,...,n] where n=12,18,32 for bcc/fcc,hcp,bct respectively
+        #   spinrate        = [1,2,3] skew symetric plastic spin rate tensor
+        #   strain          = [1,2,3,4,5,6]
+        #   strain_eq       = [1]
+        #   strain_el       = [1,2,3,4,5,6]
+        #   strain_el_eq    = [1]
+        #   strain_pl       = [1,2,3,4,5,6]
+        #   strain_pl_eq    = [1]
+        #   stress          = [1,2,3,4,5,6]
+        #   stress_eq       = [1]
+        #   velgrad         = [1,2,3,4,5,6,7,8,9] full velocity gradient tensor
+        #   work            = [1]
+        #   work_pl         = [1]
+        #   workrate        = [1]
+        #   workrate_pl     = [1]
+        #
         if output in ["coo","disp","vel"]:
             res ="nodes"
         elif res=="":

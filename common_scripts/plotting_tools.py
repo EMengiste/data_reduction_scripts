@@ -67,7 +67,7 @@ def individual_svs(path,sim,show_yield=False,outpath= "",show_offset=False,show=
     plot_stress_strain(ax,stress,strain,lw=1,ylim=[0,1.1*max(stress)],xlim=[1.0e-7,max(strain)+0.001])
     
     if show_yield: ax.plot(ystrain,ystress,"k*",ms=20,label="$\sigma_y$="+str(yield_values["y_stress"]))
-    if show_offset: ax.plot(strain,stress_off,"ko--",ms=5)
+    # if show_offset: ax.plot(strain,stress_off,"ko--",ms=5)
     
     fig.subplots_adjust(left=0.15, right=0.97,top=0.98,  bottom=0.11, wspace=0.1, hspace=0.1)        
     

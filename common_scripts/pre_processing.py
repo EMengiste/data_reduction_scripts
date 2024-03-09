@@ -289,7 +289,7 @@ def visualize(input_source,source_code="neper",overwrite_file=False,outname="def
     if options["mode"]=="debug":
         #print(input_source)
         print(os.getcwd())
-        pprint(commands)
+        # pprint(commands)
         print("Visualization command:\n",neper_command)
     elif options["mode"]=="run":
         print("Visualization command:\n",neper_command)

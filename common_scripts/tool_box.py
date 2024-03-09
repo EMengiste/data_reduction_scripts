@@ -19,6 +19,7 @@ def function_fitting(x_vals,y_vals,function):
     ## such that the error specifed for the fit values
     ## us below a threshold
     ## this will be more difficult with the number of values available 
+    
 def to_matrix(arr):
     # if arr.shape ==(6,):
     row1 = [arr[0],arr[-1],arr[-2]]
