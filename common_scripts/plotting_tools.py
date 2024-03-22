@@ -28,22 +28,10 @@ def plot3d_scatter_heat(coo,val,label='Name [units]'):
     plt.show()
     exit(0)
 
-def plot_stress_strain(ax,stress,strain,labels=False,lw=5,ls="-",col="k",ylim=[0,500],xlim=[1.0e-7,0.5]):
-    ax.plot(strain, stress,col,ms=1,linestyle=ls,linewidth=lw)
-    stress = "$\sigma_{yy}$"
-    strain='$'
-    strain+="\\varepsilon_{yy}"
-    strain+='$'
+def plot_stress_strain(ax,stress,strain,labels=False,lw=5,ls="-",col="k",label=""):
+    ax.plot(strain, stress,col,ms=1,linestyle=ls,linewidth=lw,label=label)
 
-    x_label = f'Strain ZZ (\%)'
-    y_label = f'Stress ZZ (MPa)'
-    if labels:
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label,labelpad=10)
     # Compile labels for the graphs
-    plt.ylim(ylim)
-    plt.xlim(xlim)
-    #ax.legend()
 
 def individual_svs(path,sim,show_yield=False,outpath= "",show_offset=False,show=False):
     simulation = fepx_sim(sim,path=path+"/"+sim)

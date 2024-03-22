@@ -83,6 +83,17 @@ def plotter(ax,x,y=""):
 #
 #
 def normailze(array,scale=1,maximum=1,absolute=False,debug=False):
+    # [f(x) if condition else g(x) for x in sequence]
+    if isinstance(array[0],str):
+        array=[float(i) 
+            if "d" not in i 
+            else float(i.split("d")[0])
+            for i in array ]        
+    if absolute:
+        array= [np.abs(i) for i in array]
+    if isinstance(array[0],list):
+        return array
+    
     if debug:
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
@@ -93,19 +104,8 @@ def normailze(array,scale=1,maximum=1,absolute=False,debug=False):
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
         print("-------|---------|---------|---------|---------|---------|---------|---------|")
 
-    # [f(x) if condition else g(x) for x in sequence]
-    if isinstance(array[0],str):
-        array=[float(i) 
-            if "d" not in i 
-            else float(i.split("d")[0])
-            for i in array ]        
-    if isinstance(array[0],list):
-        return array
-    if absolute:
-        array= [abs(i) for i in array]
     if maximum=="":
         maximum = max(array)
-
     return [scale*i/maximum for i in array]
 #
 import sys
@@ -123,38 +123,54 @@ plt.rc('xtick', labelsize=SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SIZE)    # legend fontsize
 plt.rc('figure', titlesize=SIZE)  #
+
 # comand line inputs
 processing= sys.argv[2] == "1"
 #
 sim_path = sys.argv[1]#"/home/etmengiste/jobs/UAH_collaboration/linear_gradient/001/simulation.sim"
 sim=fepx_sim("test_sim",path=sim_path) # object created
-sim_results = sim.get_results(process=processing)
+sim_results = sim.get_results(process=processing,)
 print(sim_results.keys())
-num_results=len(sim_results.keys())-2
+try:
+    sims= [sys.argv[3]]
+    num_results=1
+except:
+    sims=list(sim_results.keys())[2:]
+    num_results=len(sim_results.keys())-2
 print("num of results is", num_results)
-width = 3
+width = 1
 length = math.ceil(num_results/width)
 print(length)
 # exit(0)
 plotted= 1
-fig = plt.figure(figsize=[8.5,20])
-for value in list(sim_results.keys())[2:]:        
-    # val=value.split("=")[1]
-    # try:
+fig = plt.figure(figsize=[15,20])
+length+=1
+ax = fig.add_subplot(length,width,plotted)
+try:
+    stress=sim.get_output("stress",step="all",comp=2)
+    strain=sim.get_output("strain",step="all",comp=2)
+except:
+    sim.post_process(options="-resmesh stress,strain")
+    stress=sim.get_output("stress",step="all",comp=2)
+    strain=sim.get_output("strain",step="all",comp=2)
+plot_stress_strain(ax,stress,strain,lw=1,ls="-.")
+plotted+=1
+ax.set_xlim([-0.01,0.31])
+ax.set_ylim([-0.01,1500])
+del sim
+for value in sims:        
     steps_val= sim_results[value]
-    #print(step,steps_val)
-    steps_val = normailze(steps_val,maximum=1)
+    steps_val = normailze(steps_val,maximum=1,absolute=True,debug=True)
     #
+    # exit(0)
     ax = fig.add_subplot(length,width,plotted)
     if isinstance(steps_val,float):
         plotting_space([steps_val],axis=ax,ylabel=value,layers=2)
     elif isinstance(steps_val,list):
-        plotting_space(steps_val,axis=ax,ylabel=value,layers=2)            
-    # except:
-    #     pass    
+        plotting_space(steps_val,axis=ax,ylabel=value,layers=2)       
     print("===+",plotted,"\n")
+    ax.set_ylim([0,0.0125])
     plotted+=1
-del sim
 plt.tight_layout()
 print(os.getcwd())
 fig.savefig(sim_path+"/image",dpi=300)

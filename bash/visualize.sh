@@ -6,6 +6,15 @@
 path_tess="/media/schmid_2tb_1/etmengiste/files/slip_system_study/"
 #
 path_cs="/home/etmengiste/code/data_reduction_scripts/images"
+
+neper -V ${path_tess}/isotropic/Cube.sim/inputs/simulation.msh \
+        -imagesize 1100:1000\
+        -lightambient 1 -lightsource none\
+        -dataeltcol partnb\
+        -cameraangle 15 -showcsys 0\
+        -cameracoo 4:-5:4\
+        -print mesh  
+exit 0
 neper -V ${path_tess}/isotropic/Cube.sim \
         -step 0 \
         -datanodecoo coo \

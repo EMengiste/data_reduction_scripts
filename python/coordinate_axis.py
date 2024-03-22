@@ -107,13 +107,13 @@ if for_domain:
     ax.set_ylim([-.2,0.7])
     ax.set_zlim([-.2,0.7])
     
-coordinate_axis(ax,start,coo_labs=["ED","LD","RD"],fs=35,leng=.9,offset_text=1.25,offset=offset,xyz_offset=xyz_offset)
+coordinate_axis(ax,start,coo_labs=["$x$","$y$","$z$"],fs=35,leng=.9,offset_text=1.35)#,offset=offset,xyz_offset=xyz_offset)
 #coordinate_axis(ax,start,space="real_latex",fs=55,leng=0.04,offset_text=1.4,offset=offset,xyz_offset=xyz_offset)
 
 #ax.scatter(4,-5,4,"ko")
 #ele,azi,roll =[31,-28,0]
 # 28,-58
-ele,azi,roll =[0,0,0]
+ele,azi,roll =[12,33,0]
 print(ele,azi)
 ax.view_init(elev=ele, azim=azi)
 #ax.set_aspect("equal")
@@ -127,7 +127,7 @@ if show:
        plt.show()
 else:
        #fig.savefig("funda_region")
-       fig.savefig("coo_ax")
+       fig.savefig("co_ax")
        #fig.savefig("funda_region_zoomed_grain_id_"+str(grain_id))
 
 exit(0)
